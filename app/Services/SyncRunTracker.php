@@ -80,13 +80,18 @@ class SyncRunTracker
         ])->save();
     }
 
-    public function complete(SyncRun $run): void
+    /**
+     * Close the run as completed. A notice records a sweep that finished
+     * without covering everything it wanted to — a page-depth stop, say —
+     * so the panel says why instead of showing a clean run.
+     */
+    public function complete(SyncRun $run, ?string $notice = null): void
     {
         $run->forceFill([
             'status' => SyncRun::STATUS_COMPLETED,
             'heartbeat_at' => now(),
             'finished_at' => now(),
-            'last_error' => null,
+            'last_error' => $notice === null ? null : Str::limit($notice, 1000),
         ])->save();
     }
 

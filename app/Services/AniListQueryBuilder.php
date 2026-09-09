@@ -121,12 +121,16 @@ class AniListQueryBuilder
         }
     GRAPHQL;
 
+    /**
+     * Full-catalogue sweep, ordered by id so it can be re-windowed with
+     * \$idGreater once pagination reaches the AniList page-depth limit.
+     */
     public static function animePage(): string
     {
         $fields = self::MEDIA_FIELDS;
 
         return <<<GRAPHQL
-        query (\$page: Int, \$perPage: Int) {
+        query (\$page: Int, \$perPage: Int, \$idGreater: Int) {
             Page(page: \$page, perPage: \$perPage) {
                 pageInfo {
                     hasNextPage
@@ -134,7 +138,7 @@ class AniListQueryBuilder
                     lastPage
                     total
                 }
-                media(type: ANIME, sort: [ID]) {
+                media(type: ANIME, sort: [ID], id_greater: \$idGreater) {
                     {$fields}
                 }
             }
@@ -296,7 +300,7 @@ class AniListQueryBuilder
     public static function recommendationsPage(): string
     {
         return <<<'GRAPHQL'
-        query ($page: Int, $perPage: Int) {
+        query ($page: Int, $perPage: Int, $idGreater: Int) {
             Page(page: $page, perPage: $perPage) {
                 pageInfo {
                     hasNextPage
@@ -304,7 +308,7 @@ class AniListQueryBuilder
                     lastPage
                     total
                 }
-                media(type: ANIME, sort: [ID]) {
+                media(type: ANIME, sort: [ID], id_greater: $idGreater) {
                     id
                     recommendations(page: 1, perPage: 25, sort: [RATING_DESC]) {
                         edges {

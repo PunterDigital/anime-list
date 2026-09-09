@@ -24,6 +24,13 @@ return [
 
     'sync' => [
         'per_page' => 50,
+        /*
+         * AniList serves only the first 5,000 entries of any result set and
+         * answers a deeper page with a 400 "Page depth exceeds maximum
+         * allowed for API requests". Sweeps stop or re-window at this bound
+         * instead of walking into it.
+         */
+        'max_page_depth' => (int) env('ANILIST_MAX_PAGE_DEPTH', 5000),
         'store_raw_responses' => (bool) env('ANILIST_STORE_RAW', true),
     ],
 

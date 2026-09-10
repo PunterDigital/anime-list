@@ -10,6 +10,7 @@ use App\Models\Anime;
 use App\Models\SyncRun;
 use App\Services\AnimeRefreshPolicy;
 use App\Services\SyncRunTracker;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -231,6 +232,33 @@ class AdminJobObservabilityController extends Controller
         return back()->with('message', "Cleared refresh exclusions on {$restored} anime.");
     }
 
+    /**
+     * Full detail for one failed job, including the whole stack trace. The
+     * index only carries a truncated first line, so the panel fetches this
+     * when a failure is expanded.
+     */
+    public function showFailed(string $uuid): JsonResponse
+    {
+        $row = DB::table('failed_jobs')
+            ->where('uuid', $uuid)
+            ->first(['uuid', 'connection', 'queue', 'payload', 'exception', 'failed_at']);
+
+        if ($row === null) {
+            return response()->json(['message' => 'Failed job not found.'], 404);
+        }
+
+        return response()->json([
+            'uuid' => $row->uuid,
+            'connection' => $row->connection,
+            'queue' => $row->queue,
+            'job_class' => $this->extractJobClass($row->payload),
+            'exception' => $row->exception,
+            'failed_at' => $row->failed_at,
+            'attempts' => $this->extractAttempts($row->payload),
+            'payload' => $this->prettyPayload($row->payload),
+        ]);
+    }
+
     public function retryFailed(string $uuid): RedirectResponse
     {
         $exists = DB::table('failed_jobs')->where('uuid', $uuid)->exists();
@@ -376,6 +404,33 @@ class AdminJobObservabilityController extends Controller
 
         return $decoded['displayName']
             ?? ($decoded['data']['commandName'] ?? null);
+    }
+
+    private function extractAttempts(string $payload): ?int
+    {
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded) || ! isset($decoded['attempts'])) {
+            return null;
+        }
+
+        return (int) $decoded['attempts'];
+    }
+
+    /**
+     * Re-encode the queue payload for display. The serialized command is a
+     * PHP string inside the JSON, so it stays as-is; everything else is
+     * readable once indented.
+     */
+    private function prettyPayload(string $payload): string
+    {
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded)) {
+            return $payload;
+        }
+
+        $encoded = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return $encoded === false ? $payload : $encoded;
     }
 
     private function extractExceptionMessage(string $exception): string

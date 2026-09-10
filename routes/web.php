@@ -220,6 +220,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/jobs/sync/stale-refresh', [AdminJobObservabilityController::class, 'enqueueStaleRefresh'])->name('jobs.sync.stale-refresh');
     Route::delete('/jobs/refresh-exclusions', [AdminJobObservabilityController::class, 'clearRefreshExclusions'])->name('jobs.refresh-exclusions.clear');
     Route::delete('/jobs/failed', [AdminJobObservabilityController::class, 'flushFailed'])->name('jobs.failed.flush');
+    Route::get('/jobs/failed/{uuid}', [AdminJobObservabilityController::class, 'showFailed'])->name('jobs.failed.show');
     Route::post('/jobs/failed/{uuid}/retry', [AdminJobObservabilityController::class, 'retryFailed'])->name('jobs.failed.retry');
     Route::delete('/jobs/failed/{uuid}', [AdminJobObservabilityController::class, 'forgetFailed'])->name('jobs.failed.forget');
 });

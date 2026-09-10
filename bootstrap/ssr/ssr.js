@@ -1104,6 +1104,11 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
     const dispatching = ref(null);
     const retryingUuid = ref(null);
     const forgettingUuid = ref(null);
+    const expandedUuid = ref(null);
+    const failedDetails = ref({});
+    const loadingDetailUuid = ref(null);
+    const detailError = ref(null);
+    const copiedUuid = ref(null);
     const flushingFailed = ref(false);
     const syncRunsInProgress = computed(
       () => props.syncRuns.some((run) => run.status === "running" || run.status === "paused")
@@ -1255,7 +1260,10 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
           }
           _push(`</div>`);
           if (run.last_error) {
-            _push(`<div class="mt-2 break-words rounded bg-red-950/40 px-2 py-1 text-[11px] text-red-300">${ssrInterpolate(run.last_error)}</div>`);
+            _push(`<div class="${ssrRenderClass([
+              run.status === "completed" ? "bg-amber-950/40 text-amber-300" : "bg-red-950/40 text-red-300",
+              "mt-2 break-words rounded px-2 py-1 text-[11px]"
+            ])}">${ssrInterpolate(run.last_error)}</div>`);
           } else {
             _push(`<!---->`);
           }
@@ -1297,7 +1305,29 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
       } else {
         _push(`<div class="space-y-2"><!--[-->`);
         ssrRenderList(__props.recentFailed, (job) => {
-          _push(`<div class="rounded-lg border border-gray-800 bg-gray-950 p-3 text-sm"><div class="flex flex-wrap items-start justify-between gap-2"><div class="min-w-0 flex-1"><div class="flex items-center gap-2"><span class="font-mono text-xs text-gray-400">${ssrInterpolate(job.queue)}</span><span class="text-gray-200">${ssrInterpolate(job.job_class ?? "unknown")}</span></div><div class="mt-1 break-words text-xs text-red-300">${ssrInterpolate(job.exception_summary)}</div><div class="mt-1 text-[11px] text-gray-500">${ssrInterpolate(formatDate(job.failed_at))} · <span class="font-mono">${ssrInterpolate(job.uuid)}</span></div></div><div class="flex shrink-0 gap-2"><button type="button" class="rounded bg-primary-600/20 px-2.5 py-1 text-xs text-primary-300 transition hover:bg-primary-600/30 disabled:opacity-50"${ssrIncludeBooleanAttr(retryingUuid.value === job.uuid) ? " disabled" : ""}>${ssrInterpolate(retryingUuid.value === job.uuid ? "Retrying…" : "Retry")}</button><button type="button" class="rounded bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition hover:bg-gray-700 disabled:opacity-50"${ssrIncludeBooleanAttr(forgettingUuid.value === job.uuid) ? " disabled" : ""}>${ssrInterpolate(forgettingUuid.value === job.uuid ? "Removing…" : "Forget")}</button></div></div></div>`);
+          _push(`<div class="rounded-lg border border-gray-800 bg-gray-950 p-3 text-sm"><div class="flex flex-wrap items-start justify-between gap-2"><button type="button" class="min-w-0 flex-1 cursor-pointer text-left"${ssrRenderAttr("aria-expanded", expandedUuid.value === job.uuid)}${ssrRenderAttr("title", expandedUuid.value === job.uuid ? "Hide the full stack trace" : "Show the full stack trace")}><div class="flex items-center gap-2"><span class="${ssrRenderClass([expandedUuid.value === job.uuid ? "rotate-90" : "", "inline-block text-gray-500 transition-transform"])}" aria-hidden="true">›</span><span class="font-mono text-xs text-gray-400">${ssrInterpolate(job.queue)}</span><span class="text-gray-200">${ssrInterpolate(job.job_class ?? "unknown")}</span></div><div class="mt-1 break-words text-xs text-red-300">${ssrInterpolate(job.exception_summary)}</div><div class="mt-1 text-[11px] text-gray-500">${ssrInterpolate(formatDate(job.failed_at))} · <span class="font-mono">${ssrInterpolate(job.uuid)}</span></div></button><div class="flex shrink-0 gap-2"><button type="button" class="rounded bg-primary-600/20 px-2.5 py-1 text-xs text-primary-300 transition hover:bg-primary-600/30 disabled:opacity-50"${ssrIncludeBooleanAttr(retryingUuid.value === job.uuid) ? " disabled" : ""}>${ssrInterpolate(retryingUuid.value === job.uuid ? "Retrying…" : "Retry")}</button><button type="button" class="rounded bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition hover:bg-gray-700 disabled:opacity-50"${ssrIncludeBooleanAttr(forgettingUuid.value === job.uuid) ? " disabled" : ""}>${ssrInterpolate(forgettingUuid.value === job.uuid ? "Removing…" : "Forget")}</button></div></div>`);
+          if (expandedUuid.value === job.uuid) {
+            _push(`<div class="mt-3 border-t border-gray-800 pt-3">`);
+            if (loadingDetailUuid.value === job.uuid) {
+              _push(`<div class="text-xs text-gray-500"> Loading stack trace… </div>`);
+            } else if (detailError.value) {
+              _push(`<div class="text-xs text-red-400">${ssrInterpolate(detailError.value)}</div>`);
+            } else if (failedDetails.value[job.uuid]) {
+              _push(`<div><div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div class="text-[11px] text-gray-500"> connection <span class="font-mono text-gray-400">${ssrInterpolate(failedDetails.value[job.uuid].connection)}</span>`);
+              if (failedDetails.value[job.uuid].attempts !== null) {
+                _push(`<!--[--> · attempts <span class="font-mono text-gray-400">${ssrInterpolate(failedDetails.value[job.uuid].attempts)}</span><!--]-->`);
+              } else {
+                _push(`<!---->`);
+              }
+              _push(`</div><button type="button" class="rounded bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition hover:bg-gray-700">${ssrInterpolate(copiedUuid.value === job.uuid ? "Copied" : "Copy trace")}</button></div><pre class="max-h-96 overflow-auto rounded-lg bg-black/60 p-3 text-[11px] leading-relaxed text-gray-300">${ssrInterpolate(failedDetails.value[job.uuid].exception)}</pre><details class="mt-2"><summary class="cursor-pointer text-[11px] text-gray-500 hover:text-gray-400"> Job payload </summary><pre class="mt-2 max-h-64 overflow-auto rounded-lg bg-black/60 p-3 text-[11px] leading-relaxed text-gray-400">${ssrInterpolate(failedDetails.value[job.uuid].payload)}</pre></details></div>`);
+            } else {
+              _push(`<!---->`);
+            }
+            _push(`</div>`);
+          } else {
+            _push(`<!---->`);
+          }
+          _push(`</div>`);
         });
         _push(`<!--]--></div>`);
       }

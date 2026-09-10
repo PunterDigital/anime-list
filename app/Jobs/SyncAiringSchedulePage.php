@@ -7,6 +7,7 @@ use App\Models\AiringSchedule;
 use App\Models\Anime;
 use App\Models\SyncRun;
 use App\Services\AniListClient;
+use App\Services\AniListPageDepth;
 use App\Services\AniListQueryBuilder;
 use App\Services\SyncRunTracker;
 use Carbon\Carbon;
@@ -155,8 +156,17 @@ class SyncAiringSchedulePage implements ShouldQueue
             processedDelta: count($rows),
         );
 
-        // Chain next page or finalize
-        if ($pageInfo['hasNextPage'] ?? false) {
+        if (! ($pageInfo['hasNextPage'] ?? false)) {
+            $this->finalize($tracker, $run);
+
+            return;
+        }
+
+        // Chain the next page while it stays inside the AniList page depth
+        // limit; past it the schedule is time-ordered, so the sweep carries on
+        // from the last airing time it saw instead of asking for a page
+        // AniList answers with a 400.
+        if (AniListPageDepth::allows($this->page + 1, $this->perPage)) {
             self::dispatch(
                 $this->page + 1,
                 $this->airingAtGreater,
@@ -164,11 +174,53 @@ class SyncAiringSchedulePage implements ShouldQueue
                 $this->perPage,
                 $run->id,
             )->onQueue('sync');
-        } else {
-            $this->invalidateScheduleCaches();
-            $tracker->complete($run);
-            Log::info('Airing schedule sync complete', ['total_pages' => $this->page]);
+
+            return;
         }
+
+        // One second back from the last airing seen: airingAt_greater is
+        // exclusive and shows routinely share an airing time, so resuming at
+        // the timestamp itself would drop the rest of that second. The overlap
+        // re-fetches a handful of rows, which upsert absorbs.
+        $lastAiringAt = collect($schedules)->max('airingAt');
+        $nextWindowStart = $lastAiringAt === null ? null : (int) $lastAiringAt - 1;
+
+        if ($nextWindowStart === null || $nextWindowStart <= $this->airingAtGreater) {
+            Log::warning('Airing schedule sync stopped at AniList page depth limit', [
+                'pages_covered' => $this->page,
+                'airing_at_greater' => $this->airingAtGreater,
+            ]);
+
+            $this->finalize($tracker, $run, sprintf(
+                'Stopped at the AniList page depth limit (%d entries). Sync a shorter window with --days.',
+                AniListPageDepth::limit(),
+            ));
+
+            return;
+        }
+
+        Log::info('Airing schedule sync re-windowing at page depth limit', [
+            'pages_covered' => $this->page,
+            'airing_at_greater' => $nextWindowStart,
+        ]);
+
+        self::dispatch(
+            1,
+            $nextWindowStart,
+            $this->airingAtLesser,
+            $this->perPage,
+            $run->id,
+        )->onQueue('sync');
+    }
+
+    private function finalize(SyncRunTracker $tracker, SyncRun $run, ?string $notice = null): void
+    {
+        $this->invalidateScheduleCaches();
+        $tracker->complete($run, $notice);
+        Log::info('Airing schedule sync complete', [
+            'total_pages' => $this->page,
+            'notice' => $notice,
+        ]);
     }
 
     private function pauseForOutage(SyncRunTracker $tracker, SyncRun $run, AniListServiceUnavailableException $e): void

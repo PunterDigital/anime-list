@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\SyncAnimePage;
 use App\Models\SyncRun;
+use App\Services\AniListPageDepth;
 use App\Services\SyncRunTracker;
 use Illuminate\Console\Command;
 
@@ -76,12 +77,30 @@ class SyncAnimeCommand extends Command
             }
         }
 
+        $perPage = config('anilist.sync.per_page', 50);
+
+        // AniList serves only the first 5,000 entries of a result set. A full
+        // sweep past that point runs in id-ordered windows, and a page number
+        // alone cannot say which window it belongs to — so a deep start page
+        // has no meaning to resume from.
+        if (! AniListPageDepth::allows($startPage, $perPage)) {
+            $this->error(sprintf(
+                'Page %d is past the AniList page depth limit (%d entries, %d pages at %d per page). Start a fresh full sync from page 1.',
+                $startPage,
+                AniListPageDepth::limit(),
+                AniListPageDepth::maxPage($perPage),
+                $perPage,
+            ));
+
+            return null;
+        }
+
         $run = $this->tracker->start(SyncRun::MODE_FULL);
         $run->forceFill(['current_page' => $startPage - 1])->save();
 
         SyncAnimePage::dispatch(
             page: $startPage,
-            perPage: config('anilist.sync.per_page', 50),
+            perPage: $perPage,
             mode: SyncRun::MODE_FULL,
             syncRunId: $run->id,
         )->onQueue('sync');

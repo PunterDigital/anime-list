@@ -497,9 +497,17 @@ function progressPercent(run: SyncRun): number | null {
                         </div>
                     </div>
 
+                    <!-- A completed run can still carry a message (a sweep that
+                         stopped at the AniList page depth limit, say). That is a
+                         notice, not a failure, so it is not dressed as one. -->
                     <div
                         v-if="run.last_error"
-                        class="mt-2 break-words rounded bg-red-950/40 px-2 py-1 text-[11px] text-red-300"
+                        class="mt-2 break-words rounded px-2 py-1 text-[11px]"
+                        :class="
+                            run.status === 'completed'
+                                ? 'bg-amber-950/40 text-amber-300'
+                                : 'bg-red-950/40 text-red-300'
+                        "
                     >
                         {{ run.last_error }}
                     </div>

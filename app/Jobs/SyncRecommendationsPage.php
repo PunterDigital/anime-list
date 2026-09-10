@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Exceptions\AniListServiceUnavailableException;
 use App\Models\SyncRun;
 use App\Services\AniListClient;
+use App\Services\AniListPageDepth;
 use App\Services\AniListQueryBuilder;
 use App\Services\SyncRunTracker;
 use Illuminate\Bus\Queueable;
@@ -48,12 +49,29 @@ class SyncRecommendationsPage implements ShouldQueue
      */
     public ?int $syncRunId = null;
 
+    /**
+     * Lower id bound for the current window. AniList serves only the first
+     * 5,000 entries of a result set, so the sweep walks the catalogue in
+     * id-ordered windows rather than paging past that wall into a 400.
+     * Declared rather than promoted for the same reason as $syncRunId above.
+     */
+    public ?int $idGreater = null;
+
+    /**
+     * Pages covered by earlier windows, for absolute progress reporting.
+     */
+    public int $pageOffset = 0;
+
     public function __construct(
         public readonly int $page,
         public readonly int $perPage = 50,
         ?int $syncRunId = null,
+        ?int $idGreater = null,
+        int $pageOffset = 0,
     ) {
         $this->syncRunId = $syncRunId;
+        $this->idGreater = $idGreater;
+        $this->pageOffset = $pageOffset;
     }
 
     /**
@@ -70,11 +88,28 @@ class SyncRecommendationsPage implements ShouldQueue
         $run = $tracker->find($this->syncRunId)
             ?? $tracker->start(SyncRun::MODE_RECOMMENDATIONS);
 
-        try {
-            $data = $client->query(AniListQueryBuilder::recommendationsPage(), [
+        if (! AniListPageDepth::allows($this->page, $this->perPage)) {
+            Log::warning('SyncRecommendationsPage skipped: page beyond AniList depth limit', [
                 'page' => $this->page,
-                'perPage' => $this->perPage,
+                'per_page' => $this->perPage,
             ]);
+
+            $this->finalize($tracker, $run);
+
+            return;
+        }
+
+        $variables = [
+            'page' => $this->page,
+            'perPage' => $this->perPage,
+        ];
+
+        if ($this->idGreater !== null) {
+            $variables['idGreater'] = $this->idGreater;
+        }
+
+        try {
+            $data = $client->query(AniListQueryBuilder::recommendationsPage(), $variables);
         } catch (AniListServiceUnavailableException $e) {
             $this->pauseForOutage($tracker, $run, $e);
 
@@ -122,25 +157,81 @@ class SyncRecommendationsPage implements ShouldQueue
             'edges_queued' => count($pending),
         ]);
 
+        $absolutePage = $this->pageOffset + $this->page;
+
         $tracker->advance(
             run: $run,
-            page: $this->page,
-            lastPage: (int) ($pageInfo['lastPage'] ?? 0),
+            page: $absolutePage,
+            lastPage: $this->pageOffset + (int) ($pageInfo['lastPage'] ?? 0),
             totalItems: (int) ($pageInfo['total'] ?? 0),
             processedDelta: count($mediaItems),
         );
 
-        if ($pageInfo['hasNextPage'] ?? false) {
-            self::dispatch(page: $this->page + 1, perPage: $this->perPage, syncRunId: $run->id)->onQueue('sync');
-        } else {
-            $tracker->complete($run);
+        if (! ($pageInfo['hasNextPage'] ?? false)) {
+            $this->finalize($tracker, $run);
 
-            ResolveAnimeRecommendations::dispatch()
-                ->onQueue('import')
-                ->delay(now()->addSeconds(10));
-
-            Log::info('SyncRecommendationsPage sweep complete', ['total_pages' => $this->page]);
+            return;
         }
+
+        if (AniListPageDepth::allows($this->page + 1, $this->perPage)) {
+            self::dispatch(
+                page: $this->page + 1,
+                perPage: $this->perPage,
+                syncRunId: $run->id,
+                idGreater: $this->idGreater,
+                pageOffset: $this->pageOffset,
+            )->onQueue('sync');
+
+            return;
+        }
+
+        // Window exhausted: reopen at page 1 beyond the last id seen.
+        $nextWindowStart = $this->highestId($mediaItems);
+
+        if ($nextWindowStart === null) {
+            $this->finalize($tracker, $run);
+
+            return;
+        }
+
+        Log::info('SyncRecommendationsPage re-windowing at page depth limit', [
+            'pages_covered' => $absolutePage,
+            'id_greater' => $nextWindowStart,
+        ]);
+
+        self::dispatch(
+            page: 1,
+            perPage: $this->perPage,
+            syncRunId: $run->id,
+            idGreater: $nextWindowStart,
+            pageOffset: $absolutePage,
+        )->onQueue('sync');
+    }
+
+    private function finalize(SyncRunTracker $tracker, SyncRun $run): void
+    {
+        $tracker->complete($run);
+
+        ResolveAnimeRecommendations::dispatch()
+            ->onQueue('import')
+            ->delay(now()->addSeconds(10));
+
+        Log::info('SyncRecommendationsPage sweep complete', [
+            'total_pages' => $this->pageOffset + $this->page,
+        ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $mediaItems
+     */
+    private function highestId(array $mediaItems): ?int
+    {
+        $ids = array_filter(array_map(
+            static fn ($item) => isset($item['id']) ? (int) $item['id'] : null,
+            $mediaItems,
+        ));
+
+        return $ids === [] ? null : max($ids);
     }
 
     private function pauseForOutage(SyncRunTracker $tracker, SyncRun $run, AniListServiceUnavailableException $e): void

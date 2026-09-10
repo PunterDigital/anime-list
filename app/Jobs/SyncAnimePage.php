@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Exceptions\AniListServiceUnavailableException;
 use App\Models\SyncRun;
 use App\Services\AniListClient;
+use App\Services\AniListPageDepth;
 use App\Services\AniListQueryBuilder;
 use App\Services\AnimeDataPersistenceService;
 use App\Services\SyncRunTracker;
@@ -43,6 +44,21 @@ class SyncAnimePage implements ShouldQueue
      */
     public ?int $syncRunId = null;
 
+    /**
+     * Lower id bound for the current window of a full sweep. AniList only
+     * serves the first 5,000 entries of a result set, so the full sweep walks
+     * the catalogue in id-ordered windows: on reaching the depth limit it
+     * starts a fresh page 1 beyond the last id it saw. Declared rather than
+     * promoted for the same reason as $syncRunId above.
+     */
+    public ?int $idGreater = null;
+
+    /**
+     * Pages already covered by earlier windows of this sweep. Only used to
+     * report absolute progress, since $page restarts at 1 per window.
+     */
+    public int $pageOffset = 0;
+
     public function __construct(
         public readonly int $page,
         public readonly int $perPage = 50,
@@ -52,8 +68,12 @@ class SyncAnimePage implements ShouldQueue
         public readonly ?string $anilistSeason = null,
         public readonly ?int $anilistSeasonYear = null,
         ?int $syncRunId = null,
+        ?int $idGreater = null,
+        int $pageOffset = 0,
     ) {
         $this->syncRunId = $syncRunId;
+        $this->idGreater = $idGreater;
+        $this->pageOffset = $pageOffset;
     }
 
     /**
@@ -72,6 +92,21 @@ class SyncAnimePage implements ShouldQueue
     ): void {
         $run = $this->resolveRun($tracker);
 
+        // A page past the depth limit is a 400 from AniList, not an empty
+        // page. Nothing should dispatch one, but a payload queued before this
+        // guard existed can still be retried from the failed table.
+        if (! AniListPageDepth::allows($this->page, $this->perPage)) {
+            Log::warning('SyncAnimePage skipped: page beyond AniList depth limit', [
+                'page' => $this->page,
+                'per_page' => $this->perPage,
+                'mode' => $this->mode,
+            ]);
+
+            $this->finalize($tracker, $run, $this->depthNotice());
+
+            return;
+        }
+
         $query = match ($this->mode) {
             'incremental' => AniListQueryBuilder::updatedSince(false),
             'finished_incremental' => AniListQueryBuilder::updatedSince(true),
@@ -83,6 +118,10 @@ class SyncAnimePage implements ShouldQueue
             'page' => $this->page,
             'perPage' => $this->perPage,
         ];
+
+        if ($this->mode === 'full' && $this->idGreater !== null) {
+            $variables['idGreater'] = $this->idGreater;
+        }
 
         // Note: incremental mode sorts by UPDATED_AT_DESC and stops when items
         // are older than the cutoff (handled after persistence below)
@@ -141,10 +180,12 @@ class SyncAnimePage implements ShouldQueue
             $persistenceService->persistBatch($mediaItems);
         }
 
+        $absolutePage = $this->pageOffset + $this->page;
+
         $tracker->advance(
             run: $run,
-            page: $this->page,
-            lastPage: (int) ($pageInfo['lastPage'] ?? 0),
+            page: $absolutePage,
+            lastPage: $this->pageOffset + (int) ($pageInfo['lastPage'] ?? 0),
             totalItems: (int) ($pageInfo['total'] ?? 0),
             processedDelta: count($mediaItems),
         );
@@ -166,32 +207,116 @@ class SyncAnimePage implements ShouldQueue
             }
         }
 
-        // Chain next page or finalize
-        if ($shouldContinue) {
-            self::dispatch(
-                page: $this->page + 1,
-                perPage: $this->perPage,
-                mode: $this->mode,
-                updatedAtGreater: $this->updatedAtGreater,
-                anilistStatus: $this->anilistStatus,
-                anilistSeason: $this->anilistSeason,
-                anilistSeasonYear: $this->anilistSeasonYear,
-                syncRunId: $run->id,
-            )->onQueue('sync');
-        } else {
-            $tracker->complete($run);
+        if (! $shouldContinue) {
+            $this->finalize($tracker, $run);
 
-            // Resolve deferred relations after sync completes
-            $delay = $this->mode === 'full' ? now()->addMinutes(5) : now()->addSeconds(10);
-            ResolveAnimeRelations::dispatch()
-                ->onQueue('import')
-                ->delay($delay);
-            ResolveAnimeRecommendations::dispatch()
-                ->onQueue('import')
-                ->delay($delay);
-
-            Log::info("Sync {$this->mode} page sweep complete", ['total_pages' => $this->page]);
+            return;
         }
+
+        // Next page inside the current window is still reachable.
+        if (AniListPageDepth::allows($this->page + 1, $this->perPage)) {
+            $this->dispatchNext(
+                page: $this->page + 1,
+                runId: $run->id,
+                idGreater: $this->idGreater,
+                pageOffset: $this->pageOffset,
+            );
+
+            return;
+        }
+
+        // The window is exhausted. An id-ordered sweep can open the next one
+        // beyond the last id it saw; the recency- and popularity-ordered
+        // sweeps have no such cursor, so they stop here rather than asking
+        // AniList for a page it refuses to serve.
+        $nextWindowStart = $this->mode === 'full' ? $this->highestId($mediaItems) : null;
+
+        if ($nextWindowStart !== null) {
+            Log::info('Sync full sweep re-windowing at page depth limit', [
+                'pages_covered' => $absolutePage,
+                'id_greater' => $nextWindowStart,
+            ]);
+
+            $this->dispatchNext(
+                page: 1,
+                runId: $run->id,
+                idGreater: $nextWindowStart,
+                pageOffset: $absolutePage,
+            );
+
+            return;
+        }
+
+        Log::warning('Sync stopped at AniList page depth limit', [
+            'mode' => $this->mode,
+            'pages_covered' => $absolutePage,
+            'processed' => $run->processed_items,
+            'total' => (int) ($pageInfo['total'] ?? 0),
+        ]);
+
+        $this->finalize($tracker, $run, $this->depthNotice());
+    }
+
+    /**
+     * Queue the next page of this sweep.
+     */
+    private function dispatchNext(int $page, int $runId, ?int $idGreater, int $pageOffset): void
+    {
+        self::dispatch(
+            page: $page,
+            perPage: $this->perPage,
+            mode: $this->mode,
+            updatedAtGreater: $this->updatedAtGreater,
+            anilistStatus: $this->anilistStatus,
+            anilistSeason: $this->anilistSeason,
+            anilistSeasonYear: $this->anilistSeasonYear,
+            syncRunId: $runId,
+            idGreater: $idGreater,
+            pageOffset: $pageOffset,
+        )->onQueue('sync');
+    }
+
+    /**
+     * Close the run and queue the deferred relation work.
+     */
+    private function finalize(SyncRunTracker $tracker, SyncRun $run, ?string $notice = null): void
+    {
+        $tracker->complete($run, $notice);
+
+        // Resolve deferred relations after sync completes
+        $delay = $this->mode === 'full' ? now()->addMinutes(5) : now()->addSeconds(10);
+        ResolveAnimeRelations::dispatch()
+            ->onQueue('import')
+            ->delay($delay);
+        ResolveAnimeRecommendations::dispatch()
+            ->onQueue('import')
+            ->delay($delay);
+
+        Log::info("Sync {$this->mode} page sweep complete", [
+            'total_pages' => $this->pageOffset + $this->page,
+            'notice' => $notice,
+        ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $mediaItems
+     */
+    private function highestId(array $mediaItems): ?int
+    {
+        $ids = array_filter(array_map(
+            static fn ($item) => isset($item['id']) ? (int) $item['id'] : null,
+            $mediaItems,
+        ));
+
+        return $ids === [] ? null : max($ids);
+    }
+
+    private function depthNotice(): string
+    {
+        return sprintf(
+            'Stopped at the AniList page depth limit (%d entries): the remaining, least recently updated entries are left to the stale-refresh sweep.',
+            AniListPageDepth::limit(),
+        );
     }
 
     /**

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 
@@ -35,6 +36,17 @@ interface FailedJob {
     job_class: string | null
     exception_summary: string
     failed_at: string
+}
+
+interface FailedJobDetail {
+    uuid: string
+    connection: string
+    queue: string
+    job_class: string | null
+    exception: string
+    failed_at: string
+    attempts: number | null
+    payload: string
 }
 
 interface AnimeRef {
@@ -157,6 +169,51 @@ function retryJob(uuid: string) {
     )
 }
 
+// Full stack traces are large, so they are fetched on demand and kept per
+// uuid — reopening a failure you already looked at costs nothing.
+const expandedUuid = ref<string | null>(null)
+const failedDetails = ref<Record<string, FailedJobDetail>>({})
+const loadingDetailUuid = ref<string | null>(null)
+const detailError = ref<string | null>(null)
+const copiedUuid = ref<string | null>(null)
+
+async function toggleFailedDetail(uuid: string) {
+    if (expandedUuid.value === uuid) {
+        expandedUuid.value = null
+        return
+    }
+
+    expandedUuid.value = uuid
+    detailError.value = null
+
+    if (failedDetails.value[uuid]) return
+
+    loadingDetailUuid.value = uuid
+    try {
+        const { data } = await axios.get<FailedJobDetail>(route('admin.jobs.failed.show', { uuid }))
+        failedDetails.value = { ...failedDetails.value, [uuid]: data }
+    } catch (e) {
+        detailError.value = 'Could not load the stack trace. The failed job may have been cleared.'
+    } finally {
+        loadingDetailUuid.value = null
+    }
+}
+
+async function copyTrace(uuid: string) {
+    const detail = failedDetails.value[uuid]
+    if (!detail) return
+
+    try {
+        await navigator.clipboard.writeText(detail.exception)
+        copiedUuid.value = uuid
+        setTimeout(() => {
+            if (copiedUuid.value === uuid) copiedUuid.value = null
+        }, 2000)
+    } catch (e) {
+        // Clipboard access can be blocked; the trace is still selectable.
+    }
+}
+
 const flushingFailed = ref(false)
 
 function flushFailedJobs() {
@@ -174,6 +231,7 @@ function flushFailedJobs() {
 }
 
 function forgetJob(uuid: string) {
+    if (expandedUuid.value === uuid) expandedUuid.value = null
     forgettingUuid.value = uuid
     router.delete(route('admin.jobs.failed.forget', { uuid }), {
         preserveScroll: true,
@@ -661,8 +719,19 @@ function progressPercent(run: SyncRun): number | null {
                     class="rounded-lg border border-gray-800 bg-gray-950 p-3 text-sm"
                 >
                     <div class="flex flex-wrap items-start justify-between gap-2">
-                        <div class="min-w-0 flex-1">
+                        <button
+                            type="button"
+                            class="min-w-0 flex-1 cursor-pointer text-left"
+                            :aria-expanded="expandedUuid === job.uuid"
+                            :title="expandedUuid === job.uuid ? 'Hide the full stack trace' : 'Show the full stack trace'"
+                            @click="toggleFailedDetail(job.uuid)"
+                        >
                             <div class="flex items-center gap-2">
+                                <span
+                                    class="inline-block text-gray-500 transition-transform"
+                                    :class="expandedUuid === job.uuid ? 'rotate-90' : ''"
+                                    aria-hidden="true"
+                                >›</span>
                                 <span class="font-mono text-xs text-gray-400">{{ job.queue }}</span>
                                 <span class="text-gray-200">{{ job.job_class ?? 'unknown' }}</span>
                             </div>
@@ -670,7 +739,7 @@ function progressPercent(run: SyncRun): number | null {
                             <div class="mt-1 text-[11px] text-gray-500">
                                 {{ formatDate(job.failed_at) }} · <span class="font-mono">{{ job.uuid }}</span>
                             </div>
-                        </div>
+                        </button>
                         <div class="flex shrink-0 gap-2">
                             <button
                                 type="button"
@@ -688,6 +757,40 @@ function progressPercent(run: SyncRun): number | null {
                             >
                                 {{ forgettingUuid === job.uuid ? 'Removing…' : 'Forget' }}
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Full stack trace, fetched when the failure is expanded -->
+                    <div v-if="expandedUuid === job.uuid" class="mt-3 border-t border-gray-800 pt-3">
+                        <div v-if="loadingDetailUuid === job.uuid" class="text-xs text-gray-500">
+                            Loading stack trace…
+                        </div>
+                        <div v-else-if="detailError" class="text-xs text-red-400">{{ detailError }}</div>
+                        <div v-else-if="failedDetails[job.uuid]">
+                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <div class="text-[11px] text-gray-500">
+                                    connection
+                                    <span class="font-mono text-gray-400">{{ failedDetails[job.uuid].connection }}</span>
+                                    <template v-if="failedDetails[job.uuid].attempts !== null">
+                                        · attempts
+                                        <span class="font-mono text-gray-400">{{ failedDetails[job.uuid].attempts }}</span>
+                                    </template>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="rounded bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition hover:bg-gray-700"
+                                    @click="copyTrace(job.uuid)"
+                                >
+                                    {{ copiedUuid === job.uuid ? 'Copied' : 'Copy trace' }}
+                                </button>
+                            </div>
+                            <pre class="max-h-96 overflow-auto rounded-lg bg-black/60 p-3 text-[11px] leading-relaxed text-gray-300">{{ failedDetails[job.uuid].exception }}</pre>
+                            <details class="mt-2">
+                                <summary class="cursor-pointer text-[11px] text-gray-500 hover:text-gray-400">
+                                    Job payload
+                                </summary>
+                                <pre class="mt-2 max-h-64 overflow-auto rounded-lg bg-black/60 p-3 text-[11px] leading-relaxed text-gray-400">{{ failedDetails[job.uuid].payload }}</pre>
+                            </details>
                         </div>
                     </div>
                 </div>

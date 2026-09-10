@@ -255,6 +255,43 @@ class AdminJobObservabilityTest extends TestCase
         $this->assertNull($excluded->refresh_exclusion_reason);
     }
 
+    public function test_admin_can_view_the_full_stack_trace_of_a_failed_job(): void
+    {
+        $this->actingAsAdmin();
+
+        $trace = "Illuminate\\Queue\\MaxAttemptsExceededException: too many times\n#0 /app/vendor/a.php(10)\n#1 /app/vendor/b.php(20)";
+
+        DB::table('failed_jobs')->insert([
+            'uuid' => 'trace-me',
+            'connection' => 'redis',
+            'queue' => 'sync',
+            'payload' => json_encode([
+                'displayName' => 'App\\Jobs\\SyncAiringSchedulePage',
+                'attempts' => 3,
+            ]),
+            'exception' => $trace,
+            'failed_at' => now(),
+        ]);
+
+        $response = $this->getJson('/admin/jobs/failed/trace-me');
+
+        $response->assertOk();
+        $response->assertJsonPath('uuid', 'trace-me');
+        $response->assertJsonPath('connection', 'redis');
+        $response->assertJsonPath('queue', 'sync');
+        $response->assertJsonPath('job_class', 'App\\Jobs\\SyncAiringSchedulePage');
+        $response->assertJsonPath('attempts', 3);
+        $response->assertJsonPath('exception', $trace);
+        $this->assertStringContainsString('SyncAiringSchedulePage', $response->json('payload'));
+    }
+
+    public function test_stack_trace_request_for_an_unknown_job_is_not_found(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/admin/jobs/failed/nope')->assertNotFound();
+    }
+
     public function test_admin_can_forget_failed_job(): void
     {
         $this->actingAsAdmin();
@@ -338,6 +375,7 @@ class AdminJobObservabilityTest extends TestCase
         $this->actingAs($user)->get('/admin/jobs')->assertForbidden();
         $this->actingAs($user)->post('/admin/jobs/anime', ['anilist_id' => 1])->assertForbidden();
         $this->actingAs($user)->post('/admin/jobs/sync/stale-refresh')->assertForbidden();
+        $this->actingAs($user)->get('/admin/jobs/failed/trace-me')->assertForbidden();
         $this->actingAs($user)->delete('/admin/jobs/failed')->assertForbidden();
         $this->actingAs($user)->delete('/admin/jobs/refresh-exclusions')->assertForbidden();
     }

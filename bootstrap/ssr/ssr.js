@@ -1,5 +1,5 @@
-import { defineComponent, computed, mergeProps, useSSRContext, ref, resolveComponent, withCtx, createTextVNode, unref, watch, onUnmounted, toDisplayString, onScopeDispose, onMounted, onBeforeUnmount, createVNode, withDirectives, vModelText, openBlock, createBlock, createCommentVNode, resolveDynamicComponent, Fragment, renderList, reactive, createSSRApp, h as h$1 } from "vue";
-import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderSlot, ssrRenderList, ssrRenderAttr, ssrIncludeBooleanAttr, ssrRenderClass, ssrLooseContain, ssrRenderStyle, ssrRenderVNode, ssrLooseEqual, renderToString } from "vue/server-renderer";
+import { defineComponent, computed, mergeProps, useSSRContext, ref, resolveComponent, withCtx, createTextVNode, unref, onMounted, watch, nextTick, onUnmounted, toDisplayString, onScopeDispose, onBeforeUnmount, createVNode, withDirectives, vModelText, openBlock, createBlock, createCommentVNode, resolveDynamicComponent, Fragment, renderList, reactive, createSSRApp, h as h$1 } from "vue";
+import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderStyle, ssrRenderAttr, ssrRenderSlot, ssrRenderList, ssrIncludeBooleanAttr, ssrRenderClass, ssrLooseContain, ssrRenderVNode, ssrLooseEqual, renderToString } from "vue/server-renderer";
 import { usePage, useForm, router, Link, createInertiaApp, Head } from "@inertiajs/vue3";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
@@ -21,7 +21,7 @@ import { createPinia } from "pinia";
 import PrimeVue from "primevue/config";
 import ToastService from "primevue/toastservice";
 import Aura from "@primevue/themes/aura";
-const _sfc_main$W = /* @__PURE__ */ defineComponent({
+const _sfc_main$X = /* @__PURE__ */ defineComponent({
   __name: "UserAvatar",
   __ssrInlineRender: true,
   props: {
@@ -68,17 +68,17 @@ const _sfc_main$W = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const _sfc_setup$W = _sfc_main$W.setup;
-_sfc_main$W.setup = (props, ctx) => {
+const _sfc_setup$X = _sfc_main$X.setup;
+_sfc_main$X.setup = (props, ctx) => {
   const ssrContext = useSSRContext();
   (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("resources/js/Components/UserAvatar.vue");
-  return _sfc_setup$W ? _sfc_setup$W(props, ctx) : void 0;
+  return _sfc_setup$X ? _sfc_setup$X(props, ctx) : void 0;
 };
 function useFeature(name) {
   const page = usePage();
   return computed(() => page.props.features?.[name] ?? false);
 }
-const _sfc_main$V = /* @__PURE__ */ defineComponent({
+const _sfc_main$W = /* @__PURE__ */ defineComponent({
   __name: "AppNavbar",
   __ssrInlineRender: true,
   props: {
@@ -205,7 +205,7 @@ const _sfc_main$V = /* @__PURE__ */ defineComponent({
           _push(`<!---->`);
         }
         _push(`<div class="relative"><button class="flex items-center gap-2 text-gray-400 hover:text-gray-100 transition">`);
-        _push(ssrRenderComponent(_sfc_main$W, {
+        _push(ssrRenderComponent(_sfc_main$X, {
           name: __props.user.name,
           "avatar-url": __props.user.avatar_url,
           size: "sm"
@@ -305,13 +305,13 @@ const _sfc_main$V = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const _sfc_setup$V = _sfc_main$V.setup;
-_sfc_main$V.setup = (props, ctx) => {
+const _sfc_setup$W = _sfc_main$W.setup;
+_sfc_main$W.setup = (props, ctx) => {
   const ssrContext = useSSRContext();
   (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("resources/js/Components/AppNavbar.vue");
-  return _sfc_setup$V ? _sfc_setup$V(props, ctx) : void 0;
+  return _sfc_setup$W ? _sfc_setup$W(props, ctx) : void 0;
 };
-const _sfc_main$U = /* @__PURE__ */ defineComponent({
+const _sfc_main$V = /* @__PURE__ */ defineComponent({
   __name: "AppFooter",
   __ssrInlineRender: true,
   setup(__props) {
@@ -472,10 +472,58 @@ const _sfc_main$U = /* @__PURE__ */ defineComponent({
     };
   }
 });
+const _sfc_setup$V = _sfc_main$V.setup;
+_sfc_main$V.setup = (props, ctx) => {
+  const ssrContext = useSSRContext();
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("resources/js/Components/AppFooter.vue");
+  return _sfc_setup$V ? _sfc_setup$V(props, ctx) : void 0;
+};
+const _sfc_main$U = /* @__PURE__ */ defineComponent({
+  __name: "AdBanner",
+  __ssrInlineRender: true,
+  setup(__props) {
+    const page = usePage();
+    const adsEnabled = useFeature("ads");
+    const client = computed(() => page.props.adsense?.client ?? null);
+    const slot = computed(() => page.props.adsense?.slot ?? null);
+    const visible = computed(() => adsEnabled.value && !!client.value && !!slot.value);
+    const insKey = ref(0);
+    function requestAd() {
+      if (!visible.value || typeof window === "undefined") {
+        return;
+      }
+      try {
+        const w2 = window;
+        w2.adsbygoogle = w2.adsbygoogle || [];
+        w2.adsbygoogle.push({});
+      } catch {
+      }
+    }
+    onMounted(() => requestAd());
+    watch(
+      () => page.url,
+      async () => {
+        if (!visible.value) {
+          return;
+        }
+        insKey.value++;
+        await nextTick();
+        requestAd();
+      }
+    );
+    return (_ctx, _push, _parent, _attrs) => {
+      if (visible.value) {
+        _push(`<div${ssrRenderAttrs(mergeProps({ class: "container mx-auto px-4" }, _attrs))}><div class="mx-auto w-full max-w-[1200px]"><ins class="adsbygoogle block min-h-[90px] w-full" style="${ssrRenderStyle({ "display": "block" })}"${ssrRenderAttr("data-ad-client", client.value)}${ssrRenderAttr("data-ad-slot", slot.value)} data-ad-format="horizontal" data-full-width-responsive="true"></ins></div></div>`);
+      } else {
+        _push(`<!---->`);
+      }
+    };
+  }
+});
 const _sfc_setup$U = _sfc_main$U.setup;
 _sfc_main$U.setup = (props, ctx) => {
   const ssrContext = useSSRContext();
-  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("resources/js/Components/AppFooter.vue");
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("resources/js/Components/AdBanner.vue");
   return _sfc_setup$U ? _sfc_setup$U(props, ctx) : void 0;
 };
 function useFlashToast() {
@@ -512,7 +560,7 @@ const _sfc_main$T = /* @__PURE__ */ defineComponent({
     useFlashToast();
     return (_ctx, _push, _parent, _attrs) => {
       _push(`<div${ssrRenderAttrs(mergeProps({ class: "min-h-screen bg-gray-950 text-gray-100 dark" }, _attrs))}>`);
-      _push(ssrRenderComponent(_sfc_main$V, {
+      _push(ssrRenderComponent(_sfc_main$W, {
         user: user.value,
         "is-authenticated": isAuthenticated.value
       }, null, _parent));
@@ -520,6 +568,7 @@ const _sfc_main$T = /* @__PURE__ */ defineComponent({
       ssrRenderSlot(_ctx.$slots, "default", {}, null, _push, _parent);
       _push(`</main>`);
       _push(ssrRenderComponent(_sfc_main$U, null, null, _parent));
+      _push(ssrRenderComponent(_sfc_main$V, null, null, _parent));
       _push(ssrRenderComponent(unref(Toast), { position: "top-right" }, null, _parent));
       _push(`</div>`);
     };
@@ -984,7 +1033,7 @@ const _sfc_main$N = /* @__PURE__ */ defineComponent({
           _push(`<ul class="divide-y divide-gray-800"><!--[-->`);
           ssrRenderList(results.value, (user, i2) => {
             _push(`<li class="${ssrRenderClass([i2 === activeIndex.value ? "bg-gray-800" : "hover:bg-gray-800/60", "flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition"])}">`);
-            _push(ssrRenderComponent(_sfc_main$W, {
+            _push(ssrRenderComponent(_sfc_main$X, {
               name: user.name,
               "avatar-url": user.avatar_url,
               size: "sm"
@@ -1420,7 +1469,7 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
             _push(`<div class="flex flex-wrap gap-2"><!--[-->`);
             ssrRenderList(role.users, (user) => {
               _push(`<div class="flex items-center gap-2 rounded-full bg-gray-800 pl-1.5 pr-1.5 py-1 text-xs">`);
-              _push(ssrRenderComponent(_sfc_main$W, {
+              _push(ssrRenderComponent(_sfc_main$X, {
                 name: user.name,
                 "avatar-url": user.avatar_url,
                 size: "sm"
@@ -1504,7 +1553,7 @@ const _sfc_main$J = /* @__PURE__ */ defineComponent({
       _push(`</div><input${ssrRenderAttr("value", search.value)} type="text" placeholder="Search by name, email, or username..." class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><div class="overflow-x-auto rounded-xl border border-gray-800"><table class="w-full"><thead class="border-b border-gray-800 bg-gray-900"><tr><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">User</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Email</th><th class="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-400 sm:table-cell">Anime</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Joined</th><th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th></tr></thead><tbody class="divide-y divide-gray-800"><!--[-->`);
       ssrRenderList(__props.users.data, (user) => {
         _push(`<tr class="bg-gray-950 transition hover:bg-gray-900"><td class="px-4 py-3"><div class="flex items-center gap-3">`);
-        _push(ssrRenderComponent(_sfc_main$W, {
+        _push(ssrRenderComponent(_sfc_main$X, {
           name: user.name,
           "avatar-url": user.avatar_url,
           size: "sm"
@@ -6561,7 +6610,7 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
         _: 1
       }, _parent));
       _push(`<div class="max-w-4xl mx-auto"><div class="bg-gray-900 border border-gray-800 rounded-xl p-8 mb-6"><div class="flex items-center gap-6">`);
-      _push(ssrRenderComponent(_sfc_main$W, {
+      _push(ssrRenderComponent(_sfc_main$X, {
         name: __props.profile.name,
         "avatar-url": __props.profile.avatar_url,
         size: "lg"

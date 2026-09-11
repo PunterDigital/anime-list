@@ -29,24 +29,32 @@ class SecurityHeaders
 
         $isLocal = app()->environment('local');
 
+        // AdSense loads its ad code from several Google hosts and frames the
+        // creatives from others. The nonce on the loader tag is propagated by
+        // AdSense to the scripts it injects, so no 'unsafe-inline' is needed.
+        $adsense = 'https://pagead2.googlesyndication.com https://partner.googleadservices.com '
+            .'https://tpc.googlesyndication.com https://googleads.g.doubleclick.net '
+            .'https://www.googletagservices.com https://adservice.google.com '
+            .'https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google';
+
         $scriptSrc = $isLocal
-            ? "script-src 'self' http://localhost:5173 'unsafe-inline' 'nonce-{$nonce}'; "
-            : "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com; ";
+            ? "script-src 'self' http://localhost:5173 'unsafe-inline' 'nonce-{$nonce}' {$adsense}; "
+            : "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com {$adsense}; ";
 
         $connectSrc = $isLocal
-            ? "connect-src 'self' ws://localhost:5173; "
-            : "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; ";
+            ? "connect-src 'self' ws://localhost:5173 {$adsense}; "
+            : "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com {$adsense}; ";
 
         $response->headers->set(
             'Content-Security-Policy',
             "default-src 'self'; "
             . $scriptSrc
             . "style-src 'self' 'unsafe-inline'; "
-            . "img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com data:; "
+            . "img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.gstatic.com data:; "
             . "font-src 'self'; "
             . $connectSrc
             . "worker-src 'self' blob:; "
-            . "frame-src https://www.youtube.com https://www.dailymotion.com; "
+            . "frame-src https://www.youtube.com https://www.dailymotion.com {$adsense} https://www.google.com; "
             . "frame-ancestors 'none'"
         );
 

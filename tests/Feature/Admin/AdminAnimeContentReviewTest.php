@@ -100,6 +100,105 @@ class AdminAnimeContentReviewTest extends TestCase
             );
     }
 
+    public function test_admin_anime_list_defaults_to_popularity_order(): void
+    {
+        $this->actingAsAdmin();
+
+        $low = Anime::factory()->create(['synopsis' => $this->words(10), 'popularity' => 500]);
+        $high = Anime::factory()->create(['synopsis' => $this->words(300), 'popularity' => 5]);
+
+        $this->get('/admin/anime')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'popularity')
+                ->where('anime.data.0.id', $low->id)
+                ->where('anime.data.1.id', $high->id)
+            );
+    }
+
+    public function test_admin_anime_list_can_sort_by_word_count_high_to_low(): void
+    {
+        $this->actingAsAdmin();
+
+        $low = Anime::factory()->create(['synopsis' => $this->words(10), 'popularity' => 500]);
+        $mid = Anime::factory()->create(['synopsis' => $this->words(100), 'popularity' => 50]);
+        $high = Anime::factory()->create(['synopsis' => $this->words(300), 'popularity' => 5]);
+
+        $this->get('/admin/anime?sort=words_desc')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'words_desc')
+                ->where('anime.data.0.id', $high->id)
+                ->where('anime.data.1.id', $mid->id)
+                ->where('anime.data.2.id', $low->id)
+            );
+    }
+
+    public function test_admin_anime_list_can_sort_by_word_count_low_to_high(): void
+    {
+        $this->actingAsAdmin();
+
+        $low = Anime::factory()->create(['synopsis' => $this->words(10), 'popularity' => 5]);
+        $mid = Anime::factory()->create(['synopsis' => $this->words(100), 'popularity' => 50]);
+        $high = Anime::factory()->create(['synopsis' => $this->words(300), 'popularity' => 500]);
+
+        $this->get('/admin/anime?sort=words_asc')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'words_asc')
+                ->where('anime.data.0.id', $low->id)
+                ->where('anime.data.1.id', $mid->id)
+                ->where('anime.data.2.id', $high->id)
+            );
+    }
+
+    public function test_word_count_sort_breaks_ties_by_popularity(): void
+    {
+        $this->actingAsAdmin();
+
+        $lessPopular = Anime::factory()->create(['synopsis' => $this->words(100), 'popularity' => 5]);
+        $morePopular = Anime::factory()->create(['synopsis' => $this->words(100), 'popularity' => 500]);
+
+        $this->get('/admin/anime?sort=words_desc')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('anime.data.0.id', $morePopular->id)
+                ->where('anime.data.1.id', $lessPopular->id)
+            );
+    }
+
+    public function test_word_count_sort_combines_with_the_thin_filter(): void
+    {
+        $this->actingAsAdmin();
+
+        $thinLow = Anime::factory()->create(['synopsis' => $this->words(10)]);
+        $thinHigh = Anime::factory()->create(['synopsis' => $this->words(140)]);
+        Anime::factory()->create(['synopsis' => $this->words(300)]);
+
+        $this->get('/admin/anime?thin_only=1&sort=words_desc')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('anime.data', 2)
+                ->where('anime.data.0.id', $thinHigh->id)
+                ->where('anime.data.1.id', $thinLow->id)
+            );
+    }
+
+    public function test_unknown_sort_falls_back_to_popularity(): void
+    {
+        $this->actingAsAdmin();
+
+        $popular = Anime::factory()->create(['synopsis' => $this->words(10), 'popularity' => 500]);
+        Anime::factory()->create(['synopsis' => $this->words(300), 'popularity' => 5]);
+
+        $this->get('/admin/anime?sort=drop_table')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'popularity')
+                ->where('anime.data.0.id', $popular->id)
+            );
+    }
+
     public function test_admin_edit_page_exposes_the_word_count_and_flag(): void
     {
         $this->actingAsAdmin();

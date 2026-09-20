@@ -58,6 +58,8 @@ export interface AdminAnimeListItem {
     synopsis_rewritten_at: string | null
 }
 
+export type AdminAnimeSort = 'popularity' | 'words_desc' | 'words_asc'
+
 export interface AdminThinContentSummary {
     min_words: number
     total: number

@@ -1,5 +1,5 @@
 import { defineComponent, computed, mergeProps, useSSRContext, ref, resolveComponent, withCtx, createTextVNode, unref, onMounted, watch, nextTick, onUnmounted, createVNode, toDisplayString, onScopeDispose, onBeforeUnmount, withDirectives, vModelText, openBlock, createBlock, createCommentVNode, resolveDynamicComponent, Fragment, renderList, reactive, createSSRApp, h as h$1 } from "vue";
-import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderStyle, ssrRenderAttr, ssrRenderSlot, ssrRenderList, ssrRenderClass, ssrIncludeBooleanAttr, ssrLooseContain, ssrRenderVNode, ssrLooseEqual, renderToString } from "vue/server-renderer";
+import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderStyle, ssrRenderAttr, ssrRenderSlot, ssrRenderList, ssrRenderClass, ssrIncludeBooleanAttr, ssrLooseContain, ssrLooseEqual, ssrRenderVNode, renderToString } from "vue/server-renderer";
 import { usePage, useForm, router, Link, createInertiaApp, Head } from "@inertiajs/vue3";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
@@ -988,9 +988,15 @@ const _sfc_main$S = /* @__PURE__ */ defineComponent({
   },
   setup(__props) {
     const props = __props;
+    const SORT_OPTIONS = [
+      { value: "popularity", label: "Most popular first" },
+      { value: "words_desc", label: "Word count: high to low" },
+      { value: "words_asc", label: "Word count: low to high" }
+    ];
     const search = ref(props.filters.search ?? "");
     const rewrittenOnly = ref(props.filters.rewritten_only);
     const thinOnly = ref(props.filters.thin_only);
+    const sort = ref(props.filters.sort);
     let debounceTimer = null;
     function pushFilters() {
       router.get(
@@ -998,7 +1004,8 @@ const _sfc_main$S = /* @__PURE__ */ defineComponent({
         {
           search: search.value || void 0,
           rewritten_only: rewrittenOnly.value ? 1 : void 0,
-          thin_only: thinOnly.value ? 1 : void 0
+          thin_only: thinOnly.value ? 1 : void 0,
+          sort: sort.value !== "popularity" ? sort.value : void 0
         },
         { preserveState: true, preserveScroll: true }
       );
@@ -1009,6 +1016,7 @@ const _sfc_main$S = /* @__PURE__ */ defineComponent({
     });
     watch(rewrittenOnly, () => pushFilters());
     watch(thinOnly, () => pushFilters());
+    watch(sort, () => pushFilters());
     function formatDate(iso) {
       if (!iso) return null;
       return new Date(iso).toLocaleDateString("en-US", {
@@ -1036,7 +1044,19 @@ const _sfc_main$S = /* @__PURE__ */ defineComponent({
       } else {
         _push(`<!---->`);
       }
-      _push(`<div class="flex flex-col gap-3 sm:flex-row sm:items-center"><input${ssrRenderAttr("value", search.value)} type="text" placeholder="Search by title or slug..." class="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(rewrittenOnly.value) ? ssrLooseContain(rewrittenOnly.value, null) : rewrittenOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Rewritten only </label><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(thinOnly.value) ? ssrLooseContain(thinOnly.value, null) : thinOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Needs review (&lt; ${ssrInterpolate(__props.thin_content.min_words)} words) </label></div><div class="overflow-hidden rounded-xl border border-gray-800"><table class="w-full"><thead class="border-b border-gray-800 bg-gray-900"><tr><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Words</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th><th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th></tr></thead><tbody class="divide-y divide-gray-800"><!--[-->`);
+      _push(`<div class="flex flex-col gap-3 sm:flex-row sm:items-center"><input${ssrRenderAttr("value", search.value)} type="text" placeholder="Search by title or slug..." class="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(rewrittenOnly.value) ? ssrLooseContain(rewrittenOnly.value, null) : rewrittenOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Rewritten only </label><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(thinOnly.value) ? ssrLooseContain(thinOnly.value, null) : thinOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Needs review (&lt; ${ssrInterpolate(__props.thin_content.min_words)} words) </label><label class="inline-flex items-center gap-2 text-sm text-gray-300"><span class="sr-only">Sort by</span><select aria-label="Sort by" class="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><!--[-->`);
+      ssrRenderList(SORT_OPTIONS, (option) => {
+        _push(`<option${ssrRenderAttr("value", option.value)}${ssrIncludeBooleanAttr(Array.isArray(sort.value) ? ssrLooseContain(sort.value, option.value) : ssrLooseEqual(sort.value, option.value)) ? " selected" : ""}>${ssrInterpolate(option.label)}</option>`);
+      });
+      _push(`<!--]--></select></label></div><div class="overflow-hidden rounded-xl border border-gray-800"><table class="w-full"><thead class="border-b border-gray-800 bg-gray-900"><tr><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400"><button type="button" class="${ssrRenderClass([sort.value.startsWith("words") ? "text-primary-400" : "", "inline-flex items-center gap-1 uppercase tracking-wider transition hover:text-gray-200"])}"${ssrRenderAttr("title", sort.value === "words_desc" ? "Sorted high to low. Click for low to high." : "Sort by word count, high to low.")}> Words `);
+      if (sort.value === "words_desc") {
+        _push(`<span aria-hidden="true">↓</span>`);
+      } else if (sort.value === "words_asc") {
+        _push(`<span aria-hidden="true">↑</span>`);
+      } else {
+        _push(`<!---->`);
+      }
+      _push(`</button></th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th><th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th></tr></thead><tbody class="divide-y divide-gray-800"><!--[-->`);
       ssrRenderList(__props.anime.data, (item) => {
         _push(`<tr class="bg-gray-950 transition hover:bg-gray-900"><td class="px-4 py-3"><div class="flex items-center gap-3">`);
         if (item.cover_image_medium) {

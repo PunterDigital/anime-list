@@ -20,6 +20,7 @@ interface OgMeta {
     description: string
     image: string | null
     url: string
+    noindex: boolean
 }
 
 const props = defineProps<{
@@ -234,6 +235,7 @@ function displayScore(): string {
 <template>
     <Head :title="displayTitle(anime)">
         <meta name="description" :content="og.description" />
+        <meta v-if="og.noindex" name="robots" content="noindex,follow" />
         <link rel="canonical" :href="og.url" />
         <meta property="og:title" :content="og.title" />
         <meta property="og:description" :content="og.description" />

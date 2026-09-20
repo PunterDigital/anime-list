@@ -35,14 +35,21 @@ class SitemapController extends Controller
         $urls[] = $this->url(route('terms'), 'monthly', '0.3');
         $urls[] = $this->url(route('privacy'), 'monthly', '0.3');
 
-        // Anime pages
+        // Anime pages. Thin title pages (see Anime::isIndexable) carry a
+        // robots noindex, so they are left out of the sitemap as well.
         Anime::query()
             ->whereNotNull('slug')
             ->where('is_adult', false)
-            ->select(['slug', 'updated_at'])
+            ->whereNotNull('average_score')
+            ->select(['id', 'slug', 'updated_at', 'synopsis', 'episodes', 'average_score', 'is_adult'])
+            ->withExists('episodeList')
             ->orderBy('id')
             ->chunk(1000, function ($animes) use (&$urls) {
                 foreach ($animes as $anime) {
+                    if (! $anime->isIndexable()) {
+                        continue;
+                    }
+
                     $urls[] = $this->url(
                         route('anime.show', $anime->slug),
                         'weekly',

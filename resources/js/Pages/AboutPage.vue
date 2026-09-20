@@ -66,7 +66,7 @@ const pillars = [
             <p class="leading-relaxed text-gray-400">
                 Anime titles, synopses, cover art, airing dates and community scores are sourced from
                 <a href="https://anilist.co" target="_blank" rel="noopener noreferrer" class="text-primary-400 transition hover:text-primary-300">AniList</a>,
-                and kept in sync on a regular schedule. Recommendations are generated from your own list and the AniList community graph.
+                and kept in sync on a regular schedule. We write our own synopses for some shows and occasionally tidy up a title. Recommendations are generated from your own list and the AniList community graph.
                 <Link :href="route('how-it-works')" class="text-primary-400 transition hover:text-primary-300">Read how it all works</Link>.
             </p>
         </section>

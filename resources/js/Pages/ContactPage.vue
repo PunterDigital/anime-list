@@ -174,7 +174,7 @@ const inputClass = 'w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py
                         <li>
                             Wrong or missing anime data? It comes from
                             <a href="https://anilist.co" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">AniList</a>.
-                            Fixing it there fixes it here on the next sync.
+                            Fixing it there fixes it here on the next sync, unless the synopsis or title is one we wrote ourselves, in which case tell us.
                         </li>
                         <li>
                             Curious how recommendations work?

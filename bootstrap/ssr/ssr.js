@@ -1,5 +1,5 @@
 import { defineComponent, computed, mergeProps, useSSRContext, ref, resolveComponent, withCtx, createTextVNode, unref, onMounted, watch, nextTick, onUnmounted, toDisplayString, onScopeDispose, onBeforeUnmount, createVNode, withDirectives, vModelText, openBlock, createBlock, createCommentVNode, resolveDynamicComponent, Fragment, renderList, reactive, createSSRApp, h as h$1 } from "vue";
-import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderStyle, ssrRenderAttr, ssrRenderSlot, ssrRenderList, ssrIncludeBooleanAttr, ssrRenderClass, ssrLooseContain, ssrRenderVNode, ssrLooseEqual, renderToString } from "vue/server-renderer";
+import { ssrRenderAttrs, ssrInterpolate, ssrRenderComponent, ssrRenderStyle, ssrRenderAttr, ssrRenderSlot, ssrRenderList, ssrRenderClass, ssrIncludeBooleanAttr, ssrLooseContain, ssrRenderVNode, ssrLooseEqual, renderToString } from "vue/server-renderer";
 import { usePage, useForm, router, Link, createInertiaApp, Head } from "@inertiajs/vue3";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
@@ -633,7 +633,8 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
   __name: "AnimeEditPage",
   __ssrInlineRender: true,
   props: {
-    anime: {}
+    anime: {},
+    min_words: {}
   },
   setup(__props) {
     const props = __props;
@@ -654,6 +655,14 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
       });
     }
     const characterCount = computed(() => form.synopsis.length);
+    function countWords(text) {
+      const plain = text.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "").trim();
+      if (plain === "") return 0;
+      return plain.split(/\s+/).filter(Boolean).length;
+    }
+    const wordCount = computed(() => countWords(form.synopsis));
+    const isThin = computed(() => wordCount.value < props.min_words);
+    const wordsNeeded = computed(() => Math.max(0, props.min_words - wordCount.value));
     return (_ctx, _push, _parent, _attrs) => {
       const _component_Head = resolveComponent("Head");
       const _component_Link = resolveComponent("Link");
@@ -697,6 +706,11 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
       } else {
         _push(`<!---->`);
       }
+      if (isThin.value) {
+        _push(`<div class="rounded-lg border border-amber-700/50 bg-amber-900/10 px-4 py-3 text-sm text-amber-300"><strong>Flagged for review:</strong> this page has ${ssrInterpolate(wordCount.value.toLocaleString())} ${ssrInterpolate(wordCount.value === 1 ? "word" : "words")} of synopsis. Add at least ${ssrInterpolate(wordsNeeded.value.toLocaleString())} more to reach the ${ssrInterpolate(__props.min_words)}-word minimum. Pages under the minimum are not indexed by search engines. </div>`);
+      } else {
+        _push(`<!---->`);
+      }
       if (__props.anime.synopsis_rewritten_at) {
         _push(`<div class="rounded-lg border border-primary-600/40 bg-primary-900/10 px-4 py-3 text-sm"><div class="flex items-center justify-between gap-4"><span class="text-primary-300"> This description was rewritten on ${ssrInterpolate(formatDateTime(__props.anime.synopsis_rewritten_at))}. AniList syncs will not overwrite it. </span>`);
         if (confirmingReset.value) {
@@ -708,7 +722,7 @@ const _sfc_main$R = /* @__PURE__ */ defineComponent({
       } else {
         _push(`<!---->`);
       }
-      _push(`<form class="space-y-4"><div><label class="mb-1 flex items-center justify-between text-sm font-medium text-gray-300"><span>Synopsis</span><span class="text-xs font-normal text-gray-500">${ssrInterpolate(characterCount.value.toLocaleString())} chars</span></label><textarea rows="16" class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 font-mono text-sm text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="Write a unique, SEO-friendly description...">${ssrInterpolate(unref(form).synopsis)}</textarea>`);
+      _push(`<form class="space-y-4"><div><label class="mb-1 flex items-center justify-between text-sm font-medium text-gray-300"><span>Synopsis</span><span class="text-xs font-normal text-gray-500"><span class="${ssrRenderClass(isThin.value ? "text-amber-300" : "text-green-400")}">${ssrInterpolate(wordCount.value.toLocaleString())} / ${ssrInterpolate(__props.min_words)} words </span> · ${ssrInterpolate(characterCount.value.toLocaleString())} chars </span></label><textarea rows="16" class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 font-mono text-sm text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="Write a unique, SEO-friendly description...">${ssrInterpolate(unref(form).synopsis)}</textarea>`);
       if (unref(form).errors.synopsis) {
         _push(`<p class="mt-1 text-sm text-red-400">${ssrInterpolate(unref(form).errors.synopsis)}</p>`);
       } else {
@@ -810,19 +824,22 @@ const _sfc_main$P = /* @__PURE__ */ defineComponent({
   __ssrInlineRender: true,
   props: {
     anime: {},
-    filters: {}
+    filters: {},
+    thin_content: {}
   },
   setup(__props) {
     const props = __props;
     const search = ref(props.filters.search ?? "");
     const rewrittenOnly = ref(props.filters.rewritten_only);
+    const thinOnly = ref(props.filters.thin_only);
     let debounceTimer = null;
     function pushFilters() {
       router.get(
         route("admin.anime.index"),
         {
           search: search.value || void 0,
-          rewritten_only: rewrittenOnly.value ? 1 : void 0
+          rewritten_only: rewrittenOnly.value ? 1 : void 0,
+          thin_only: thinOnly.value ? 1 : void 0
         },
         { preserveState: true, preserveScroll: true }
       );
@@ -832,6 +849,7 @@ const _sfc_main$P = /* @__PURE__ */ defineComponent({
       debounceTimer = setTimeout(pushFilters, 300);
     });
     watch(rewrittenOnly, () => pushFilters());
+    watch(thinOnly, () => pushFilters());
     function formatDate(iso) {
       if (!iso) return null;
       return new Date(iso).toLocaleDateString("en-US", {
@@ -847,7 +865,19 @@ const _sfc_main$P = /* @__PURE__ */ defineComponent({
       _push(ssrRenderComponent(_component_Head, { title: "Anime Descriptions" }, null, _parent));
       _push(`<div class="mx-auto max-w-6xl space-y-6">`);
       _push(ssrRenderComponent(_sfc_main$S, null, null, _parent));
-      _push(`<div class="flex items-center justify-between"><div><h1 class="text-2xl font-bold">Anime Descriptions</h1><p class="mt-1 text-sm text-gray-400"> Rewrite synopses for SEO. Rewritten descriptions are preserved across AniList syncs. </p></div><span class="text-xs text-gray-500">${ssrInterpolate(__props.anime.meta.total.toLocaleString())} total</span></div><div class="flex flex-col gap-3 sm:flex-row sm:items-center"><input${ssrRenderAttr("value", search.value)} type="text" placeholder="Search by title or slug..." class="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(rewrittenOnly.value) ? ssrLooseContain(rewrittenOnly.value, null) : rewrittenOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Rewritten only </label></div><div class="overflow-hidden rounded-xl border border-gray-800"><table class="w-full"><thead class="border-b border-gray-800 bg-gray-900"><tr><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th><th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th></tr></thead><tbody class="divide-y divide-gray-800"><!--[-->`);
+      _push(`<div class="flex items-center justify-between"><div><h1 class="text-2xl font-bold">Anime Descriptions</h1><p class="mt-1 text-sm text-gray-400"> Rewrite synopses for SEO. Rewritten descriptions are preserved across AniList syncs. </p></div><span class="text-xs text-gray-500">${ssrInterpolate(__props.anime.meta.total.toLocaleString())} total</span></div>`);
+      if (__props.thin_content.total > 0) {
+        _push(`<div class="flex flex-col gap-3 rounded-lg border border-amber-700/50 bg-amber-900/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span class="text-amber-300"><strong>${ssrInterpolate(__props.thin_content.total.toLocaleString())}</strong> ${ssrInterpolate(__props.thin_content.total === 1 ? "page has" : "pages have")} fewer than ${ssrInterpolate(__props.thin_content.min_words)} words of synopsis and ${ssrInterpolate(__props.thin_content.total === 1 ? "is" : "are")} flagged for review. </span>`);
+        if (!thinOnly.value) {
+          _push(`<button type="button" class="flex-shrink-0 rounded bg-amber-600/20 px-2.5 py-1 text-xs text-amber-300 transition hover:bg-amber-600/30"> Show flagged pages </button>`);
+        } else {
+          _push(`<!---->`);
+        }
+        _push(`</div>`);
+      } else {
+        _push(`<!---->`);
+      }
+      _push(`<div class="flex flex-col gap-3 sm:flex-row sm:items-center"><input${ssrRenderAttr("value", search.value)} type="text" placeholder="Search by title or slug..." class="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(rewrittenOnly.value) ? ssrLooseContain(rewrittenOnly.value, null) : rewrittenOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Rewritten only </label><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input${ssrIncludeBooleanAttr(Array.isArray(thinOnly.value) ? ssrLooseContain(thinOnly.value, null) : thinOnly.value) ? " checked" : ""} type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"> Needs review (&lt; ${ssrInterpolate(__props.thin_content.min_words)} words) </label></div><div class="overflow-hidden rounded-xl border border-gray-800"><table class="w-full"><thead class="border-b border-gray-800 bg-gray-900"><tr><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th><th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Words</th><th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th><th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th></tr></thead><tbody class="divide-y divide-gray-800"><!--[-->`);
       ssrRenderList(__props.anime.data, (item) => {
         _push(`<tr class="bg-gray-950 transition hover:bg-gray-900"><td class="px-4 py-3"><div class="flex items-center gap-3">`);
         if (item.cover_image_medium) {
@@ -867,7 +897,13 @@ const _sfc_main$P = /* @__PURE__ */ defineComponent({
         } else {
           _push(`<span class="italic text-gray-600">No description</span>`);
         }
-        _push(`</td><td class="hidden px-4 py-3 text-xs lg:table-cell">`);
+        _push(`</td><td class="px-4 py-3 text-xs"><div class="flex flex-col items-start gap-1"><span class="${ssrRenderClass([item.is_thin ? "font-medium text-amber-300" : "text-gray-400", "tabular-nums"])}">${ssrInterpolate(item.synopsis_word_count.toLocaleString())}</span>`);
+        if (item.is_thin) {
+          _push(`<span class="rounded bg-amber-600/20 px-2 py-0.5 text-[11px] font-medium text-amber-300"${ssrRenderAttr("title", `Fewer than ${__props.thin_content.min_words} words. Add more content to this page.`)}> Needs review </span>`);
+        } else {
+          _push(`<!---->`);
+        }
+        _push(`</div></td><td class="hidden px-4 py-3 text-xs lg:table-cell">`);
         if (item.synopsis_rewritten_at) {
           _push(`<span class="rounded bg-primary-600/20 px-2 py-0.5 text-primary-400">${ssrInterpolate(formatDate(item.synopsis_rewritten_at))}</span>`);
         } else {
@@ -893,7 +929,7 @@ const _sfc_main$P = /* @__PURE__ */ defineComponent({
       });
       _push(`<!--]-->`);
       if (__props.anime.data.length === 0) {
-        _push(`<tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500"> No anime match your search. </td></tr>`);
+        _push(`<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">${ssrInterpolate(thinOnly.value ? "No anime are flagged for review." : "No anime match your search.")}</td></tr>`);
       } else {
         _push(`<!---->`);
       }
@@ -942,11 +978,34 @@ const _sfc_main$O = /* @__PURE__ */ defineComponent({
     }
     return (_ctx, _push, _parent, _attrs) => {
       const _component_Head = resolveComponent("Head");
+      const _component_Link = resolveComponent("Link");
       _push(`<!--[-->`);
       _push(ssrRenderComponent(_component_Head, { title: "Admin Dashboard" }, null, _parent));
       _push(`<div class="mx-auto max-w-6xl space-y-8">`);
       _push(ssrRenderComponent(_sfc_main$S, null, null, _parent));
-      _push(`<h1 class="text-2xl font-bold">Dashboard</h1><div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_users.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Total Users</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.new_users_this_month)}</div><div class="mt-1 text-xs text-gray-400">New This Month</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_anime.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Anime in DB</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_list_entries.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">List Entries</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_episodes_watched.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Episodes Watched</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.active_users_today)}</div><div class="mt-1 text-xs text-gray-400">Active Today</div></div></div><div class="grid gap-6 lg:grid-cols-2"><div class="rounded-xl border border-gray-800 bg-gray-900 p-6"><h2 class="mb-4 text-lg font-semibold">Sync Status</h2><div class="space-y-3"><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Releasing Anime</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.releasing), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.releasing)}</span></div><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Incremental Sync</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.incremental), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.incremental)}</span></div><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Airing Schedule</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.schedule), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.schedule)}</span></div></div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-6"><h2 class="mb-4 text-lg font-semibold">Recent Users</h2><div class="space-y-3"><!--[-->`);
+      _push(`<h1 class="text-2xl font-bold">Dashboard</h1><div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_users.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Total Users</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.new_users_this_month)}</div><div class="mt-1 text-xs text-gray-400">New This Month</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_anime.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Anime in DB</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_list_entries.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">List Entries</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.total_episodes_watched.toLocaleString())}</div><div class="mt-1 text-xs text-gray-400">Episodes Watched</div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-4"><div class="text-2xl font-bold text-primary-400">${ssrInterpolate(__props.stats.active_users_today)}</div><div class="mt-1 text-xs text-gray-400">Active Today</div></div></div>`);
+      if (__props.stats.thin_content_anime > 0) {
+        _push(`<div class="flex flex-col gap-3 rounded-xl border border-amber-700/50 bg-amber-900/10 p-4 sm:flex-row sm:items-center sm:justify-between"><div><div class="text-sm font-medium text-amber-300">${ssrInterpolate(__props.stats.thin_content_anime.toLocaleString())} anime ${ssrInterpolate(__props.stats.thin_content_anime === 1 ? "page needs" : "pages need")} content review </div><div class="mt-0.5 text-xs text-amber-300/70"> Fewer than ${ssrInterpolate(__props.stats.thin_content_min_words)} words of synopsis. These pages are not indexed until they are expanded. </div></div>`);
+        _push(ssrRenderComponent(_component_Link, {
+          href: _ctx.route("admin.anime.index", { thin_only: 1 }),
+          class: "flex-shrink-0 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-600/30"
+        }, {
+          default: withCtx((_2, _push2, _parent2, _scopeId) => {
+            if (_push2) {
+              _push2(` Review flagged pages `);
+            } else {
+              return [
+                createTextVNode(" Review flagged pages ")
+              ];
+            }
+          }),
+          _: 1
+        }, _parent));
+        _push(`</div>`);
+      } else {
+        _push(`<!---->`);
+      }
+      _push(`<div class="grid gap-6 lg:grid-cols-2"><div class="rounded-xl border border-gray-800 bg-gray-900 p-6"><h2 class="mb-4 text-lg font-semibold">Sync Status</h2><div class="space-y-3"><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Releasing Anime</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.releasing), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.releasing)}</span></div><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Incremental Sync</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.incremental), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.incremental)}</span></div><div class="flex items-center justify-between"><span class="text-sm text-gray-400">Airing Schedule</span><span class="${ssrRenderClass([syncStatusColor(__props.syncStatuses.schedule), "text-sm font-medium capitalize"])}">${ssrInterpolate(__props.syncStatuses.schedule)}</span></div></div></div><div class="rounded-xl border border-gray-800 bg-gray-900 p-6"><h2 class="mb-4 text-lg font-semibold">Recent Users</h2><div class="space-y-3"><!--[-->`);
       ssrRenderList(__props.recentUsers, (user) => {
         _push(`<div class="flex items-center justify-between"><div class="flex items-center gap-3"><div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-700 text-xs font-medium text-gray-300">${ssrInterpolate(user.name.charAt(0).toUpperCase())}</div><div><div class="text-sm font-medium text-gray-200">${ssrInterpolate(user.name)} `);
         if (user.is_admin) {
@@ -2462,7 +2521,13 @@ const _sfc_main$E = /* @__PURE__ */ defineComponent({
       }, {
         default: withCtx((_2, _push2, _parent2, _scopeId) => {
           if (_push2) {
-            _push2(`<meta name="description"${ssrRenderAttr("content", __props.og.description)}${_scopeId}><link rel="canonical"${ssrRenderAttr("href", __props.og.url)}${_scopeId}><meta property="og:title"${ssrRenderAttr("content", __props.og.title)}${_scopeId}><meta property="og:description"${ssrRenderAttr("content", __props.og.description)}${_scopeId}>`);
+            _push2(`<meta name="description"${ssrRenderAttr("content", __props.og.description)}${_scopeId}>`);
+            if (__props.og.noindex) {
+              _push2(`<meta name="robots" content="noindex,follow"${_scopeId}>`);
+            } else {
+              _push2(`<!---->`);
+            }
+            _push2(`<link rel="canonical"${ssrRenderAttr("href", __props.og.url)}${_scopeId}><meta property="og:title"${ssrRenderAttr("content", __props.og.title)}${_scopeId}><meta property="og:description"${ssrRenderAttr("content", __props.og.description)}${_scopeId}>`);
             if (__props.og.image) {
               _push2(`<meta property="og:image"${ssrRenderAttr("content", __props.og.image)}${_scopeId}>`);
             } else {
@@ -2480,6 +2545,11 @@ const _sfc_main$E = /* @__PURE__ */ defineComponent({
                 name: "description",
                 content: __props.og.description
               }, null, 8, ["content"]),
+              __props.og.noindex ? (openBlock(), createBlock("meta", {
+                key: 0,
+                name: "robots",
+                content: "noindex,follow"
+              })) : createCommentVNode("", true),
               createVNode("link", {
                 rel: "canonical",
                 href: __props.og.url
@@ -2493,7 +2563,7 @@ const _sfc_main$E = /* @__PURE__ */ defineComponent({
                 content: __props.og.description
               }, null, 8, ["content"]),
               __props.og.image ? (openBlock(), createBlock("meta", {
-                key: 0,
+                key: 1,
                 property: "og:image",
                 content: __props.og.image
               }, null, 8, ["content"])) : createCommentVNode("", true),
@@ -2518,7 +2588,7 @@ const _sfc_main$E = /* @__PURE__ */ defineComponent({
                 content: __props.og.description
               }, null, 8, ["content"]),
               __props.og.image ? (openBlock(), createBlock("meta", {
-                key: 1,
+                key: 2,
                 name: "twitter:image",
                 content: __props.og.image
               }, null, 8, ["content"])) : createCommentVNode("", true)

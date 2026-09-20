@@ -23,6 +23,8 @@ class AdminDashboardController extends Controller
             'active_users_today' => UserAnimeList::where('updated_at', '>=', now()->startOfDay())
                 ->distinct('user_id')
                 ->count('user_id'),
+            'thin_content_anime' => Anime::query()->thinContent()->count(),
+            'thin_content_min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,
         ];
 
         $recentUsers = User::query()

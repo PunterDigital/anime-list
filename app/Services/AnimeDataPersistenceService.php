@@ -107,6 +107,7 @@ class AnimeDataPersistenceService
             foreach ($rows as &$row) {
                 if ($rewritten->has($row['anilist_id'])) {
                     $row['synopsis'] = $rewritten->get($row['anilist_id']);
+                    $row['synopsis_word_count'] = Anime::countSynopsisWords($row['synopsis']);
                 }
             }
             unset($row);
@@ -610,7 +611,7 @@ class AnimeDataPersistenceService
             ->whereNotNull('synopsis_rewritten_at')
             ->first(['synopsis']);
         if ($existing) {
-            unset($attributes['synopsis']);
+            unset($attributes['synopsis'], $attributes['synopsis_word_count']);
         }
 
         try {
@@ -844,6 +845,8 @@ class AnimeDataPersistenceService
             'aired_from' => $dto->aired_from,
             'aired_to' => $dto->aired_to,
             'synopsis' => $dto->synopsis,
+            // Upserts bypass model events, so the count is computed here too.
+            'synopsis_word_count' => Anime::countSynopsisWords($dto->synopsis),
             'cover_image_large' => $dto->cover_image_large,
             'cover_image_medium' => $dto->cover_image_medium,
             'cover_image_color' => $dto->cover_image_color,

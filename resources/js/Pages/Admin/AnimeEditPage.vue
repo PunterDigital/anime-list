@@ -9,6 +9,7 @@ defineOptions({ layout: AppLayout })
 
 const props = defineProps<{
     anime: AdminAnimeEdit
+    min_words: number
 }>()
 
 const form = useForm({
@@ -44,6 +45,25 @@ function formatDateTime(iso: string | null): string | null {
 }
 
 const characterCount = computed(() => form.synopsis.length)
+
+/**
+ * Mirrors Anime::countSynopsisWords() on the backend: drop HTML tags and
+ * line breaks, then count whitespace-separated words.
+ */
+function countWords(text: string): number {
+    const plain = text
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]*>/g, '')
+        .trim()
+
+    if (plain === '') return 0
+
+    return plain.split(/\s+/).filter(Boolean).length
+}
+
+const wordCount = computed(() => countWords(form.synopsis))
+const isThin = computed(() => wordCount.value < props.min_words)
+const wordsNeeded = computed(() => Math.max(0, props.min_words - wordCount.value))
 </script>
 
 <template>
@@ -86,6 +106,16 @@ const characterCount = computed(() => form.synopsis.length)
         </div>
 
         <div
+            v-if="isThin"
+            class="rounded-lg border border-amber-700/50 bg-amber-900/10 px-4 py-3 text-sm text-amber-300"
+        >
+            <strong>Flagged for review:</strong>
+            this page has {{ wordCount.toLocaleString() }} {{ wordCount === 1 ? 'word' : 'words' }} of synopsis.
+            Add at least {{ wordsNeeded.toLocaleString() }} more to reach the {{ min_words }}-word minimum.
+            Pages under the minimum are not indexed by search engines.
+        </div>
+
+        <div
             v-if="anime.synopsis_rewritten_at"
             class="rounded-lg border border-primary-600/40 bg-primary-900/10 px-4 py-3 text-sm"
         >
@@ -123,7 +153,12 @@ const characterCount = computed(() => form.synopsis.length)
             <div>
                 <label class="mb-1 flex items-center justify-between text-sm font-medium text-gray-300">
                     <span>Synopsis</span>
-                    <span class="text-xs font-normal text-gray-500">{{ characterCount.toLocaleString() }} chars</span>
+                    <span class="text-xs font-normal text-gray-500">
+                        <span :class="isThin ? 'text-amber-300' : 'text-green-400'">
+                            {{ wordCount.toLocaleString() }} / {{ min_words }} words
+                        </span>
+                        · {{ characterCount.toLocaleString() }} chars
+                    </span>
                 </label>
                 <textarea
                     v-model="form.synopsis"

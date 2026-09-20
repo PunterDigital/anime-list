@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Models\Anime;
 use App\Services\AnimeDataPersistenceService;
 use Illuminate\Support\Facades\Redis;
 use Mockery;
@@ -66,6 +67,52 @@ class AnimeDataPersistenceServiceTest extends TestCase
         ];
 
         app(AnimeDataPersistenceService::class)->persistBatch($media);
+    }
+
+    public function test_persist_batch_stores_the_synopsis_word_count(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $media = $this->minimalMedia(1);
+        $media['description'] = "<i>One</i> two<br>three\nfour   five";
+
+        app(AnimeDataPersistenceService::class)->persistBatch([$media, $this->minimalMedia(2)]);
+
+        $this->assertSame(5, Anime::where('anilist_id', 1)->value('synopsis_word_count'));
+        $this->assertSame(0, Anime::where('anilist_id', 2)->value('synopsis_word_count'));
+    }
+
+    public function test_persist_batch_keeps_the_word_count_of_a_rewritten_synopsis(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $rewritten = trim(str_repeat('word ', 160));
+        Anime::factory()->create([
+            'anilist_id' => 1,
+            'synopsis' => $rewritten,
+            'synopsis_rewritten_at' => now(),
+        ]);
+
+        $media = $this->minimalMedia(1);
+        $media['description'] = 'short synced text';
+
+        app(AnimeDataPersistenceService::class)->persistBatch([$media]);
+
+        $anime = Anime::where('anilist_id', 1)->first();
+        $this->assertSame($rewritten, $anime->synopsis);
+        $this->assertSame(160, $anime->synopsis_word_count);
+    }
+
+    public function test_persist_single_stores_the_synopsis_word_count(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $media = $this->minimalMedia(7);
+        $media['description'] = 'alpha beta gamma';
+
+        $anime = app(AnimeDataPersistenceService::class)->persistSingle($media);
+
+        $this->assertSame(3, $anime->fresh()->synopsis_word_count);
     }
 
     /**

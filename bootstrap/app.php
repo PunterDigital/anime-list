@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
-      
+
         $middleware->validateCsrfTokens(except: [
             'webauthn/*',
             'api/v1/*',
@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
             'public-api' => \App\Http\Middleware\EnsurePublicApiEnabled::class,
+            'feature' => \App\Http\Middleware\EnsureFeatureActive::class,
             'track-token-usage' => \App\Http\Middleware\TrackSanctumTokenUsage::class,
         ]);
     })

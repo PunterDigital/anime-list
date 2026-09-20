@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AdminAnimeController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
@@ -15,8 +16,10 @@ use App\Http\Controllers\Api\V1\UserController as ApiUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DevelopersController;
 use App\Http\Controllers\DiscoverController;
+use App\Http\Controllers\HowItWorksController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PlaylistController;
@@ -67,6 +70,16 @@ Route::get('/developers', [DevelopersController::class, 'index'])->name('develop
 Route::get('/alternatives', fn () => Inertia::render('AlternativesPage'))->name('alternatives');
 Route::get('/top', [TopAnimeController::class, 'rated'])->name('top.rated');
 Route::get('/top/popular', [TopAnimeController::class, 'popular'])->name('top.popular');
+
+// Company pages — gated behind the `company-pages` Pennant flag.
+Route::middleware('feature:company-pages')->group(function () {
+    Route::get('/about', AboutController::class)->name('about');
+    Route::get('/how-it-works', HowItWorksController::class)->name('how-it-works');
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+    Route::post('/contact', [ContactController::class, 'store'])
+        ->middleware('throttle:contact')
+        ->name('contact.store');
+});
 
 // Discover is now the home page; keep /discover as a permanent redirect for old links.
 Route::permanentRedirect('/discover', '/');

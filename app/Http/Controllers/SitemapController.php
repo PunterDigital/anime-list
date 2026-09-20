@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Anime;
 use App\Models\User;
+use App\Services\FeatureFlagService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -34,6 +35,14 @@ class SitemapController extends Controller
         $urls[] = $this->url(route('top.popular'), 'daily', '0.8');
         $urls[] = $this->url(route('terms'), 'monthly', '0.3');
         $urls[] = $this->url(route('privacy'), 'monthly', '0.3');
+
+        // Company pages are only reachable by crawlers once the flag is on
+        // for everyone (guests), so list them under the same condition.
+        if (app(FeatureFlagService::class)->active('company-pages', null)) {
+            $urls[] = $this->url(route('about'), 'monthly', '0.4');
+            $urls[] = $this->url(route('how-it-works'), 'monthly', '0.4');
+            $urls[] = $this->url(route('contact'), 'monthly', '0.3');
+        }
 
         // Anime pages. Thin title pages (see Anime::isIndexable) carry a
         // robots noindex, so they are left out of the sitemap as well.

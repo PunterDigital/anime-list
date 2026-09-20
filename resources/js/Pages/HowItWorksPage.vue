@@ -46,7 +46,7 @@ const signals = [
         <section class="space-y-4">
             <h2 class="text-xl font-semibold text-gray-200">Where the data comes from</h2>
             <p class="leading-relaxed text-gray-400">
-                AniTrack does not maintain its own anime encyclopaedia. Titles, synopses, cover art, formats, episode counts, air dates, studios, genres, trailers, streaming links and community scores all come from the
+                Almost all of the anime data on AniTrack comes from upstream. Titles, synopses, cover art, formats, episode counts, air dates, studios, genres, trailers, streaming links and community scores are fetched from the
                 <a href="https://anilist.co" target="_blank" rel="noopener noreferrer" class="text-primary-400 transition hover:text-primary-300">AniList</a>
                 public GraphQL API. AniList is a community-maintained database, and we are grateful to everyone who keeps it accurate.
             </p>
@@ -55,6 +55,16 @@ const signals = [
             </p>
             <p class="leading-relaxed text-gray-400">
                 We do not scrape websites. Everything is fetched through AniList's official API, well inside its published rate limits.
+            </p>
+        </section>
+
+        <section class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-200">What we edit ourselves</h2>
+            <p class="leading-relaxed text-gray-400">
+                We do make some edits of our own. Where the upstream synopsis is missing, very short, or simply not very good, we write our own. Occasionally we also tidy up a title, for example where the English title is missing or misleading. Everything else stays exactly as it is upstream.
+            </p>
+            <p class="leading-relaxed text-gray-400">
+                A synopsis we have written is kept when the show is next synced, so it will not be silently replaced by the upstream text. If we ever revert a show to the upstream synopsis, the next sync brings it back.
             </p>
         </section>
 
@@ -83,7 +93,7 @@ const signals = [
                 On top of the scheduled syncs, a nightly job works through any show whose data has gone stale. Once a long-finished show has been refreshed it is retired from that sweep, so we spend our API budget on the shows that are actually changing.
             </p>
             <p class="leading-relaxed text-gray-400">
-                If you spot something wrong, the fix usually belongs upstream: correct it on AniList and it will flow through to AniTrack on the next sync. If it still looks wrong after a few days, <Link :href="route('contact')" class="text-primary-400 transition hover:text-primary-300">let us know</Link>.
+                If you spot something wrong, the fix usually belongs upstream: correct it on AniList and it will flow through to AniTrack on the next sync. If it still looks wrong after a few days, or the problem is in a synopsis or title we wrote ourselves, <Link :href="route('contact')" class="text-primary-400 transition hover:text-primary-300">let us know</Link>.
             </p>
         </section>
 

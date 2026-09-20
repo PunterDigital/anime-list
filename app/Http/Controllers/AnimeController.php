@@ -152,6 +152,7 @@ class AnimeController extends Controller
                 'description' => $description,
                 'image' => $image,
                 'url' => route('anime.show', $model),
+                'noindex' => ! $model->isIndexable(),
             ],
         ]);
     }

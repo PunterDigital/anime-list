@@ -70,9 +70,67 @@ class Anime extends Model
         ];
     }
 
+    /**
+     * Minimum synopsis word count for a title page to be worth indexing.
+     */
+    public const MIN_INDEXABLE_SYNOPSIS_WORDS = 150;
+
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Whether the title page carries enough content to be indexed by search
+     * engines. Thin pages (short or missing synopsis, no episode data, no
+     * score) get a robots noindex and are left out of the sitemap.
+     */
+    public function isIndexable(): bool
+    {
+        if ($this->is_adult) {
+            return false;
+        }
+
+        if ($this->synopsisWordCount() < self::MIN_INDEXABLE_SYNOPSIS_WORDS) {
+            return false;
+        }
+
+        if (! $this->hasEpisodeData()) {
+            return false;
+        }
+
+        return $this->average_score !== null && $this->average_score > 0;
+    }
+
+    public function synopsisWordCount(): int
+    {
+        $text = trim(strip_tags(str_replace('<br>', ' ', (string) $this->synopsis)));
+
+        if ($text === '') {
+            return 0;
+        }
+
+        return count(preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+    }
+
+    /**
+     * True when the title has a known episode count or at least one episode row.
+     */
+    public function hasEpisodeData(): bool
+    {
+        if ($this->episodes !== null && $this->episodes > 0) {
+            return true;
+        }
+
+        if (array_key_exists('episode_list_exists', $this->attributes)) {
+            return (bool) $this->attributes['episode_list_exists'];
+        }
+
+        if ($this->relationLoaded('episodeList')) {
+            return $this->episodeList->isNotEmpty();
+        }
+
+        return $this->episodeList()->exists();
     }
 
     protected static function booted(): void

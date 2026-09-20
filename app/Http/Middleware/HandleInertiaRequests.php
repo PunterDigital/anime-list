@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                 'newApiToken' => $request->session()->get('newApiToken'),
             ],
             'features' => fn () => app(FeatureFlagService::class)->allForUser($request->user()),
+            'business' => config('business'),
             'adsense' => [
                 'client' => config('adsense.client'),
                 'slot' => config('adsense.slot'),

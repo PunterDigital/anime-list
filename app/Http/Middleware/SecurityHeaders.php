@@ -37,9 +37,13 @@ class SecurityHeaders
             .'https://www.googletagservices.com https://adservice.google.com '
             .'https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google';
 
+        // Cloudflare Turnstile (contact form captcha) loads its widget script
+        // from, and renders its challenge iframe on, this single host.
+        $turnstile = 'https://challenges.cloudflare.com';
+
         $scriptSrc = $isLocal
-            ? "script-src 'self' http://localhost:5173 'unsafe-inline' 'nonce-{$nonce}' {$adsense}; "
-            : "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com {$adsense}; ";
+            ? "script-src 'self' http://localhost:5173 'unsafe-inline' 'nonce-{$nonce}' {$adsense} {$turnstile}; "
+            : "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com {$adsense} {$turnstile}; ";
 
         $connectSrc = $isLocal
             ? "connect-src 'self' ws://localhost:5173 {$adsense}; "
@@ -48,14 +52,14 @@ class SecurityHeaders
         $response->headers->set(
             'Content-Security-Policy',
             "default-src 'self'; "
-            . $scriptSrc
-            . "style-src 'self' 'unsafe-inline'; "
-            . "img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.gstatic.com data:; "
-            . "font-src 'self'; "
-            . $connectSrc
-            . "worker-src 'self' blob:; "
-            . "frame-src https://www.youtube.com https://www.dailymotion.com {$adsense} https://www.google.com; "
-            . "frame-ancestors 'none'"
+            .$scriptSrc
+            ."style-src 'self' 'unsafe-inline'; "
+            ."img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.gstatic.com data:; "
+            ."font-src 'self'; "
+            .$connectSrc
+            ."worker-src 'self' blob:; "
+            ."frame-src https://www.youtube.com https://www.dailymotion.com {$adsense} https://www.google.com {$turnstile}; "
+            ."frame-ancestors 'none'"
         );
 
         return $response;

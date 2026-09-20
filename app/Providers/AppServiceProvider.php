@@ -63,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
 
+        RateLimiter::for('contact', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?: $request->ip()));
+
         $this->defineFeatureFlags();
     }
 
@@ -76,5 +78,6 @@ class AppServiceProvider extends ServiceProvider
         Feature::define('episodes-tab', fn ($user) => true);
         Feature::define('landing-page', fn ($user) => false);
         Feature::define('ads', fn ($user) => false);
+        Feature::define('company-pages', fn ($user) => false);
     }
 }

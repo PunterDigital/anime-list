@@ -1,3 +1,4 @@
+import type { BusinessInfo } from './business'
 import type { User } from './user'
 
 declare module '@inertiajs/vue3' {
@@ -9,5 +10,6 @@ declare module '@inertiajs/vue3' {
             message: string | null
             status: string | null
         }
+        business: BusinessInfo
     }
 }

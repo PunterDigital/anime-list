@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 import PaginationBar from '@/Components/PaginationBar.vue'
 import type { PaginatedResponse } from '@/types/api'
-import type { AdminAnimeListItem, AdminThinContentSummary } from '@/types/admin'
+import type { AdminAnimeListItem, AdminAnimeSort, AdminThinContentSummary } from '@/types/admin'
 
 defineOptions({ layout: AppLayout })
 
@@ -15,13 +15,21 @@ const props = defineProps<{
         search: string | null
         rewritten_only: boolean
         thin_only: boolean
+        sort: AdminAnimeSort
     }
     thin_content: AdminThinContentSummary
 }>()
 
+const SORT_OPTIONS: { value: AdminAnimeSort; label: string }[] = [
+    { value: 'popularity', label: 'Most popular first' },
+    { value: 'words_desc', label: 'Word count: high to low' },
+    { value: 'words_asc', label: 'Word count: low to high' },
+]
+
 const search = ref(props.filters.search ?? '')
 const rewrittenOnly = ref(props.filters.rewritten_only)
 const thinOnly = ref(props.filters.thin_only)
+const sort = ref<AdminAnimeSort>(props.filters.sort)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -32,6 +40,7 @@ function pushFilters() {
             search: search.value || undefined,
             rewritten_only: rewrittenOnly.value ? 1 : undefined,
             thin_only: thinOnly.value ? 1 : undefined,
+            sort: sort.value !== 'popularity' ? sort.value : undefined,
         },
         { preserveState: true, preserveScroll: true },
     )
@@ -44,6 +53,11 @@ watch(search, () => {
 
 watch(rewrittenOnly, () => pushFilters())
 watch(thinOnly, () => pushFilters())
+watch(sort, () => pushFilters())
+
+function toggleWordSort() {
+    sort.value = sort.value === 'words_desc' ? 'words_asc' : 'words_desc'
+}
 
 function formatDate(iso: string | null): string | null {
     if (!iso) return null
@@ -113,6 +127,18 @@ function formatDate(iso: string | null): string | null {
                 />
                 Needs review (&lt; {{ thin_content.min_words }} words)
             </label>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-300">
+                <span class="sr-only">Sort by</span>
+                <select
+                    v-model="sort"
+                    aria-label="Sort by"
+                    class="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                >
+                    <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </select>
+            </label>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-800">
@@ -121,7 +147,19 @@ function formatDate(iso: string | null): string | null {
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th>
                         <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Words</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1 uppercase tracking-wider transition hover:text-gray-200"
+                                :class="sort.startsWith('words') ? 'text-primary-400' : ''"
+                                :title="sort === 'words_desc' ? 'Sorted high to low. Click for low to high.' : 'Sort by word count, high to low.'"
+                                @click="toggleWordSort"
+                            >
+                                Words
+                                <span v-if="sort === 'words_desc'" aria-hidden="true">&darr;</span>
+                                <span v-else-if="sort === 'words_asc'" aria-hidden="true">&uarr;</span>
+                            </button>
+                        </th>
                         <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th>
                         <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th>
                     </tr>

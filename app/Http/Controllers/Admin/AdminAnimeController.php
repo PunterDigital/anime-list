@@ -11,6 +11,13 @@ use Inertia\Response;
 
 class AdminAnimeController extends Controller
 {
+    /**
+     * Sort orders the anime list accepts. Popularity is the default so the
+     * most-visited pages come first; the word-count orders let an editor
+     * work from the longest or shortest synopses.
+     */
+    public const SORTS = ['popularity', 'words_desc', 'words_asc'];
+
     public function index(Request $request): Response
     {
         $query = Anime::query()
@@ -46,8 +53,19 @@ class AdminAnimeController extends Controller
             $query->thinContent();
         }
 
+        $sort = (string) $request->input('sort', 'popularity');
+        if (! in_array($sort, self::SORTS, true)) {
+            $sort = 'popularity';
+        }
+
+        match ($sort) {
+            'words_desc' => $query->orderByDesc('synopsis_word_count')->orderByDesc('popularity'),
+            'words_asc' => $query->orderBy('synopsis_word_count')->orderByDesc('popularity'),
+            default => $query->orderByDesc('popularity'),
+        };
+
         $paginator = $query
-            ->orderByDesc('popularity')
+            ->orderBy('id')
             ->paginate(25)
             ->withQueryString()
             ->through(fn (Anime $a) => [
@@ -88,6 +106,7 @@ class AdminAnimeController extends Controller
                 'search' => $search ?: null,
                 'rewritten_only' => $request->boolean('rewritten_only'),
                 'thin_only' => $request->boolean('thin_only'),
+                'sort' => $sort,
             ],
             'thin_content' => [
                 'min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,

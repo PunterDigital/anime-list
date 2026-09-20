@@ -72,6 +72,28 @@ function syncStatusColor(status: string): string {
             </div>
         </div>
 
+        <!-- Content Review -->
+        <div
+            v-if="stats.thin_content_anime > 0"
+            class="flex flex-col gap-3 rounded-xl border border-amber-700/50 bg-amber-900/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+            <div>
+                <div class="text-sm font-medium text-amber-300">
+                    {{ stats.thin_content_anime.toLocaleString() }} anime
+                    {{ stats.thin_content_anime === 1 ? 'page needs' : 'pages need' }} content review
+                </div>
+                <div class="mt-0.5 text-xs text-amber-300/70">
+                    Fewer than {{ stats.thin_content_min_words }} words of synopsis. These pages are not indexed until they are expanded.
+                </div>
+            </div>
+            <Link
+                :href="route('admin.anime.index', { thin_only: 1 })"
+                class="flex-shrink-0 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-600/30"
+            >
+                Review flagged pages
+            </Link>
+        </div>
+
         <div class="grid gap-6 lg:grid-cols-2">
             <!-- Sync Status -->
             <div class="rounded-xl border border-gray-800 bg-gray-900 p-6">

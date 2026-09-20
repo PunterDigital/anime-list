@@ -25,6 +25,7 @@ class AdminAnimeController extends Controller
                 'season_year',
                 'cover_image_medium',
                 'synopsis',
+                'synopsis_word_count',
                 'synopsis_rewritten_at',
             ]);
 
@@ -39,6 +40,10 @@ class AdminAnimeController extends Controller
 
         if ($request->boolean('rewritten_only')) {
             $query->whereNotNull('synopsis_rewritten_at');
+        }
+
+        if ($request->boolean('thin_only')) {
+            $query->thinContent();
         }
 
         $paginator = $query
@@ -58,6 +63,8 @@ class AdminAnimeController extends Controller
                 'synopsis_excerpt' => $a->synopsis
                     ? \Illuminate\Support\Str::limit(strip_tags($a->synopsis), 140)
                     : null,
+                'synopsis_word_count' => $a->synopsis_word_count,
+                'is_thin' => $a->hasThinContent(),
                 'synopsis_rewritten_at' => $a->synopsis_rewritten_at?->toIso8601String(),
             ]);
 
@@ -80,6 +87,11 @@ class AdminAnimeController extends Controller
             'filters' => [
                 'search' => $search ?: null,
                 'rewritten_only' => $request->boolean('rewritten_only'),
+                'thin_only' => $request->boolean('thin_only'),
+            ],
+            'thin_content' => [
+                'min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,
+                'total' => Anime::query()->thinContent()->count(),
             ],
         ]);
     }
@@ -99,8 +111,11 @@ class AdminAnimeController extends Controller
                 'season' => $anime->season,
                 'season_year' => $anime->season_year,
                 'synopsis' => $anime->synopsis,
+                'synopsis_word_count' => $anime->synopsis_word_count,
+                'is_thin' => $anime->hasThinContent(),
                 'synopsis_rewritten_at' => $anime->synopsis_rewritten_at?->toIso8601String(),
             ],
+            'min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,
         ]);
     }
 

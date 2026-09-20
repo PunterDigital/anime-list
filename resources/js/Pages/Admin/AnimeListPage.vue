@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 import PaginationBar from '@/Components/PaginationBar.vue'
 import type { PaginatedResponse } from '@/types/api'
-import type { AdminAnimeListItem } from '@/types/admin'
+import type { AdminAnimeListItem, AdminThinContentSummary } from '@/types/admin'
 
 defineOptions({ layout: AppLayout })
 
@@ -14,11 +14,14 @@ const props = defineProps<{
     filters: {
         search: string | null
         rewritten_only: boolean
+        thin_only: boolean
     }
+    thin_content: AdminThinContentSummary
 }>()
 
 const search = ref(props.filters.search ?? '')
 const rewrittenOnly = ref(props.filters.rewritten_only)
+const thinOnly = ref(props.filters.thin_only)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -28,6 +31,7 @@ function pushFilters() {
         {
             search: search.value || undefined,
             rewritten_only: rewrittenOnly.value ? 1 : undefined,
+            thin_only: thinOnly.value ? 1 : undefined,
         },
         { preserveState: true, preserveScroll: true },
     )
@@ -39,6 +43,7 @@ watch(search, () => {
 })
 
 watch(rewrittenOnly, () => pushFilters())
+watch(thinOnly, () => pushFilters())
 
 function formatDate(iso: string | null): string | null {
     if (!iso) return null
@@ -66,6 +71,25 @@ function formatDate(iso: string | null): string | null {
             <span class="text-xs text-gray-500">{{ anime.meta.total.toLocaleString() }} total</span>
         </div>
 
+        <div
+            v-if="thin_content.total > 0"
+            class="flex flex-col gap-3 rounded-lg border border-amber-700/50 bg-amber-900/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+        >
+            <span class="text-amber-300">
+                <strong>{{ thin_content.total.toLocaleString() }}</strong>
+                {{ thin_content.total === 1 ? 'page has' : 'pages have' }} fewer than {{ thin_content.min_words }} words of synopsis and
+                {{ thin_content.total === 1 ? 'is' : 'are' }} flagged for review.
+            </span>
+            <button
+                v-if="!thinOnly"
+                type="button"
+                class="flex-shrink-0 rounded bg-amber-600/20 px-2.5 py-1 text-xs text-amber-300 transition hover:bg-amber-600/30"
+                @click="thinOnly = true"
+            >
+                Show flagged pages
+            </button>
+        </div>
+
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <input
                 v-model="search"
@@ -81,6 +105,14 @@ function formatDate(iso: string | null): string | null {
                 />
                 Rewritten only
             </label>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-300">
+                <input
+                    v-model="thinOnly"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"
+                />
+                Needs review (&lt; {{ thin_content.min_words }} words)
+            </label>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-800">
@@ -89,6 +121,7 @@ function formatDate(iso: string | null): string | null {
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th>
                         <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Words</th>
                         <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 lg:table-cell">Rewritten</th>
                         <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th>
                     </tr>
@@ -125,6 +158,23 @@ function formatDate(iso: string | null): string | null {
                             <span v-if="item.synopsis_excerpt">{{ item.synopsis_excerpt }}</span>
                             <span v-else class="italic text-gray-600">No description</span>
                         </td>
+                        <td class="px-4 py-3 text-xs">
+                            <div class="flex flex-col items-start gap-1">
+                                <span
+                                    class="tabular-nums"
+                                    :class="item.is_thin ? 'font-medium text-amber-300' : 'text-gray-400'"
+                                >
+                                    {{ item.synopsis_word_count.toLocaleString() }}
+                                </span>
+                                <span
+                                    v-if="item.is_thin"
+                                    class="rounded bg-amber-600/20 px-2 py-0.5 text-[11px] font-medium text-amber-300"
+                                    :title="`Fewer than ${thin_content.min_words} words. Add more content to this page.`"
+                                >
+                                    Needs review
+                                </span>
+                            </div>
+                        </td>
                         <td class="hidden px-4 py-3 text-xs lg:table-cell">
                             <span
                                 v-if="item.synopsis_rewritten_at"
@@ -144,8 +194,8 @@ function formatDate(iso: string | null): string | null {
                         </td>
                     </tr>
                     <tr v-if="anime.data.length === 0">
-                        <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500">
-                            No anime match your search.
+                        <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
+                            {{ thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
                         </td>
                     </tr>
                 </tbody>

@@ -36,6 +36,7 @@ class Anime extends Model
         'aired_from',
         'aired_to',
         'synopsis',
+        'synopsis_word_count',
         'synopsis_rewritten_at',
         'cover_image_large',
         'cover_image_medium',
@@ -65,6 +66,7 @@ class Anime extends Model
             'is_adult' => 'boolean',
             'anilist_updated_at' => 'datetime',
             'synced_at' => 'datetime',
+            'synopsis_word_count' => 'integer',
             'synopsis_rewritten_at' => 'datetime',
             'refresh_excluded_at' => 'datetime',
         ];
@@ -104,13 +106,40 @@ class Anime extends Model
 
     public function synopsisWordCount(): int
     {
-        $text = trim(strip_tags(str_replace('<br>', ' ', (string) $this->synopsis)));
+        return static::countSynopsisWords($this->synopsis);
+    }
+
+    /**
+     * Count the words in a synopsis, ignoring HTML tags and line breaks.
+     * Shared by the model, the sync persistence layer and the backfill
+     * migration so every stored `synopsis_word_count` uses the same rule.
+     */
+    public static function countSynopsisWords(?string $synopsis): int
+    {
+        $text = trim(strip_tags(str_replace('<br>', ' ', (string) $synopsis)));
 
         if ($text === '') {
             return 0;
         }
 
         return count(preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+    }
+
+    /**
+     * True when the page carries fewer than the minimum number of synopsis
+     * words and should be flagged for an editor to expand the content.
+     */
+    public function hasThinContent(): bool
+    {
+        return $this->synopsisWordCount() < self::MIN_INDEXABLE_SYNOPSIS_WORDS;
+    }
+
+    /**
+     * Scope to anime whose stored synopsis word count is under the minimum.
+     */
+    public function scopeThinContent(Builder $query): Builder
+    {
+        return $query->where('synopsis_word_count', '<', self::MIN_INDEXABLE_SYNOPSIS_WORDS);
     }
 
     /**
@@ -138,6 +167,12 @@ class Anime extends Model
         static::saving(function (Anime $anime) {
             if (! $anime->slug || $anime->isDirty(['title_english', 'title_romaji'])) {
                 $anime->slug = static::generateUniqueSlug($anime);
+            }
+
+            // Only recompute when the synopsis is part of this save, so a
+            // model loaded with a partial select cannot zero the stored count.
+            if (! $anime->exists || $anime->isDirty('synopsis')) {
+                $anime->synopsis_word_count = static::countSynopsisWords($anime->synopsis);
             }
         });
     }

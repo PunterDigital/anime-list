@@ -17,6 +17,8 @@ export interface AdminStats {
     total_list_entries: number
     total_episodes_watched: number
     active_users_today: number
+    thin_content_anime: number
+    thin_content_min_words: number
 }
 
 export interface SyncStatuses {
@@ -51,7 +53,14 @@ export interface AdminAnimeListItem {
     season_year: number | null
     cover_image_medium: string | null
     synopsis_excerpt: string | null
+    synopsis_word_count: number
+    is_thin: boolean
     synopsis_rewritten_at: string | null
+}
+
+export interface AdminThinContentSummary {
+    min_words: number
+    total: number
 }
 
 export interface AdminAnimeEdit {
@@ -66,5 +75,7 @@ export interface AdminAnimeEdit {
     season: string | null
     season_year: number | null
     synopsis: string | null
+    synopsis_word_count: number
+    is_thin: boolean
     synopsis_rewritten_at: string | null
 }

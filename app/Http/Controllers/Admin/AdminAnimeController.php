@@ -83,9 +83,6 @@ class AdminAnimeController extends Controller
                 'season' => $a->season,
                 'season_year' => $a->season_year,
                 'cover_image_medium' => $a->cover_image_medium,
-                'synopsis_excerpt' => $a->synopsis
-                    ? \Illuminate\Support\Str::limit(strip_tags($a->synopsis), 140)
-                    : null,
                 'synopsis_word_count' => $a->synopsis_word_count,
                 'is_thin' => $a->hasThinContent(),
                 'synopsis_rewritten_at' => $a->synopsis_rewritten_at?->toIso8601String(),

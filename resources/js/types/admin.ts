@@ -52,7 +52,6 @@ export interface AdminAnimeListItem {
     season: string | null
     season_year: number | null
     cover_image_medium: string | null
-    synopsis_excerpt: string | null
     synopsis_word_count: number
     is_thin: boolean
     synopsis_rewritten_at: string | null

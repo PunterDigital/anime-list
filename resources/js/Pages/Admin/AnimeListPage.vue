@@ -153,12 +153,11 @@ function formatDate(iso: string | null): string | null {
             </label>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-gray-800">
+        <div class="overflow-x-auto rounded-xl border border-gray-800">
             <table class="w-full">
                 <thead class="border-b border-gray-800 bg-gray-900">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Anime</th>
-                        <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400 md:table-cell">Synopsis</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                             <button
                                 type="button"
@@ -191,7 +190,7 @@ function formatDate(iso: string | null): string | null {
                                     class="h-14 w-10 flex-shrink-0 rounded object-cover"
                                 />
                                 <div v-else class="h-14 w-10 flex-shrink-0 rounded bg-gray-800" />
-                                <div class="min-w-0">
+                                <div class="min-w-0 max-w-xs">
                                     <div class="truncate font-medium text-gray-200">
                                         {{ item.title }}
                                     </div>
@@ -209,10 +208,6 @@ function formatDate(iso: string | null): string | null {
                                     </span>
                                 </div>
                             </div>
-                        </td>
-                        <td class="hidden px-4 py-3 text-sm text-gray-400 md:table-cell">
-                            <span v-if="item.synopsis_excerpt">{{ item.synopsis_excerpt }}</span>
-                            <span v-else class="italic text-gray-600">No description</span>
                         </td>
                         <td class="px-4 py-3 text-xs">
                             <div class="flex flex-col items-start gap-1">
@@ -250,7 +245,7 @@ function formatDate(iso: string | null): string | null {
                         </td>
                     </tr>
                     <tr v-if="anime.data.length === 0">
-                        <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
+                        <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500">
                             {{ hiddenOnly ? 'No anime are hidden.' : thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
                         </td>
                     </tr>

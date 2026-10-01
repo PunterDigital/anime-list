@@ -216,6 +216,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/anime', [AdminAnimeController::class, 'index'])->name('anime.index');
     Route::get('/anime/{anime:id}/edit', [AdminAnimeController::class, 'edit'])->name('anime.edit');
     Route::patch('/anime/{anime:id}', [AdminAnimeController::class, 'update'])->name('anime.update');
+    Route::patch('/anime/{anime:id}/visibility', [AdminAnimeController::class, 'updateVisibility'])->name('anime.visibility');
     Route::delete('/anime/{anime:id}/rewrite', [AdminAnimeController::class, 'reset'])->name('anime.reset');
 
     Route::get('/features', [AdminFeatureFlagController::class, 'index'])->name('features');

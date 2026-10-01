@@ -95,7 +95,7 @@ class RecommendationEngine
         $poolSize = self::CANDIDATE_POOL_MULTIPLIER * 100;
 
         $candidates = Anime::query()
-            ->where('is_adult', false)
+            ->where('is_adult', false)->visible()
             ->whereNotIn('id', $profile->seenAnimeIds ?: [0])
             ->whereHas('genres', fn ($q) => $q->whereIn('name', $topGenres))
             ->with(['genres:id,name', 'studios:id,name'])
@@ -159,10 +159,10 @@ class RecommendationEngine
             $summed[$id] = ($summed[$id] ?? 0) + max(0, (int) $row->rating);
         }
 
-        // Exclude adult titles at the SQL layer.
+        // Exclude adult and hidden titles at the SQL layer.
         $adultIds = Anime::query()
             ->whereIn('id', array_keys($summed))
-            ->where('is_adult', true)
+            ->where(fn ($q) => $q->where('is_adult', true)->orWhereNotNull('hidden_at'))
             ->pluck('id')
             ->all();
 
@@ -190,7 +190,7 @@ class RecommendationEngine
     private function coldStart(TasteProfile $profile, int $limit): EloquentCollection
     {
         $query = Anime::query()
-            ->where('is_adult', false)
+            ->where('is_adult', false)->visible()
             ->whereNotNull('bayesian_score')
             ->whereIn('status', ['FINISHED', 'RELEASING']);
 

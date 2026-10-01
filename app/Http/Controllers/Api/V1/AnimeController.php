@@ -14,6 +14,10 @@ class AnimeController extends Controller
      */
     public function show(Anime $anime): JsonResponse
     {
+        if ($anime->isHidden()) {
+            return $this->unavailable();
+        }
+
         $anime->load(['genres', 'studios', 'externalIds', 'nextAiringEpisode']);
 
         return response()->json(new AnimeResource($anime));
@@ -33,6 +37,19 @@ class AnimeController extends Controller
             return response()->json(['message' => 'Anime not found.'], 404);
         }
 
+        if ($anime->isHidden()) {
+            return $this->unavailable();
+        }
+
         return response()->json(new AnimeResource($anime));
+    }
+
+    /**
+     * Response for a title page an admin has hidden (for example after a
+     * copyright takedown request).
+     */
+    private function unavailable(): JsonResponse
+    {
+        return response()->json(['message' => 'This anime is not available.'], 451);
     }
 }

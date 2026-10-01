@@ -54,6 +54,8 @@ class Anime extends Model
         'synced_at',
         'refresh_excluded_at',
         'refresh_exclusion_reason',
+        'hidden_at',
+        'hidden_reason',
     ];
 
     protected function casts(): array
@@ -69,6 +71,7 @@ class Anime extends Model
             'synopsis_word_count' => 'integer',
             'synopsis_rewritten_at' => 'datetime',
             'refresh_excluded_at' => 'datetime',
+            'hidden_at' => 'datetime',
         ];
     }
 
@@ -89,7 +92,7 @@ class Anime extends Model
      */
     public function isIndexable(): bool
     {
-        if ($this->is_adult) {
+        if ($this->is_adult || $this->isHidden()) {
             return false;
         }
 
@@ -282,6 +285,23 @@ class Anime extends Model
     }
 
     /**
+     * True when an admin has taken the title page down (for example after a
+     * copyright takedown request).
+     */
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
+    }
+
+    /**
+     * Anime whose title page is not hidden by an admin.
+     */
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->whereNull($query->qualifyColumn('hidden_at'));
+    }
+
+    /**
      * Anime whose local copy has not been refreshed from AniList recently
      * (never-synced rows included).
      */
@@ -316,6 +336,11 @@ class Anime extends Model
     }
 
     // Scout
+
+    public function shouldBeSearchable(): bool
+    {
+        return ! $this->isHidden();
+    }
 
     public function toSearchableArray(): array
     {

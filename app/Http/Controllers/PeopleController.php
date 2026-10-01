@@ -37,7 +37,7 @@ class PeopleController extends Controller
                     ->selectRaw('count(*)')
                     ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
                     ->whereColumn('character_voice_actor.person_id', 'people.id')
-                    ->where('anime.is_adult', false),
+                    ->where('anime.is_adult', false)->whereNull('anime.hidden_at'),
                 'role_count',
             )
             ->whereExists(function ($q) {
@@ -45,7 +45,7 @@ class PeopleController extends Controller
                     ->from('character_voice_actor')
                     ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
                     ->whereColumn('character_voice_actor.person_id', 'people.id')
-                    ->where('anime.is_adult', false);
+                    ->where('anime.is_adult', false)->whereNull('anime.hidden_at');
             });
 
         if ($search !== '') {
@@ -95,7 +95,7 @@ class PeopleController extends Controller
             ->select('character_voice_actor.*')
             ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
             ->where('character_voice_actor.person_id', $person->id)
-            ->where('anime.is_adult', false)
+            ->where('anime.is_adult', false)->whereNull('anime.hidden_at')
             ->with([
                 'anime:id,slug,title_romaji,title_english,cover_image_large,cover_image_medium,format,season_year,average_score',
                 'character:id,name_full,name_native,image_medium',
@@ -109,7 +109,7 @@ class PeopleController extends Controller
         $totalRoles = CharacterVoiceActor::query()
             ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
             ->where('character_voice_actor.person_id', $person->id)
-            ->where('anime.is_adult', false)
+            ->where('anime.is_adult', false)->whereNull('anime.hidden_at')
             ->count();
 
         return Inertia::render('PersonDetailPage', [

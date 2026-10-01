@@ -34,6 +34,7 @@ class AdminAnimeController extends Controller
                 'synopsis',
                 'synopsis_word_count',
                 'synopsis_rewritten_at',
+                'hidden_at',
             ]);
 
         if ($search = trim((string) $request->input('search'))) {
@@ -51,6 +52,10 @@ class AdminAnimeController extends Controller
 
         if ($request->boolean('thin_only')) {
             $query->thinContent();
+        }
+
+        if ($request->boolean('hidden_only')) {
+            $query->whereNotNull('hidden_at');
         }
 
         $sort = (string) $request->input('sort', 'popularity');
@@ -84,6 +89,7 @@ class AdminAnimeController extends Controller
                 'synopsis_word_count' => $a->synopsis_word_count,
                 'is_thin' => $a->hasThinContent(),
                 'synopsis_rewritten_at' => $a->synopsis_rewritten_at?->toIso8601String(),
+                'is_hidden' => $a->isHidden(),
             ]);
 
         return Inertia::render('Admin/AnimeListPage', [
@@ -106,6 +112,7 @@ class AdminAnimeController extends Controller
                 'search' => $search ?: null,
                 'rewritten_only' => $request->boolean('rewritten_only'),
                 'thin_only' => $request->boolean('thin_only'),
+                'hidden_only' => $request->boolean('hidden_only'),
                 'sort' => $sort,
             ],
             'thin_content' => [
@@ -133,6 +140,9 @@ class AdminAnimeController extends Controller
                 'synopsis_word_count' => $anime->synopsis_word_count,
                 'is_thin' => $anime->hasThinContent(),
                 'synopsis_rewritten_at' => $anime->synopsis_rewritten_at?->toIso8601String(),
+                'is_hidden' => $anime->isHidden(),
+                'hidden_at' => $anime->hidden_at?->toIso8601String(),
+                'hidden_reason' => $anime->hidden_reason,
             ],
             'min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,
         ]);
@@ -154,6 +164,48 @@ class AdminAnimeController extends Controller
         return redirect()
             ->route('admin.anime.edit', $anime)
             ->with('message', 'Description saved.');
+    }
+
+    /**
+     * Show or hide the public title page. Hiding needs a reason so the team
+     * can see later why the page was taken down (for example a copyright
+     * takedown request).
+     */
+    public function updateVisibility(Request $request, Anime $anime): RedirectResponse
+    {
+        $validated = $request->validate([
+            'shown' => ['required', 'boolean'],
+            'hidden_reason' => ['nullable', 'required_if:shown,false', 'string', 'max:2000'],
+        ]);
+
+        $shown = (bool) $validated['shown'];
+
+        $anime->forceFill([
+            'hidden_at' => $shown ? null : ($anime->hidden_at ?? now()),
+            'hidden_reason' => $shown ? null : trim($validated['hidden_reason']),
+        ])->save();
+
+        // Drop the page cache and the long-lived public listings that can
+        // link to it, so the change shows at once.
+        foreach ([
+            "anime:v3:{$anime->id}",
+            'sitemap:xml',
+            'top:rated:100',
+            'top:popular:100',
+            'welcome:featured_anime',
+            'welcome:total_anime',
+            'discover:trending:top10',
+        ] as $key) {
+            \Illuminate\Support\Facades\Cache::forget($key);
+        }
+
+        if ($anime->season_year && $anime->season) {
+            \Illuminate\Support\Facades\Cache::forget("anime:seasonal:{$anime->season_year}:{$anime->season}");
+        }
+
+        return redirect()
+            ->route('admin.anime.edit', $anime)
+            ->with('message', $shown ? 'Page is now shown.' : 'Page is now hidden.');
     }
 
     public function reset(Anime $anime): RedirectResponse

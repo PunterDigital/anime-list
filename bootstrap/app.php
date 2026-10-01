@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         Integration::handles($exceptions);
 
         $exceptions->respond(function (Response $response, \Throwable $exception, Request $request) {
-            if (! in_array($response->getStatusCode(), [403, 404, 419, 500, 503])) {
+            if (! in_array($response->getStatusCode(), [403, 404, 419, 451, 500, 503])) {
                 return $response;
             }
 

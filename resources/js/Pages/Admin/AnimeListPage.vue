@@ -15,6 +15,7 @@ const props = defineProps<{
         search: string | null
         rewritten_only: boolean
         thin_only: boolean
+        hidden_only: boolean
         sort: AdminAnimeSort
     }
     thin_content: AdminThinContentSummary
@@ -29,6 +30,7 @@ const SORT_OPTIONS: { value: AdminAnimeSort; label: string }[] = [
 const search = ref(props.filters.search ?? '')
 const rewrittenOnly = ref(props.filters.rewritten_only)
 const thinOnly = ref(props.filters.thin_only)
+const hiddenOnly = ref(props.filters.hidden_only)
 const sort = ref<AdminAnimeSort>(props.filters.sort)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -40,6 +42,7 @@ function pushFilters() {
             search: search.value || undefined,
             rewritten_only: rewrittenOnly.value ? 1 : undefined,
             thin_only: thinOnly.value ? 1 : undefined,
+            hidden_only: hiddenOnly.value ? 1 : undefined,
             sort: sort.value !== 'popularity' ? sort.value : undefined,
         },
         { preserveState: true, preserveScroll: true },
@@ -53,6 +56,7 @@ watch(search, () => {
 
 watch(rewrittenOnly, () => pushFilters())
 watch(thinOnly, () => pushFilters())
+watch(hiddenOnly, () => pushFilters())
 watch(sort, () => pushFilters())
 
 function toggleWordSort() {
@@ -128,6 +132,14 @@ function formatDate(iso: string | null): string | null {
                 Needs review (&lt; {{ thin_content.min_words }} words)
             </label>
             <label class="inline-flex items-center gap-2 text-sm text-gray-300">
+                <input
+                    v-model="hiddenOnly"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"
+                />
+                Hidden only
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-300">
                 <span class="sr-only">Sort by</span>
                 <select
                     v-model="sort"
@@ -189,6 +201,12 @@ function formatDate(iso: string | null): string | null {
                                     <div class="mt-0.5 text-[11px] uppercase tracking-wide text-gray-600">
                                         {{ [item.format, item.season_year].filter(Boolean).join(' · ') }}
                                     </div>
+                                    <span
+                                        v-if="item.is_hidden"
+                                        class="mt-1 inline-block rounded bg-red-600/20 px-2 py-0.5 text-[11px] font-medium text-red-300"
+                                    >
+                                        Hidden
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -233,7 +251,7 @@ function formatDate(iso: string | null): string | null {
                     </tr>
                     <tr v-if="anime.data.length === 0">
                         <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
-                            {{ thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
+                            {{ hiddenOnly ? 'No anime are hidden.' : thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
                         </td>
                     </tr>
                 </tbody>

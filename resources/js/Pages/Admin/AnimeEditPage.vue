@@ -16,6 +16,22 @@ const form = useForm({
     synopsis: props.anime.synopsis ?? '',
 })
 
+const visibilityForm = useForm({
+    shown: !props.anime.is_hidden,
+    hidden_reason: props.anime.hidden_reason ?? '',
+})
+
+const visibilityChanged = computed(() =>
+    visibilityForm.shown === props.anime.is_hidden
+    || (!visibilityForm.shown && visibilityForm.hidden_reason !== (props.anime.hidden_reason ?? '')),
+)
+
+function submitVisibility() {
+    visibilityForm.patch(route('admin.anime.visibility', { anime: props.anime.id }), {
+        preserveScroll: true,
+    })
+}
+
 const confirmingReset = ref(false)
 const page = usePage()
 const flashMessage = computed(() => (page.props.flash as { message?: string } | undefined)?.message ?? null)
@@ -148,6 +164,55 @@ const wordsNeeded = computed(() => Math.max(0, props.min_words - wordCount.value
                 </button>
             </div>
         </div>
+
+        <form
+            class="space-y-3 rounded-lg border px-4 py-3"
+            :class="anime.is_hidden ? 'border-red-700/50 bg-red-900/10' : 'border-gray-800 bg-gray-900/40'"
+            @submit.prevent="submitVisibility"
+        >
+            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-200">
+                <input
+                    v-model="visibilityForm.shown"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"
+                />
+                Shown
+            </label>
+            <p class="text-xs text-gray-500">
+                Clear this box to take the public page down, for example after a copyright takedown request.
+                A hidden page returns a "451 Unavailable" error and is removed from search, listings and the sitemap.
+            </p>
+            <p v-if="anime.is_hidden && anime.hidden_at" class="text-sm text-red-300">
+                This page has been hidden since {{ formatDateTime(anime.hidden_at) }}.
+            </p>
+
+            <div v-if="!visibilityForm.shown">
+                <label for="hidden_reason" class="mb-1 block text-sm font-medium text-gray-300">
+                    Reason not shown
+                </label>
+                <textarea
+                    id="hidden_reason"
+                    v-model="visibilityForm.hidden_reason"
+                    rows="3"
+                    class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    placeholder="For example: DMCA takedown request from ... received 1 Oct 2026, ref ..."
+                />
+                <p v-if="visibilityForm.errors.hidden_reason" class="mt-1 text-sm text-red-400">
+                    {{ visibilityForm.errors.hidden_reason }}
+                </p>
+            </div>
+
+            <div v-if="visibilityChanged" class="flex justify-end">
+                <button
+                    type="submit"
+                    :disabled="visibilityForm.processing"
+                    class="rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50"
+                    :class="visibilityForm.shown ? 'bg-primary-600 hover:bg-primary-700' : 'bg-red-600 hover:bg-red-700'"
+                >
+                    {{ visibilityForm.processing ? 'Saving…' : visibilityForm.shown ? 'Show page' : (anime.is_hidden ? 'Save reason' : 'Hide page') }}
+                </button>
+            </div>
+        </form>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div>

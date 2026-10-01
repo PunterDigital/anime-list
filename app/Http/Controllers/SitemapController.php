@@ -48,9 +48,9 @@ class SitemapController extends Controller
         // robots noindex, so they are left out of the sitemap as well.
         Anime::query()
             ->whereNotNull('slug')
-            ->where('is_adult', false)
+            ->where('is_adult', false)->visible()
             ->whereNotNull('average_score')
-            ->select(['id', 'slug', 'updated_at', 'synopsis', 'episodes', 'average_score', 'is_adult'])
+            ->select(['id', 'slug', 'updated_at', 'synopsis', 'episodes', 'average_score', 'is_adult', 'hidden_at'])
             ->withExists('episodeList')
             ->orderBy('id')
             ->chunk(1000, function ($animes) use (&$urls) {

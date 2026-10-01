@@ -63,7 +63,7 @@ class DiscoverService
         $minScore = (int) ($def['min_score'] ?? 70);
 
         $query = Anime::query()
-            ->where('is_adult', false)
+            ->where('is_adult', false)->visible()
             ->whereNotNull('average_score')
             ->where('average_score', '>=', $minScore)
             ->whereHas('genres', fn ($q) => $q->whereIn('name', $any));
@@ -96,7 +96,7 @@ class DiscoverService
     {
         return Cache::remember('discover:trending:top10', 3600, function () {
             $results = Anime::query()
-                ->where('is_adult', false)
+                ->where('is_adult', false)->visible()
                 ->whereNotNull('trending')
                 ->where('trending', '>', 0)
                 ->with(['genres', 'nextAiringEpisode'])
@@ -115,7 +115,7 @@ class DiscoverService
             // often airs at the same time, and we only want each show once.
             $schedules = AiringSchedule::query()
                 ->whereBetween('airs_at', [now()->subDays(14), now()])
-                ->whereHas('anime', fn ($q) => $q->where('is_adult', false))
+                ->whereHas('anime', fn ($q) => $q->where('is_adult', false)->visible())
                 ->with(['anime' => fn ($q) => $q->with(['genres', 'nextAiringEpisode'])])
                 ->orderByDesc('airs_at')
                 ->limit($limit * 5)
@@ -146,7 +146,7 @@ class DiscoverService
     {
         return Cache::remember("discover:hidden_gems:{$limit}", 21600, function () use ($limit) {
             $results = Anime::query()
-                ->where('is_adult', false)
+                ->where('is_adult', false)->visible()
                 ->whereNotNull('average_score')
                 ->where('average_score', '>=', 80)
                 ->where(function ($q) {
@@ -198,7 +198,7 @@ class DiscoverService
             ->get()
             ->map(fn (Recommendation $r) => $r->recommendedAnime)
             ->filter()
-            ->filter(fn (Anime $a) => ! $a->is_adult)
+            ->filter(fn (Anime $a) => ! $a->is_adult && ! $a->isHidden())
             ->values();
 
         // Fallback if no recommendations stored: use genre overlap.
@@ -267,7 +267,7 @@ class DiscoverService
             ->get()
             ->map(fn (Recommendation $r) => $r->recommendedAnime)
             ->filter()
-            ->filter(fn (Anime $a) => ! $a->is_adult)
+            ->filter(fn (Anime $a) => ! $a->is_adult && ! $a->isHidden())
             ->values();
 
         if ($similar->isEmpty()) {
@@ -285,7 +285,7 @@ class DiscoverService
         }
 
         return Anime::query()
-            ->where('is_adult', false)
+            ->where('is_adult', false)->visible()
             ->where('id', '!=', $anchor->id)
             ->whereNotIn('id', $excludeIds)
             ->whereHas('genres', fn ($q) => $q->whereIn('genres.id', $genreIds))

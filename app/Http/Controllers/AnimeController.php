@@ -95,6 +95,12 @@ class AnimeController extends Controller
 
     public function show(Request $request, Anime $anime, DiscoverService $discover): Response
     {
+        // Checked before the cache so a page hidden by an admin (for example
+        // after a copyright takedown request) goes down at once.
+        if ($anime->isHidden()) {
+            abort(451);
+        }
+
         $cacheKey = "anime:v3:{$anime->id}";
         $model = Cache::get($cacheKey);
 

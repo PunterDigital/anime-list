@@ -56,6 +56,7 @@ export interface AdminAnimeListItem {
     synopsis_word_count: number
     is_thin: boolean
     synopsis_rewritten_at: string | null
+    is_hidden: boolean
 }
 
 export type AdminAnimeSort = 'popularity' | 'words_desc' | 'words_asc'
@@ -80,4 +81,7 @@ export interface AdminAnimeEdit {
     synopsis_word_count: number
     is_thin: boolean
     synopsis_rewritten_at: string | null
+    is_hidden: boolean
+    hidden_at: string | null
+    hidden_reason: string | null
 }

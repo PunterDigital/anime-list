@@ -18,7 +18,7 @@ class AnimeQueryService
         $perPage = min(max($perPage, 1), 100);
 
         $paginator = QueryBuilder::for(
-            Anime::query()->where('is_adult', false)
+            Anime::query()->where('is_adult', false)->visible()
         )
             ->allowedFilters([
                 AllowedFilter::exact('format'),

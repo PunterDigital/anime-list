@@ -29,7 +29,7 @@ class SeasonalController extends Controller
         $groups = Cache::remember("anime:seasonal:{$year}:{$season}", $ttl, function () use ($year, $season, $seasonService) {
             $anime = Anime::query()
                 ->forSeason($year, $season)
-                ->where('is_adult', false)
+                ->where('is_adult', false)->visible()
                 ->with(['genres', 'nextAiringEpisode'])
                 ->orderByDesc('popularity')
                 ->get();

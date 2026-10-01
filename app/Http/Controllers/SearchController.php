@@ -31,7 +31,7 @@ class SearchController extends Controller
             if (! $result) {
                 // Try local Scout search first
                 $items = Anime::search($query)
-                    ->query(fn ($q) => $q->where('is_adult', false)->with('genres'))
+                    ->query(fn ($q) => $q->where('is_adult', false)->visible()->with('genres'))
                     ->take(20)
                     ->get();
 

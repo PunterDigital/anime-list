@@ -14,7 +14,7 @@ class TopAnimeController extends Controller
     {
         $anime = Cache::remember('top:rated:100', 86400, fn () => AnimeCardResource::collection(
             Anime::query()
-                ->where('is_adult', false)
+                ->where('is_adult', false)->visible()
                 ->whereNotNull('bayesian_score')
                 ->where('bayesian_score', '>', 0)
                 ->orderByDesc('bayesian_score')
@@ -33,7 +33,7 @@ class TopAnimeController extends Controller
     {
         $anime = Cache::remember('top:popular:100', 86400, fn () => AnimeCardResource::collection(
             Anime::query()
-                ->where('is_adult', false)
+                ->where('is_adult', false)->visible()
                 ->orderByDesc('popularity')
                 ->with(['genres', 'nextAiringEpisode'])
                 ->limit(100)

@@ -115,6 +115,21 @@ class AnimeDataPersistenceServiceTest extends TestCase
         $this->assertSame(3, $anime->fresh()->synopsis_word_count);
     }
 
+    public function test_persist_batch_stores_the_search_text(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $media = $this->minimalMedia(1);
+        $media['title'] = ['romaji' => 'Komi-san wa, Komyushou desu.', 'english' => "Komi Can't Communicate", 'native' => null];
+
+        app(AnimeDataPersistenceService::class)->persistBatch([$media]);
+
+        $this->assertSame(
+            'komi san wa komyushou desu | komisanwakomyushoudesu | komi cant communicate | komicantcommunicate',
+            Anime::where('anilist_id', 1)->value('search_text'),
+        );
+    }
+
     /**
      * @param  array<int, array{nodeId:int, recId:int, rating:int}>  $recommendations
      * @param  array<int, array<string, mixed>>|null  $recommendationsRaw

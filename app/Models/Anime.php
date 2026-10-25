@@ -146,6 +146,83 @@ class Anime extends Model
     }
 
     /**
+     * Fold text into the form title search compares against: lower case, no
+     * accents, apostrophes dropped ("can't" -> "cant") and every other
+     * punctuation mark turned into a space ("Re:Zero" -> "re zero").
+     */
+    public static function normalizeSearchText(?string $text): string
+    {
+        $text = (string) $text;
+
+        if (class_exists(\Normalizer::class)) {
+            // NFKD splits accents off their letters and folds full-width
+            // characters, so "Pokémon" and "Ｐｏｋｅｍｏｎ" both become "pokemon".
+            $text = \Normalizer::normalize($text, \Normalizer::FORM_KD) ?: $text;
+            $text = preg_replace('/\p{Mn}+/u', '', $text) ?? $text;
+        }
+
+        $text = mb_strtolower($text);
+        $text = preg_replace("/['‘’`´]/u", '', $text) ?? $text;
+        $text = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $text) ?? $text;
+
+        return trim($text);
+    }
+
+    /**
+     * Build the stored `search_text` value from every title of an anime.
+     * Each title is stored normalised and also with its spaces removed, so
+     * "rezero" finds "Re:Zero" and "komisan" finds "Komi-san". Shared by the
+     * model, the sync persistence layer and the backfill migration.
+     *
+     * @param  array<int, string>|string|null  $synonyms
+     */
+    public static function buildSearchText(?string $romaji, ?string $english, ?string $native, array|string|null $synonyms): string
+    {
+        if (is_string($synonyms)) {
+            $synonyms = json_decode($synonyms, true);
+        }
+
+        $titles = array_merge([$romaji, $english, $native], is_array($synonyms) ? $synonyms : []);
+
+        $parts = [];
+        foreach ($titles as $title) {
+            $normalized = static::normalizeSearchText(is_string($title) ? $title : null);
+            if ($normalized === '') {
+                continue;
+            }
+
+            $parts[] = $normalized;
+            $compact = str_replace(' ', '', $normalized);
+            if ($compact !== $normalized) {
+                $parts[] = $compact;
+            }
+        }
+
+        return implode(' | ', array_unique($parts));
+    }
+
+    /**
+     * Scope to anime whose titles contain every word of the search term,
+     * in any order, ignoring case, accents and punctuation.
+     */
+    public function scopeSearchTitle(Builder $query, string $term): Builder
+    {
+        $words = array_slice(array_unique(array_filter(explode(' ', static::normalizeSearchText($term)))), 0, 10);
+
+        if ($words === []) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Normalised words hold only letters and digits, so no LIKE
+        // wildcards need escaping.
+        foreach ($words as $word) {
+            $query->where('search_text', 'like', '%'.$word.'%');
+        }
+
+        return $query;
+    }
+
+    /**
      * True when the title has a known episode count or at least one episode row.
      */
     public function hasEpisodeData(): bool
@@ -176,6 +253,15 @@ class Anime extends Model
             // model loaded with a partial select cannot zero the stored count.
             if (! $anime->exists || $anime->isDirty('synopsis')) {
                 $anime->synopsis_word_count = static::countSynopsisWords($anime->synopsis);
+            }
+
+            if (! $anime->exists || $anime->isDirty(['title_romaji', 'title_english', 'title_native', 'title_synonyms'])) {
+                $anime->search_text = static::buildSearchText(
+                    $anime->title_romaji,
+                    $anime->title_english,
+                    $anime->title_native,
+                    $anime->title_synonyms,
+                );
             }
         });
     }

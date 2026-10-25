@@ -40,12 +40,7 @@ class AnimeQueryService
                     if ($term === '') {
                         return;
                     }
-                    $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
-                    $query->where(function ($q) use ($like) {
-                        $q->where('title_romaji', 'like', $like)
-                            ->orWhere('title_english', 'like', $like)
-                            ->orWhere('title_native', 'like', $like);
-                    });
+                    $query->searchTitle($term);
                 }),
             ])
             ->allowedSorts([

@@ -23,16 +23,20 @@ class SearchController extends Controller
             return response()->json(['data' => [], 'query' => $query, 'total' => 0]);
         }
 
-        $cacheKey = 'search:'.md5(mb_strtolower($query));
+        // Key on the normalised form so "Komi can't" and "komi cant" share a cache entry.
+        $cacheKey = 'search:'.md5(Anime::normalizeSearchText($query));
 
         try {
             $result = Cache::get($cacheKey);
 
             if (! $result) {
-                // Try local Scout search first
-                $items = Anime::search($query)
-                    ->query(fn ($q) => $q->where('is_adult', false)->visible()->with('genres'))
-                    ->take(20)
+                // Try local search first
+                $items = Anime::query()
+                    ->where('is_adult', false)->visible()
+                    ->searchTitle($query)
+                    ->orderByDesc('popularity')
+                    ->with('genres')
+                    ->limit(20)
                     ->get();
 
                 if ($items->isNotEmpty()) {

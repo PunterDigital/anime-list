@@ -834,6 +834,8 @@ class AnimeDataPersistenceService
             'title_english' => $dto->title_english,
             'title_native' => $dto->title_native,
             'title_synonyms' => json_encode($dto->title_synonyms),
+            // Upserts bypass model events, so the search text is built here too.
+            'search_text' => Anime::buildSearchText($dto->title_romaji, $dto->title_english, $dto->title_native, $dto->title_synonyms),
             'format' => $dto->format,
             'status' => $dto->status,
             'season' => $dto->season,

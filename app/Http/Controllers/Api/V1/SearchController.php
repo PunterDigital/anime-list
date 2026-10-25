@@ -31,15 +31,9 @@ class SearchController extends Controller
             ]);
         }
 
-        $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $query).'%';
-
         $results = Anime::query()
             ->where('is_adult', false)->visible()
-            ->where(function ($builder) use ($like) {
-                $builder->where('title_romaji', 'like', $like)
-                    ->orWhere('title_english', 'like', $like)
-                    ->orWhere('title_native', 'like', $like);
-            })
+            ->searchTitle($query)
             ->orderByDesc('popularity')
             ->with('genres')
             ->limit($limit)

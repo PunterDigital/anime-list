@@ -41,7 +41,10 @@ class E2ESeeder extends Seeder
                 'cover_image_large' => null,
                 'cover_image_medium' => null,
                 'banner_image' => null,
-                'synopsis' => str_repeat("A story used by the end-to-end tests ({$english}). ", 20),
+                // Formatting tags with attributes: the page must keep the tags and drop the attributes.
+                'synopsis' => '<p onclick="window.synopsisClicked = true" style="color: red">'
+                    .str_repeat("A story used by the end-to-end tests ({$english}). ", 20)
+                    ."<i class=\"seed\" title=\"x\">{$english}</i></p>",
                 'popularity' => 300_000 - $i * 1000,
                 'trending' => 900 - $i * 10,
             ]);

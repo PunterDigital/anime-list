@@ -29,6 +29,23 @@ test('browse and open an anime detail page', async ({ page }) => {
     expect(errors).toEqual([]);
 });
 
+test('the synopsis keeps its formatting tags but none of their attributes', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto('/anime');
+    await page.getByRole('link', { name: ANIME }).first().click();
+
+    const synopsis = page.locator('section', { hasText: 'Synopsis' }).locator('.prose').first();
+    await expect(synopsis.locator('i', { hasText: ANIME })).toBeVisible();
+    const attributes = await synopsis.evaluate((el) =>
+        Array.from(el.querySelectorAll('p, i')).flatMap((tag) => tag.getAttributeNames()),
+    );
+    expect(attributes).toEqual([]);
+
+    await synopsis.locator('p').first().click();
+    expect(await page.evaluate(() => (window as unknown as { synopsisClicked?: boolean }).synopsisClicked)).toBeUndefined();
+    expect(errors).toEqual([]);
+});
+
 test('search finds a title ignoring case and punctuation', async ({ page }) => {
     await page.goto('/search?q=cowboy-BEBOP');
     await expect(page).toHaveURL(/\/anime\?/);

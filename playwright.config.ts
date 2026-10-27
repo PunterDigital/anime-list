@@ -19,7 +19,9 @@ const appEnv = {
     APP_URL: baseURL,
     DB_CONNECTION: 'sqlite',
     DB_DATABASE: process.env.E2E_DB ?? join(tmpdir(), 'anitrack-e2e', 'e2e.sqlite'),
-    CACHE_STORE: 'file',
+    // The throwaway database, so a run never sees what an earlier one cached
+    // (storage/framework/cache outlives the run; the anime page caches for an hour).
+    CACHE_STORE: 'database',
     QUEUE_CONNECTION: 'sync',
     SESSION_DRIVER: 'file',
     SESSION_DOMAIN: 'null',

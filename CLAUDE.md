@@ -68,6 +68,7 @@ All new user-facing features MUST be gated behind a feature flag using Laravel P
 composer install                # on Windows add --ignore-platform-req=ext-pcntl --ignore-platform-req=ext-posix
 npm ci
 vendor/bin/pint                 # fix style; CI runs `vendor/bin/pint --test`
+npm run lint                    # ESLint (eslint.config.js); `npx eslint . --fix` fixes most of it
 npm run build                   # vue-tsc + client build + SSR build
 php artisan test                # Pest, in-memory SQLite (forced in phpunit.xml)
 npm run test:e2e                # Playwright; needs `npm run build` first

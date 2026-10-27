@@ -56,7 +56,7 @@ async function signInWithPasskey() {
     <Head title="Login" />
     <div class="max-w-md mx-auto mt-16">
         <h1 class="text-2xl font-bold mb-6">Login</h1>
-        <form @submit.prevent="submit" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="submit">
             <div>
                 <label for="email" class="block text-sm text-gray-400 mb-1">Email</label>
                 <input
@@ -97,9 +97,9 @@ async function signInWithPasskey() {
             </div>
             <button
                 type="button"
-                @click="signInWithPasskey"
                 :disabled="passkeyBusy"
                 class="w-full flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-900 text-gray-100 py-2 rounded-lg transition disabled:opacity-50"
+                @click="signInWithPasskey"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                     <path d="M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />

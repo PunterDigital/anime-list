@@ -11,7 +11,7 @@ import type { PaginatedResponse } from '@/types/api'
 
 defineOptions({ layout: AppLayout })
 
-const props = defineProps<{
+defineProps<{
     anime: PaginatedResponse<AnimeCardType>
     genres: FilterOption[]
     studios: FilterOption[]

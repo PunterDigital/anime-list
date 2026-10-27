@@ -15,7 +15,7 @@ interface RecentUser {
     created_at: string
 }
 
-const props = defineProps<{
+defineProps<{
     stats: AdminStats
     recentUsers: RecentUser[]
     syncStatuses: SyncStatuses

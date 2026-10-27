@@ -180,8 +180,8 @@ async function deletePlaylist() {
             <Button
                 :label="isNew ? 'Create Playlist' : 'Save Changes'"
                 :loading="saving"
-                @click="savePlaylist"
                 :disabled="!title.trim()"
+                @click="savePlaylist"
             />
         </div>
 
@@ -231,12 +231,16 @@ async function deletePlaylist() {
                                 class="text-gray-500 hover:text-gray-300 disabled:opacity-30 text-xs"
                                 :disabled="index === 0"
                                 @click="moveItem(index, 'up')"
-                            >&#9650;</button>
+                            >
+                                &#9650;
+                            </button>
                             <button
                                 class="text-gray-500 hover:text-gray-300 disabled:opacity-30 text-xs"
                                 :disabled="index === items.length - 1"
                                 @click="moveItem(index, 'down')"
-                            >&#9660;</button>
+                            >
+                                &#9660;
+                            </button>
                         </div>
 
                         <!-- Position -->

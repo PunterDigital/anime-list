@@ -407,15 +407,15 @@ Accept: application/json</code></pre>
             <!-- Endpoint reference -->
             <section
                 v-for="group in sections"
-                :key="group.id"
                 :id="group.id"
+                :key="group.id"
                 class="space-y-4 scroll-mt-6"
             >
                 <h2 class="text-xl font-semibold">{{ group.title }}</h2>
                 <article
                     v-for="endpoint in group.endpoints"
-                    :key="endpoint.id"
                     :id="endpoint.id"
+                    :key="endpoint.id"
                     class="space-y-3 rounded-xl border border-gray-800 bg-gray-900/40 p-5 scroll-mt-6"
                 >
                     <header class="space-y-2">

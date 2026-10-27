@@ -6,7 +6,7 @@ import type { SeasonalGroup, AnimeSeason, AdjacentSeasons } from '@/types/anime'
 
 defineOptions({ layout: AppLayout })
 
-const props = defineProps<{
+defineProps<{
     groups: SeasonalGroup[]
     year: number
     season: AnimeSeason

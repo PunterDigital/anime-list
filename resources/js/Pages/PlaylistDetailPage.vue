@@ -6,7 +6,7 @@ import Button from 'primevue/button'
 
 defineOptions({ layout: AppLayout })
 
-const props = defineProps<{
+defineProps<{
     playlist: PlaylistResource
     isOwner: boolean
 }>()

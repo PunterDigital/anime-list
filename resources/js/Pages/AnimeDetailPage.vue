@@ -435,6 +435,8 @@ function displayScore(): string {
                     <section v-if="anime.synopsis">
                         <div class="mb-3 font-mono text-[11px] uppercase tracking-[0.1em] text-gray-500">Synopsis</div>
                         <div class="prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed max-w-none text-[15px]">
+                            <!-- AnimeResource strips the synopsis down to a few formatting tags. -->
+                            <!-- eslint-disable-next-line vue/no-v-html -->
                             <div v-html="anime.synopsis" />
                         </div>
                     </section>

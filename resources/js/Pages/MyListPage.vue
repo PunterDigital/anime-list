@@ -351,12 +351,16 @@ const sortOptions = [
                     ? 'border-primary-400 bg-primary-400/10 text-primary-300'
                     : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200'"
                 @click="toggleGenre(g)"
-            >{{ g }}</button>
+            >
+                {{ g }}
+            </button>
             <button
                 v-if="selectedGenres.length"
                 class="rounded-full border border-dashed border-gray-700 px-3 py-1 text-xs text-gray-500 hover:text-gray-300"
                 @click="selectedGenres = []"
-            >Clear</button>
+            >
+                Clear
+            </button>
         </div>
 
         <!-- Main content -->

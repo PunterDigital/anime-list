@@ -69,7 +69,9 @@ function incrementProgress(entry: ListEntryResource) {
                     :disabled="!canIncrementProgress(entry)"
                     :title="canIncrementProgress(entry) ? 'Add one episode' : 'Already at total episode count'"
                     @click="incrementProgress(entry)"
-                >+</button>
+                >
+                    +
+                </button>
             </div>
             <span class="w-16 text-gray-500">
                 {{ entry.anime?.format?.replace(/_/g, ' ') ?? '-' }}

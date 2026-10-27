@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({ layout: false })
 
-const props = defineProps<{
+defineProps<{
     status: number
 }>()
 

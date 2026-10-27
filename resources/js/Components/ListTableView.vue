@@ -48,7 +48,7 @@ function incrementProgress(entry: ListEntryResource) {
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-800 text-left text-gray-400">
-                    <th class="w-12 py-3 pr-2"></th>
+                    <th class="w-12 py-3 pr-2" />
                     <th class="py-3 pr-4">Title</th>
                     <th class="w-40 py-3 pr-4">Status</th>
                     <th class="w-20 py-3 pr-4">Score</th>

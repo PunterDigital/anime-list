@@ -9,8 +9,8 @@ const props = defineProps<{
     slots: ScheduleSlot[]
 }>()
 
-const page = usePage()
-const timezone = computed(() => (page.props.auth as any)?.user?.timezone as string | undefined)
+const page = usePage<{ auth: { user: import('@/types').User | null } }>()
+const timezone = computed(() => page.props.auth?.user?.timezone)
 const { formatCountdown, formatLocalTime } = useCountdown()
 
 type ValidSlot = ScheduleSlot & { anime: ScheduleAnime }

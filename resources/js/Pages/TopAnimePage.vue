@@ -5,7 +5,7 @@ import type { AnimeCard } from '@/types/anime'
 
 defineOptions({ layout: AppLayout })
 
-const props = defineProps<{
+defineProps<{
     anime: AnimeCard[]
     metric: 'rated' | 'popular'
 }>()

@@ -106,7 +106,9 @@ function genrePair(entry: ListEntryResource): string {
                 :disabled="!canIncrement(e)"
                 title="Add one episode"
                 @click="emit('progress', e, 1)"
-            >+1</button>
+            >
+                +1
+            </button>
 
             <button class="p-1 text-gray-500 transition hover:text-gray-200" title="Edit entry" @click="emit('edit', e)">
                 <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">

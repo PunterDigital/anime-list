@@ -29,15 +29,18 @@ createServer((page) =>
 
             // Make Ziggy config available globally for SSR so route() works
             // (in the browser, @routes Blade directive sets window.Ziggy)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ;(globalThis as any).Ziggy = ziggy
 
             app.use(ZiggyVue, {
                 ...ziggy,
                 location: ziggy?.location ? new URL(ziggy.location) : undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any)
 
             // Expose route() globally for <script setup> blocks
             // (in the browser, @routes Blade directive sets window.route)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ;(globalThis as any).route = app.config.globalProperties.route
             app.use(createPinia())
             app.use(VueQueryPlugin)
@@ -52,7 +55,10 @@ createServer((page) =>
             })
             app.use(ToastService)
 
+            // Inertia's own names for these globals.
+            // eslint-disable-next-line vue/multi-word-component-names, vue/no-reserved-component-names
             app.component('Link', Link)
+            // eslint-disable-next-line vue/multi-word-component-names, vue/no-reserved-component-names
             app.component('Head', Head)
 
             return app

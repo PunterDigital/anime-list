@@ -2,7 +2,7 @@
 import type { AnimeCard } from '@/types/anime'
 import ScoreBadge from './ScoreBadge.vue'
 
-const props = defineProps<{
+defineProps<{
     anime: AnimeCard[]
     title: string
     seeAllRoute?: string

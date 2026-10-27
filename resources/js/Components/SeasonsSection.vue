@@ -56,8 +56,9 @@ function displayTitle(entry: SeasonEntry): string {
                         </span>
                     </div>
                 </div>
-                <p class="mt-1.5 line-clamp-2 text-xs font-medium transition"
-                   :class="season.is_current ? 'text-primary-400' : 'text-gray-300 group-hover:text-primary-400'"
+                <p
+                    class="mt-1.5 line-clamp-2 text-xs font-medium transition"
+                    :class="season.is_current ? 'text-primary-400' : 'text-gray-300 group-hover:text-primary-400'"
                 >
                     {{ displayTitle(season) }}
                 </p>

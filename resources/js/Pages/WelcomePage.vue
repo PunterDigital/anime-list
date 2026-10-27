@@ -99,7 +99,7 @@ const stats = computed(() => [
         <nav class="sticky top-0 z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
             <div class="container mx-auto flex h-14 items-center justify-between px-4">
                 <Link :href="route('welcome')" class="flex items-center gap-2 text-lg font-bold">
-                    <span class="inline-block h-5 w-5 rounded-md bg-gradient-to-br from-primary-400 to-primary-700"></span>
+                    <span class="inline-block h-5 w-5 rounded-md bg-gradient-to-br from-primary-400 to-primary-700" />
                     <span class="text-primary-400">AniTrack</span>
                 </Link>
                 <Link :href="route('login')" class="text-sm text-gray-400 transition hover:text-gray-100">Sign in</Link>
@@ -109,11 +109,11 @@ const stats = computed(() => [
         <main>
             <!-- Hero -->
             <section class="relative overflow-hidden">
-                <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_-10%,rgba(99,102,241,0.18),transparent_70%)]"></div>
+                <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_-10%,rgba(99,102,241,0.18),transparent_70%)]" />
                 <div class="container relative mx-auto px-4 pt-16 pb-12 sm:pt-24 sm:pb-16">
                     <div class="mx-auto max-w-3xl text-center">
                         <span class="inline-flex items-center gap-2 rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-300">
-                            <span class="h-1.5 w-1.5 rounded-full bg-primary-400"></span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-primary-400" />
                             Free anime tracker. No paywall, ever.
                         </span>
 

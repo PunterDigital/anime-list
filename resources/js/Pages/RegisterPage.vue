@@ -21,7 +21,7 @@ function submit() {
     <Head title="Create Account" />
     <div class="max-w-md mx-auto mt-16">
         <h1 class="text-2xl font-bold mb-6">Create Account</h1>
-        <form @submit.prevent="submit" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="submit">
             <div>
                 <label for="name" class="block text-sm text-gray-400 mb-1">Name</label>
                 <input

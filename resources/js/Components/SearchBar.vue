@@ -66,7 +66,7 @@ function animeUrl(anime: AnimeCard): string {
                         :alt="displayTitle(anime)"
                         class="h-12 w-8 rounded object-cover"
                     />
-                    <div class="h-12 w-8 rounded bg-gray-800" v-else />
+                    <div v-else class="h-12 w-8 rounded bg-gray-800" />
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm text-gray-200">{{ displayTitle(anime) }}</p>
                         <p class="text-xs text-gray-500">

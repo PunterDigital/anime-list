@@ -35,7 +35,10 @@ createInertiaApp({
 
         app.use(ToastService)
 
+        // Inertia's own names for these globals.
+        // eslint-disable-next-line vue/multi-word-component-names, vue/no-reserved-component-names
         app.component('Link', Link)
+        // eslint-disable-next-line vue/multi-word-component-names, vue/no-reserved-component-names
         app.component('Head', Head)
 
         app.mount(el)

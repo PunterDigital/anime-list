@@ -47,7 +47,7 @@ function formatLabel(entry: ListEntryResource): string {
             <div>Progress</div>
             <div>Type</div>
             <div>Updated</div>
-            <div></div>
+            <div />
         </div>
 
         <div

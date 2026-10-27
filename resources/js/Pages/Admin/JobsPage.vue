@@ -192,7 +192,7 @@ async function toggleFailedDetail(uuid: string) {
     try {
         const { data } = await axios.get<FailedJobDetail>(route('admin.jobs.failed.show', { uuid }))
         failedDetails.value = { ...failedDetails.value, [uuid]: data }
-    } catch (e) {
+    } catch {
         detailError.value = 'Could not load the stack trace. The failed job may have been cleared.'
     } finally {
         loadingDetailUuid.value = null
@@ -209,7 +209,7 @@ async function copyTrace(uuid: string) {
         setTimeout(() => {
             if (copiedUuid.value === uuid) copiedUuid.value = null
         }, 2000)
-    } catch (e) {
+    } catch {
         // Clipboard access can be blocked; the trace is still selectable.
     }
 }

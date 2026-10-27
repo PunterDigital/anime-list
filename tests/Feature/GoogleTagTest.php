@@ -24,6 +24,17 @@ class GoogleTagTest extends TestCase
             ->assertDontSee('gtag(', false);
     }
 
+    public function test_the_content_security_policy_lets_the_ads_tag_send_its_hits(): void
+    {
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+        preg_match('/connect-src ([^;]+);/', $csp, $connectSrc);
+
+        $this->assertNotEmpty($connectSrc);
+        $this->assertContains('https://www.google.com', explode(' ', $connectSrc[1]));
+        $this->assertContains('https://ad.doubleclick.net', explode(' ', $connectSrc[1]));
+    }
+
     public function test_the_ads_tag_alone_still_loads_the_google_tag(): void
     {
         config(['analytics.ga_id' => '']);

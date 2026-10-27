@@ -83,6 +83,10 @@ as `php <that dir>/composer/composer.phar`.
   (in the OS temp dir), runs `migrate:fresh --seeder=E2ESeeder` and `php artisan serve` on
   `127.0.0.1:8765`. Env overrides in the config beat `.env`: file cache/session, sync queue,
   collection Scout driver, no Redis, no SSR, and Sentry, AdSense and the Google tag switched off.
+- A second server on `127.0.0.1:8766` (own SQLite file) has the production Google tag IDs, for
+  `google-tag.spec.ts` only (Playwright project `google-tag`). That spec lets the tag's scripts
+  load and answers every other non-local request itself, so no hit reaches Google; it fails on
+  CSP errors from the tag's page_view hits.
 - Seed data lives in `database/seeders/E2ESeeder.php` (three anime + `e2e@example.com`).
 - Specs fail on any browser console error. The production CSP is active in E2E (`APP_ENV=e2e`),
   so a CSP violation shows up as a failure: seed images must be `null` or on an allowed host.

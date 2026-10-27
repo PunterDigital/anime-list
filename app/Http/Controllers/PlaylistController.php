@@ -43,6 +43,7 @@ class PlaylistController extends Controller
     public function create(Request $request): Response
     {
         $this->ensureFeatureEnabled($request);
+
         return Inertia::render('PlaylistEditPage', [
             'playlist' => null,
         ]);

@@ -139,6 +139,7 @@ class MalImportService
                 if ($entry['mal_id']) {
                     $notFound[] = ['mal_id' => $entry['mal_id'], 'title' => $entry['title']];
                 }
+
                 continue;
             }
 
@@ -146,6 +147,7 @@ class MalImportService
 
             if (isset($existing[$animeId]) && ! $overwrite) {
                 $skipped++;
+
                 continue;
             }
 

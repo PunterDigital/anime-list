@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Exceptions\AniListApiException;
 use App\Exceptions\AniListRateLimitException;
 use App\Exceptions\AniListServiceUnavailableException;
+use App\Http\Resources\AnimeCardResource;
 use App\Http\Resources\AnimeResource;
 use App\Http\Resources\ListEntryResource;
 use App\Jobs\ResolveAnimeRelations;
 use App\Models\Anime;
 use App\Models\AnimeRelation;
 use App\Models\UserAnimeList;
-use App\Http\Resources\AnimeCardResource;
 use App\Services\AniListClient;
 use App\Services\AniListQueryBuilder;
 use App\Services\AnimeDataPersistenceService;
@@ -118,11 +118,11 @@ class AnimeController extends Controller
                 'episodeList' => fn ($q) => $q->orderBy('number'),
                 'relations.relatedAnime.genres',
                 'characters' => fn ($q) => $q->orderByRaw(
-                    "CASE anime_character.role "
+                    'CASE anime_character.role '
                     ."WHEN 'MAIN' THEN 1 "
                     ."WHEN 'SUPPORTING' THEN 2 "
                     ."WHEN 'BACKGROUND' THEN 3 "
-                    ."ELSE 4 END"
+                    .'ELSE 4 END'
                 )->orderBy('characters.id'),
                 'characters.voiceActors' => fn ($q) => $q->wherePivot('anime_id', $anime->id),
             ]);

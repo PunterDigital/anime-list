@@ -15,7 +15,7 @@ class UserListServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new UserListService();
+        $this->service = new UserListService;
     }
 
     public function test_store_creates_an_entry_for_the_user(): void

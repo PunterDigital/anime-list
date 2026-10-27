@@ -44,7 +44,7 @@ All new user-facing features MUST be gated behind a feature flag using Laravel P
 
 ## Tech Stack
 
-- **Backend:** Laravel 12, PHP 8.2+
+- **Backend:** Laravel 12, PHP 8.4 (the lockfile needs 8.4; CI and production run 8.4)
 - **Frontend:** Vue 3 + TypeScript, Inertia.js, PrimeVue, Tailwind CSS
 - **Database:** MySQL
 - **Queue:** Redis + Laravel Horizon
@@ -61,3 +61,45 @@ All new user-facing features MUST be gated behind a feature flag using Laravel P
 - Anime uses **slug-based routing** (`getRouteKeyName()` → `'slug'`)
 - API routes use `{model:id}` binding (not slug) for mutation endpoints
 - Frontend mutations use **TanStack Vue Query** via composables
+
+## Commands
+
+```bash
+composer install                # on Windows add --ignore-platform-req=ext-pcntl --ignore-platform-req=ext-posix
+npm ci
+vendor/bin/pint                 # fix style; CI runs `vendor/bin/pint --test`
+npm run build                   # vue-tsc + client build + SSR build
+php artisan test                # Pest, in-memory SQLite (forced in phpunit.xml)
+npm run test:e2e                # Playwright; needs `npm run build` first
+```
+
+On Shay's PC the default `php` is 8.3: put 8.4 first on `PATH`
+(`export PATH="$(ls -d ~/.pvm/versions/php-8.4* | sort -V | tail -1):$PATH"`) and run Composer
+as `php <that dir>/composer/composer.phar`.
+
+## E2E
+
+- `playwright.config.ts` starts `tests/e2e/serve.mjs`: it recreates a throwaway SQLite file
+  (in the OS temp dir), runs `migrate:fresh --seeder=E2ESeeder` and `php artisan serve` on
+  `127.0.0.1:8765`. Env overrides in the config beat `.env`: file cache/session, sync queue,
+  collection Scout driver, no Redis, no SSR, and Sentry, AdSense and the Google tag switched off.
+- Seed data lives in `database/seeders/E2ESeeder.php` (three anime + `e2e@example.com`).
+- Specs fail on any browser console error. The production CSP is active in E2E (`APP_ENV=e2e`),
+  so a CSP violation shows up as a failure: seed images must be `null` or on an allowed host.
+- `throttle:auth` allows 5 auth requests a minute: keep registrations/logins per run low.
+
+## Deploy and release
+
+- Laravel Forge deploys `main` on every push (GitHub webhook). Each merge is a production deploy:
+  check https://anitrack.app afterwards (the `build/assets/app-*.js` hash changes).
+- Releases are `vX.Y.Z` tags: `.github/workflows/release.yml` creates the GitHub Release with
+  generated notes. The Chrome extension has its own `extension-v*` tags and an
+  `extension-dev-latest` prerelease.
+- `bootstrap/ssr/ssr.js` is committed and `npm run build` rewrites it: don't commit a rebuilt
+  copy by accident.
+
+## Quirks
+
+- Google tag IDs live in `config/analytics.php` (`GOOGLE_ANALYTICS_ID`, `GOOGLE_ADS_ID`); empty
+  values leave the tag out. AdSense is `config/adsense.php`.
+- `env('X', fallback)` returns `''` for an empty `X=` line, so the fallback never applies.

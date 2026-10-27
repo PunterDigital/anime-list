@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Anime;
 use App\Models\Playlist;
 use App\Models\User;
 use App\Models\UserAnimeList;

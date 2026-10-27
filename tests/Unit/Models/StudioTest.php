@@ -10,7 +10,7 @@ class StudioTest extends TestCase
 {
     public function test_it_uses_slug_as_route_key_name(): void
     {
-        $this->assertSame('slug', (new Studio())->getRouteKeyName());
+        $this->assertSame('slug', (new Studio)->getRouteKeyName());
     }
 
     public function test_it_generates_slug_from_name_on_create(): void

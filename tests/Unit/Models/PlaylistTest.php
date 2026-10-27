@@ -12,7 +12,7 @@ class PlaylistTest extends TestCase
 {
     public function test_it_uses_slug_as_route_key_name(): void
     {
-        $this->assertSame('slug', (new Playlist())->getRouteKeyName());
+        $this->assertSame('slug', (new Playlist)->getRouteKeyName());
     }
 
     public function test_it_generates_slug_from_title_on_create(): void

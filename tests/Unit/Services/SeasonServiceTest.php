@@ -13,7 +13,7 @@ class SeasonServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SeasonService();
+        $this->service = new SeasonService;
     }
 
     protected function tearDown(): void

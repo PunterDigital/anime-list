@@ -5,9 +5,11 @@
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc --noEmit && vite build && vite build --ssr",
-        "type-check": "vue-tsc --noEmit"
+        "type-check": "vue-tsc --noEmit",
+        "test:e2e": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.64.1",
         "@types/node": "^22.0.0",
         "@vitejs/plugin-vue": "^6.0.4",
         "@vue/test-utils": "^2.4.6",

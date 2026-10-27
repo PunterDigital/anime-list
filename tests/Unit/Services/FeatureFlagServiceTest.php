@@ -13,7 +13,7 @@ class FeatureFlagServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new FeatureFlagService();
+        $this->service = new FeatureFlagService;
     }
 
     public function test_it_returns_false_by_default_when_no_overrides_exist(): void

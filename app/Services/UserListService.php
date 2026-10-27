@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Http\Resources\AnimeCardResource;
 use App\Http\Resources\ListEntryResource;
 use App\Models\Anime;
 use App\Models\User;

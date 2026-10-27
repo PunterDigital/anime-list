@@ -4,7 +4,6 @@ namespace Tests\Unit\Models;
 
 use App\Models\AiringSchedule;
 use App\Models\Anime;
-use App\Models\AnimeRelation;
 use App\Models\Character;
 use App\Models\Genre;
 use App\Models\Studio;
@@ -14,7 +13,7 @@ class AnimeTest extends TestCase
 {
     public function test_it_uses_slug_as_route_key_name(): void
     {
-        $anime = new Anime();
+        $anime = new Anime;
         $this->assertSame('slug', $anime->getRouteKeyName());
     }
 

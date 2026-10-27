@@ -21,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -140,7 +141,7 @@ class AnimeController extends Controller
 
         $title = $model->title_english ?: $model->title_romaji;
         $description = $model->synopsis
-            ? \Illuminate\Support\Str::limit(strip_tags($model->synopsis), 200)
+            ? Str::limit(strip_tags($model->synopsis), 200)
             : "View {$title} on AniTrack";
         $image = $model->cover_image_large ?: $model->cover_image_medium;
 

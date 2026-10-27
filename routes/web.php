@@ -33,6 +33,8 @@ use App\Http\Controllers\StudioController;
 use App\Http\Controllers\TopAnimeController;
 use App\Http\Controllers\UserListController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\Anime;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -44,7 +46,7 @@ Route::get('/', [DiscoverController::class, 'index'])->name('home');
 Route::get('/welcome', WelcomeController::class)->name('welcome');
 Route::get('/anime', [AnimeController::class, 'index'])->name('anime.index');
 Route::get('/anime/{id}', function (int $id) {
-    $anime = \App\Models\Anime::find($id);
+    $anime = Anime::find($id);
     if (! $anime) {
         abort(404);
     }
@@ -55,7 +57,7 @@ Route::get('/anime/al/{anilistId}', [AnimeController::class, 'showByAnilistId'])
 Route::get('/anime/{anime:slug}', [AnimeController::class, 'show'])->name('anime.show');
 Route::get('/seasonal', [SeasonalController::class, 'index'])->name('seasonal');
 Route::get('/schedule', ScheduleController::class)->name('schedule');
-Route::get('/search', function (\Illuminate\Http\Request $request) {
+Route::get('/search', function (Request $request) {
     $params = [];
     $q = trim((string) $request->query('q', ''));
     if ($q !== '') {

@@ -5,11 +5,12 @@ namespace App\Services;
 use App\Models\Playlist;
 use App\Models\PlaylistItem;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PlaylistService
 {
-    public function getUserPlaylists(User $user): \Illuminate\Database\Eloquent\Collection
+    public function getUserPlaylists(User $user): Collection
     {
         return $user->playlists()
             ->with(['items.anime:id,slug,title_romaji,title_english,cover_image_medium'])

@@ -4,6 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Models\SyncRun;
 use App\Services\SyncRunTracker;
+use Illuminate\Queue\MaxAttemptsExceededException;
 use Tests\TestCase;
 
 class SyncRunTrackerTest extends TestCase
@@ -116,7 +117,7 @@ class SyncRunTrackerTest extends TestCase
 
         // What the queue reports once retryUntil lapses. On its own it reads
         // like the attempt-exhaustion bug rather than the outage behind it.
-        $this->tracker->fail($run, new \Illuminate\Queue\MaxAttemptsExceededException(
+        $this->tracker->fail($run, new MaxAttemptsExceededException(
             'App\Jobs\RefreshStaleAnimeBatch has been attempted too many times.'
         ));
 

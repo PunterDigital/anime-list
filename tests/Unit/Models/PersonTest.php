@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Person;
+use Carbon\CarbonInterface;
 use Tests\TestCase;
 
 class PersonTest extends TestCase
@@ -31,7 +32,7 @@ class PersonTest extends TestCase
     {
         $person = Person::factory()->create(['birthdate' => '1990-01-15']);
 
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $person->birthdate);
+        $this->assertInstanceOf(CarbonInterface::class, $person->birthdate);
         $this->assertSame('1990-01-15', $person->birthdate->toDateString());
     }
 }

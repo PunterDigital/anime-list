@@ -12,7 +12,7 @@ class UpdateListEntryRequest extends FormRequest
     {
         $entry = $this->route('entry');
 
-        return $entry instanceof \App\Models\UserAnimeList
+        return $entry instanceof UserAnimeList
             && $this->user()?->id === $entry->user_id;
     }
 

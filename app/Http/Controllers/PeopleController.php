@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anime;
 use App\Models\CharacterVoiceActor;
 use App\Models\Person;
 use App\Services\FeatureFlagService;
@@ -136,7 +137,7 @@ class PeopleController extends Controller
                         'cover_image_medium' => $row->anime->cover_image_medium,
                         'format' => $row->anime->format,
                         'season_year' => $row->anime->season_year,
-                        'average_score' => \App\Models\Anime::normalizeScore($row->anime->average_score),
+                        'average_score' => Anime::normalizeScore($row->anime->average_score),
                     ] : null,
                     'character' => $row->character ? [
                         'id' => $row->character->id,

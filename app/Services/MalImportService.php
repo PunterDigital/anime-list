@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Anime;
 use App\Models\User;
 use App\Models\UserAnimeList;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -173,7 +175,7 @@ class MalImportService
                 }
 
                 $imported++;
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 Log::warning('MAL import: DB error for entry', [
                     'mal_id' => $entry['mal_id'],
                     'title' => $entry['title'],
@@ -205,9 +207,9 @@ class MalImportService
     /**
      * Fetch missing anime from AniList by MAL IDs and persist them.
      *
-     * @return \Illuminate\Support\Collection<int, int> Updated mal_id => anime.id map
+     * @return Collection<int, int> Updated mal_id => anime.id map
      */
-    public function fetchAndPersistMissing(array $missingMalIds, \Illuminate\Support\Collection $animeMap): \Illuminate\Support\Collection
+    public function fetchAndPersistMissing(array $missingMalIds, Collection $animeMap): Collection
     {
         $client = app(AniListClient::class);
         $persistence = app(AnimeDataPersistenceService::class);

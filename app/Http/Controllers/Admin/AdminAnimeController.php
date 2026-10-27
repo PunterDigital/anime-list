@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Anime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -156,7 +157,7 @@ class AdminAnimeController extends Controller
             'synopsis_rewritten_at' => now(),
         ])->save();
 
-        \Illuminate\Support\Facades\Cache::forget("anime:v3:{$anime->id}");
+        Cache::forget("anime:v3:{$anime->id}");
 
         return redirect()
             ->route('admin.anime.edit', $anime)
@@ -193,11 +194,11 @@ class AdminAnimeController extends Controller
             'welcome:total_anime',
             'discover:trending:top10',
         ] as $key) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
         }
 
         if ($anime->season_year && $anime->season) {
-            \Illuminate\Support\Facades\Cache::forget("anime:seasonal:{$anime->season_year}:{$anime->season}");
+            Cache::forget("anime:seasonal:{$anime->season_year}:{$anime->season}");
         }
 
         return redirect()
@@ -211,7 +212,7 @@ class AdminAnimeController extends Controller
             'synopsis_rewritten_at' => null,
         ])->save();
 
-        \Illuminate\Support\Facades\Cache::forget("anime:v3:{$anime->id}");
+        Cache::forget("anime:v3:{$anime->id}");
 
         return back()->with('message', 'Reverted to auto-synced description. The next sync will overwrite it.');
     }

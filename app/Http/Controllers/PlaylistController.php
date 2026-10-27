@@ -9,6 +9,7 @@ use App\Http\Resources\PlaylistItemResource;
 use App\Http\Resources\PlaylistResource;
 use App\Models\Playlist;
 use App\Models\PlaylistItem;
+use App\Services\FeatureFlagService;
 use App\Services\PlaylistService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class PlaylistController extends Controller
 {
     public function __construct(
         private readonly PlaylistService $playlistService,
-        private readonly \App\Services\FeatureFlagService $featureFlags,
+        private readonly FeatureFlagService $featureFlags,
     ) {}
 
     private function ensureFeatureEnabled(?Request $request = null): void

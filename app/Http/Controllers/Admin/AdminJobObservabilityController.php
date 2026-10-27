@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Horizon\WaitTimeCalculator;
 
 class AdminJobObservabilityController extends Controller
 {
@@ -362,12 +363,12 @@ class AdminJobObservabilityController extends Controller
      */
     private function longestQueueWait(): ?int
     {
-        if (! class_exists(\Laravel\Horizon\WaitTimeCalculator::class)) {
+        if (! class_exists(WaitTimeCalculator::class)) {
             return null;
         }
 
         try {
-            $waits = app(\Laravel\Horizon\WaitTimeCalculator::class)->calculate();
+            $waits = app(WaitTimeCalculator::class)->calculate();
         } catch (\Throwable $e) {
             return null;
         }

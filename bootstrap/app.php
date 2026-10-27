@@ -1,9 +1,18 @@
 <?php
 
+use App\Http\Middleware\EnsureEmailIsVerified;
+use App\Http\Middleware\EnsureFeatureActive;
+use App\Http\Middleware\EnsureIsAdmin;
+use App\Http\Middleware\EnsurePublicApiEnabled;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrackSanctumTokenUsage;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
 use Inertia\Inertia;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,8 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \App\Http\Middleware\SecurityHeaders::class,
+            HandleInertiaRequests::class,
+            SecurityHeaders::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
@@ -26,18 +35,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
-            'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
-            'public-api' => \App\Http\Middleware\EnsurePublicApiEnabled::class,
-            'feature' => \App\Http\Middleware\EnsureFeatureActive::class,
-            'track-token-usage' => \App\Http\Middleware\TrackSanctumTokenUsage::class,
+            'verified' => EnsureEmailIsVerified::class,
+            'admin' => EnsureIsAdmin::class,
+            'role' => EnsureUserHasRole::class,
+            'public-api' => EnsurePublicApiEnabled::class,
+            'feature' => EnsureFeatureActive::class,
+            'track-token-usage' => TrackSanctumTokenUsage::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
 
-        $exceptions->respond(function (Response $response, \Throwable $exception, Request $request) {
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
             if (! in_array($response->getStatusCode(), [403, 404, 419, 451, 500, 503])) {
                 return $response;
             }
@@ -51,7 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if (! app()->bound('csp-nonce')) {
                 $nonce = base64_encode(random_bytes(16));
                 app()->instance('csp-nonce', $nonce);
-                \Illuminate\Support\Facades\Vite::useCspNonce($nonce);
+                Vite::useCspNonce($nonce);
             }
 
             return Inertia::render('ErrorPage', [

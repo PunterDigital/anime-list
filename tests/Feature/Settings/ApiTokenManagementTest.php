@@ -3,6 +3,7 @@
 namespace Tests\Feature\Settings;
 
 use App\Models\User;
+use App\Services\FeatureFlagService;
 use Laravel\Pennant\Feature;
 use Tests\TestCase;
 
@@ -42,7 +43,7 @@ class ApiTokenManagementTest extends TestCase
     {
         $user = User::factory()->create();
         // Simulate an admin flipping "public-api" to Everyone in /admin/features.
-        app(\App\Services\FeatureFlagService::class)->setGlobalStatus('public-api', 'everyone');
+        app(FeatureFlagService::class)->setGlobalStatus('public-api', 'everyone');
 
         $this->actingAs($user)
             ->get('/settings')

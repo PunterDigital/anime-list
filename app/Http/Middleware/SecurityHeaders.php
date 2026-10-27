@@ -45,9 +45,13 @@ class SecurityHeaders
             ? "script-src 'self' http://localhost:5173 'unsafe-inline' 'nonce-{$nonce}' {$adsense} {$turnstile}; "
             : "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com {$adsense} {$turnstile}; ";
 
+        // The Google Ads tag sends its page_view hits with fetch() to these two
+        // hosts (/ccm/collect and /ccm/s/collect).
+        $googleAds = 'https://www.google.com https://ad.doubleclick.net';
+
         $connectSrc = $isLocal
             ? "connect-src 'self' ws://localhost:5173 {$adsense}; "
-            : "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com {$adsense}; ";
+            : "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com {$googleAds} {$adsense}; ";
 
         $response->headers->set(
             'Content-Security-Policy',

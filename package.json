@@ -12,7 +12,7 @@
     "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@playwright/test": "^1.64.1",
-        "@types/node": "^22.0.0",
+        "@types/node": "^26.6.5",
         "@vitejs/plugin-vue": "^6.0.4",
         "@vue/test-utils": "^2.4.6",
         "eslint": "^10.0.2",

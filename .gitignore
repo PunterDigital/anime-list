@@ -23,6 +23,11 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
+/.pnpm-store
+/test-results
+/playwright-report
+/blob-report
+
 # Docker volumes
 /docker/volumes
 

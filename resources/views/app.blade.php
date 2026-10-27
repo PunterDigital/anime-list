@@ -13,8 +13,11 @@
             <meta name="google-adsense-account" content="{{ config('adsense.client') }}">
             <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ config('adsense.client') }}" crossorigin="anonymous" nonce="{{ app('csp-nonce') }}"></script>
         @endif
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-4K6RNYTM27" nonce="{{ app('csp-nonce') }}"></script>
-        <script nonce="{{ app('csp-nonce') }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-4K6RNYTM27');gtag('config','AW-18128258525');</script>
+        @php($gtagIds = array_values(array_filter([config('analytics.ga_id'), config('analytics.ads_id')])))
+        @if ($gtagIds)
+            <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gtagIds[0] }}" nonce="{{ app('csp-nonce') }}"></script>
+            <script nonce="{{ app('csp-nonce') }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());@foreach ($gtagIds as $gtagId)gtag('config',@js($gtagId));@endforeach</script>
+        @endif
         <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode(['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'AniTrack', 'url' => config('app.url')], JSON_UNESCAPED_SLASHES) !!}</script>
         @routes(nonce: app('csp-nonce'))
         @vite(['resources/js/app.ts'])

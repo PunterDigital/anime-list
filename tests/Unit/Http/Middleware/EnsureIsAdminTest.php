@@ -16,7 +16,7 @@ class EnsureIsAdminTest extends TestCase
         $request = Request::create('/admin');
 
         try {
-            (new EnsureIsAdmin())->handle($request, fn () => new Response('ok'));
+            (new EnsureIsAdmin)->handle($request, fn () => new Response('ok'));
             $this->fail('Expected HttpException to be thrown.');
         } catch (HttpException $e) {
             $this->assertSame(403, $e->getStatusCode());
@@ -29,7 +29,7 @@ class EnsureIsAdminTest extends TestCase
         $request->setUserResolver(fn () => User::factory()->create(['is_admin' => false]));
 
         try {
-            (new EnsureIsAdmin())->handle($request, fn () => new Response('ok'));
+            (new EnsureIsAdmin)->handle($request, fn () => new Response('ok'));
             $this->fail('Expected HttpException to be thrown.');
         } catch (HttpException $e) {
             $this->assertSame(403, $e->getStatusCode());
@@ -41,7 +41,7 @@ class EnsureIsAdminTest extends TestCase
         $request = Request::create('/admin');
         $request->setUserResolver(fn () => User::factory()->admin()->create());
 
-        $response = (new EnsureIsAdmin())->handle($request, fn () => new Response('ok'));
+        $response = (new EnsureIsAdmin)->handle($request, fn () => new Response('ok'));
 
         $this->assertSame('ok', $response->getContent());
     }

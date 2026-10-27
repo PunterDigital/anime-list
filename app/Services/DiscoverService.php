@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Http\Resources\AnimeCardResource;
-use App\Models\Anime;
 use App\Models\AiringSchedule;
+use App\Models\Anime;
 use App\Models\Genre;
 use App\Models\Recommendation;
 use App\Models\User;

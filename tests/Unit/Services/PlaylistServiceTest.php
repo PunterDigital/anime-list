@@ -17,7 +17,7 @@ class PlaylistServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PlaylistService();
+        $this->service = new PlaylistService;
     }
 
     public function test_store_creates_a_playlist_for_the_user(): void

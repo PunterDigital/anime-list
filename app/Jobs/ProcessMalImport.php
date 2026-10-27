@@ -88,6 +88,7 @@ class ProcessMalImport implements ShouldQueue
                     if ($entry['mal_id']) {
                         $notFound[] = ['mal_id' => $entry['mal_id'], 'title' => $entry['title']];
                     }
+
                     continue;
                 }
 
@@ -95,6 +96,7 @@ class ProcessMalImport implements ShouldQueue
 
                 if (isset($existing[$animeId]) && ! $this->overwrite) {
                     $skipped++;
+
                     continue;
                 }
 

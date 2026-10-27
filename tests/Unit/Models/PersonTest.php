@@ -9,7 +9,7 @@ class PersonTest extends TestCase
 {
     public function test_it_uses_slug_as_route_key_name(): void
     {
-        $this->assertSame('slug', (new Person())->getRouteKeyName());
+        $this->assertSame('slug', (new Person)->getRouteKeyName());
     }
 
     public function test_it_generates_slug_from_name_full_on_create(): void

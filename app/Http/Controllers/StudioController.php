@@ -145,7 +145,7 @@ class StudioController extends Controller
             'anime' => AnimeCardResource::collection($paginator),
             'og' => [
                 'title' => "{$studio->name} — {$label}",
-                'description' => "Browse all anime "
+                'description' => 'Browse all anime '
                     .($kind === 'studio' ? 'animated by' : 'produced by')
                     ." {$studio->name} on AniTrack.",
                 'url' => route($routeName, $studio),

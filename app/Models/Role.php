@@ -11,6 +11,7 @@ class Role extends Model
     use HasFactory;
 
     public const OWNER = 'owner';
+
     public const CONTENT_MANAGER = 'content-manager';
 
     protected $fillable = [

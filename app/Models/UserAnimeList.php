@@ -12,9 +12,13 @@ class UserAnimeList extends Model
     use HasFactory, SoftDeletes;
 
     public const STATUS_WATCHING = 'watching';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_ON_HOLD = 'on_hold';
+
     public const STATUS_DROPPED = 'dropped';
+
     public const STATUS_PLAN_TO_WATCH = 'plan_to_watch';
 
     public const STATUSES = [

@@ -15,7 +15,7 @@ class MalExportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new MalExportService();
+        $this->service = new MalExportService;
     }
 
     public function test_generate_produces_valid_myanimelist_xml(): void

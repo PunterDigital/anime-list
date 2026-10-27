@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SyncRun;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -178,9 +179,9 @@ class SyncRunTracker
      * Latest run per mode, plus every distinct label for multi-label modes
      * such as targeted syncs.
      *
-     * @return \Illuminate\Support\Collection<int, SyncRun>
+     * @return Collection<int, SyncRun>
      */
-    public function latestRuns(): \Illuminate\Support\Collection
+    public function latestRuns(): Collection
     {
         return SyncRun::query()
             ->whereIn('id', function ($query) {

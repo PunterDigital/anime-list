@@ -8,6 +8,7 @@ use App\Models\UserAnimeList;
 use App\Services\MalImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -118,7 +119,7 @@ class ProcessMalImport implements ShouldQueue
                     }
 
                     $imported++;
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     Log::warning('MAL import: DB error for entry', [
                         'mal_id' => $entry['mal_id'],
                         'title' => $entry['title'],

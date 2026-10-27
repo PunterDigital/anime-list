@@ -7,6 +7,7 @@ use App\Jobs\RefreshStaleAnimeBatch;
 use App\Jobs\SyncAnimePage;
 use App\Models\Anime;
 use App\Models\SyncRun;
+use App\Models\User;
 use App\Services\AnimeRefreshPolicy;
 use App\Services\SyncRunTracker;
 use Illuminate\Support\Facades\DB;
@@ -370,7 +371,7 @@ class AdminJobObservabilityTest extends TestCase
 
     public function test_non_admin_cannot_access_jobs_routes(): void
     {
-        $user = \App\Models\User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create(['is_admin' => false]);
 
         $this->actingAs($user)->get('/admin/jobs')->assertForbidden();
         $this->actingAs($user)->post('/admin/jobs/anime', ['anilist_id' => 1])->assertForbidden();

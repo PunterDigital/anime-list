@@ -12,10 +12,12 @@ use App\Models\SyncRun;
 use App\Services\AniListClient;
 use App\Services\SyncRunTracker;
 use Illuminate\Contracts\Queue\Job as QueueJobContract;
+use Illuminate\Queue\MaxAttemptsExceededException;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SyncRunTrackingTest extends TestCase
@@ -48,7 +50,7 @@ class SyncRunTrackingTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('anilistJobProvider')]
+    #[DataProvider('anilistJobProvider')]
     public function test_anilist_jobs_bound_attempts_by_deadline_not_by_release_count(object $job): void
     {
         $this->assertSame(0, $job->tries, 'A fixed try count is spent by outage releases.');
@@ -174,7 +176,7 @@ class SyncRunTrackingTest extends TestCase
     /**
      * @param  array<string, mixed>  $legacyProperties
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('legacyPayloadProvider')]
+    #[DataProvider('legacyPayloadProvider')]
     public function test_a_payload_queued_before_run_tracking_still_fails_cleanly(
         object $prototype,
         array $legacyProperties,
@@ -217,7 +219,7 @@ class SyncRunTrackingTest extends TestCase
             airingAtGreater: 0,
             airingAtLesser: 1,
             syncRunId: $run->id,
-        ))->failed(new \Illuminate\Queue\MaxAttemptsExceededException(
+        ))->failed(new MaxAttemptsExceededException(
             'App\Jobs\SyncAiringSchedulePage has been attempted too many times.'
         ));
 

@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AdminRoleManagementTest extends TestCase
@@ -84,7 +85,7 @@ class AdminRoleManagementTest extends TestCase
 
     public function test_role_middleware_allows_users_with_matching_role(): void
     {
-        \Illuminate\Support\Facades\Route::middleware(['web', 'auth', 'role:content-manager'])
+        Route::middleware(['web', 'auth', 'role:content-manager'])
             ->get('/_test/roles-gate', fn () => response('ok'));
 
         $user = User::factory()->create();
@@ -96,7 +97,7 @@ class AdminRoleManagementTest extends TestCase
 
     public function test_role_middleware_blocks_users_without_matching_role(): void
     {
-        \Illuminate\Support\Facades\Route::middleware(['web', 'auth', 'role:owner'])
+        Route::middleware(['web', 'auth', 'role:owner'])
             ->get('/_test/roles-owner-gate', fn () => response('ok'));
 
         $user = User::factory()->create();

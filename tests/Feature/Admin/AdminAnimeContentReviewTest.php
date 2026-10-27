@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Anime;
+use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -249,7 +250,7 @@ class AdminAnimeContentReviewTest extends TestCase
 
     public function test_non_admins_cannot_view_the_anime_content_list(): void
     {
-        $user = \App\Models\User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create(['is_admin' => false]);
 
         $this->actingAs($user)->get('/admin/anime?thin_only=1')->assertForbidden();
     }

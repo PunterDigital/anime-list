@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Models\Anime;
 use App\Models\User;
 use App\Models\UserAnimeList;
+use Carbon\CarbonInterface;
 use Tests\TestCase;
 
 class UserAnimeListTest extends TestCase
@@ -66,7 +67,7 @@ class UserAnimeListTest extends TestCase
             'tags' => ['fantasy', 'shounen'],
         ]);
 
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $entry->started_at);
+        $this->assertInstanceOf(CarbonInterface::class, $entry->started_at);
         $this->assertIsBool($entry->is_private);
         $this->assertTrue($entry->is_private);
         $this->assertFalse($entry->is_rewatching);

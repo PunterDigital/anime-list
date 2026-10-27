@@ -29,9 +29,7 @@ class AnimeResource extends JsonResource
             'episode_count_unknown' => $this->episode_count_unknown,
             'aired_from' => $this->aired_from?->toDateString(),
             'aired_to' => $this->aired_to?->toDateString(),
-            'synopsis' => $this->synopsis !== null
-                ? strip_tags($this->synopsis, '<br><i><b><em><strong><p>')
-                : null,
+            'synopsis' => self::synopsisHtml($this->synopsis),
             'cover_image_large' => $this->cover_image_large,
             'cover_image_medium' => $this->cover_image_medium,
             'cover_image_color' => $this->cover_image_color,
@@ -57,5 +55,24 @@ class AnimeResource extends JsonResource
             }),
             'relations' => AnimeRelationResource::collection($this->whenLoaded('relations')),
         ];
+    }
+
+    /**
+     * The synopsis is rendered with v-html, so keep only a few formatting tags,
+     * and none of their attributes: strip_tags() leaves `<p onclick="...">` alone.
+     */
+    public static function synopsisHtml(?string $synopsis): ?string
+    {
+        if ($synopsis === null) {
+            return null;
+        }
+
+        $html = strip_tags($synopsis, '<br><i><b><em><strong><p>');
+
+        return preg_replace(
+            '/<(\/?)(br|i|b|em|strong|p)\b(?:[^>"\']|"[^"]*"|\'[^\']*\')*>/i',
+            '<$1$2>',
+            $html,
+        );
     }
 }

@@ -10,6 +10,12 @@ const baseURL = `http://127.0.0.1:${port}`;
 const gtagPort = port + 1;
 const gtagURL = `http://127.0.0.1:${gtagPort}`;
 
+// A third server with Inertia SSR on, talking to the built bootstrap/ssr/ssr.js on
+// its own port, for ssr.spec.ts only. Needs `npm run build` first, like every spec.
+const ssrPort = port + 2;
+const ssrURL = `http://127.0.0.1:${ssrPort}`;
+const ssrNodePort = Number(process.env.E2E_SSR_NODE_PORT ?? 13716);
+
 // Env beats `.env` in Laravel: point the app at a throwaway SQLite file and
 // switch off everything that would reach a real service (Redis, Sentry, AdSense).
 const appEnv = {
@@ -46,6 +52,15 @@ const gtagEnv = {
     GOOGLE_ADS_ID: 'AW-18128258525',
 };
 
+const ssrEnv = {
+    ...appEnv,
+    E2E_PORT: String(ssrPort),
+    APP_URL: ssrURL,
+    DB_DATABASE: join(tmpdir(), 'anitrack-e2e', 'e2e-ssr.sqlite'),
+    INERTIA_SSR_ENABLED: 'true',
+    INERTIA_SSR_URL: `http://127.0.0.1:${ssrNodePort}`,
+};
+
 export default defineConfig({
     testDir: 'tests/e2e',
     fullyParallel: false,
@@ -58,11 +73,16 @@ export default defineConfig({
         screenshot: 'only-on-failure',
     },
     projects: [
-        { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /google-tag\.spec\.ts/ },
+        { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(google-tag|ssr)\.spec\.ts/ },
         {
             name: 'google-tag',
             use: { ...devices['Desktop Chrome'], baseURL: gtagURL },
             testMatch: /google-tag\.spec\.ts/,
+        },
+        {
+            name: 'ssr',
+            use: { ...devices['Desktop Chrome'], baseURL: ssrURL },
+            testMatch: /ssr\.spec\.ts/,
         },
     ],
     webServer: [
@@ -79,6 +99,20 @@ export default defineConfig({
             timeout: 120_000,
             reuseExistingServer: false,
             env: gtagEnv,
+        },
+        {
+            command: 'node bootstrap/ssr/ssr.js',
+            url: `http://127.0.0.1:${ssrNodePort}/health`,
+            timeout: 30_000,
+            reuseExistingServer: false,
+            env: { INERTIA_SSR_PORT: String(ssrNodePort) },
+        },
+        {
+            command: 'node tests/e2e/serve.mjs',
+            url: `${ssrURL}/up`,
+            timeout: 120_000,
+            reuseExistingServer: false,
+            env: ssrEnv,
         },
     ],
 });

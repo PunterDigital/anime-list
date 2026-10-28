@@ -54,10 +54,12 @@ class AdminUserManagementTest extends TestCase
 
     public function test_admin_user_search_returns_matching_users(): void
     {
-        $this->actingAsAdmin();
+        // The search also matches email, and factory names/emails are random
+        // ("Natalia", "kalista@..."), so every user that must not match gets fixed values.
+        $this->actingAsAdmin(['username' => 'staff_admin', 'name' => 'Staff Admin', 'email' => 'staff@example.com']);
         User::factory()->create(['username' => 'alice_alpha', 'name' => 'Alice Alpha']);
         User::factory()->create(['username' => 'alicia_beta', 'name' => 'Alicia Beta']);
-        User::factory()->create(['username' => 'bob_other', 'name' => 'Bob Other']);
+        User::factory()->create(['username' => 'bob_other', 'name' => 'Bob Other', 'email' => 'bob@example.com']);
 
         $response = $this->getJson('/admin/users/search?q=ali');
 

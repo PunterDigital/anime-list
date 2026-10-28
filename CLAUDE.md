@@ -89,6 +89,10 @@ as `php <that dir>/composer/composer.phar`.
   `google-tag.spec.ts` only (Playwright project `google-tag`). That spec lets the tag's scripts
   load and answers every other non-local request itself, so no hit reaches Google; it fails on
   CSP errors from the tag's page_view hits.
+- A third server on `127.0.0.1:8767` (own SQLite file) has SSR on and talks to
+  `node bootstrap/ssr/ssr.js` on port 13716 (`INERTIA_SSR_PORT`), for `ssr.spec.ts` only
+  (Playwright project `ssr`). It checks the raw HTML inside `#app` before any JS runs, then
+  that the page hydrates without console errors.
 - Seed data lives in `database/seeders/E2ESeeder.php` (three anime + `e2e@example.com`).
 - Specs fail on any browser console error. The production CSP is active in E2E (`APP_ENV=e2e`),
   so a CSP violation shows up as a failure: seed images must be `null` or on an allowed host.
@@ -101,11 +105,17 @@ as `php <that dir>/composer/composer.phar`.
 - Releases are `vX.Y.Z` tags: `.github/workflows/release.yml` creates the GitHub Release with
   generated notes. The Chrome extension has its own `extension-v*` tags and an
   `extension-dev-latest` prerelease.
-- `bootstrap/ssr/ssr.js` is committed and `npm run build` rewrites it: don't commit a rebuilt
-  copy by accident.
+- Production runs Inertia SSR: a Forge daemon runs `php artisan inertia:start-ssr`, and the
+  deploy script runs `npm run build` and ends with `php artisan inertia:stop-ssr` (the daemon
+  restarts on the new bundle). `bootstrap/ssr/` is built, not committed (gitignored).
+- Check SSR on the live site with `curl -s https://anitrack.app/ | grep -o '<div id="app"[^>]*>.\{0,80\}'`
+  (strip the long `data-page`): the page's HTML should follow, not an empty div.
 
 ## Quirks
 
 - Google tag IDs live in `config/analytics.php` (`GOOGLE_ANALYTICS_ID`, `GOOGLE_ADS_ID`); empty
   values leave the tag out. AdSense is `config/adsense.php`.
 - `env('X', fallback)` returns `''` for an empty `X=` line, so the fallback never applies.
+- `resources/js/ssr.ts` renders the page app itself and hands Inertia the finished HTML: Vue
+  3.5.44 turns `innerHTML` into a string (vuejs/core#15769), and Inertia 2.x puts a Promise
+  there, so stock `render: renderToString` gives `[object Promise]` (#3408).

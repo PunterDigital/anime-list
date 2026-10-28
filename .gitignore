@@ -33,3 +33,6 @@ Thumbs.db
 
 # Compass / Claude artifacts
 compass_artifact_*
+
+# Built by `npm run build` (the Forge deploy runs it too)
+/bootstrap/ssr

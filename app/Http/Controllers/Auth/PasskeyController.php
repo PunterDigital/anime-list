@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\RedirectPath;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,21 @@ class PasskeyController extends Controller
             return response()->json(['message' => 'Authentication failed.'], 422);
         }
 
-        return response()->json(['message' => "Welcome back, {$user->name}!"]);
+        // Where the page should send the browser next: the safe `redirect` the
+        // login page was opened with, else the page the auth middleware stopped
+        // the guest at (as password login does), else Home.
+        $target = RedirectPath::sanitize($request->query('redirect'));
+
+        if ($target !== null) {
+            $request->session()->forget('url.intended');
+        } else {
+            $target = $request->session()->pull('url.intended', route('home'));
+        }
+
+        return response()->json([
+            'message' => "Welcome back, {$user->name}!",
+            'redirect' => $target,
+        ]);
     }
 
     public function destroy(Request $request, string $id): RedirectResponse

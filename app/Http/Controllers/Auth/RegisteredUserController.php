@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\RedirectPath;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,11 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('RegisterPage');
+        return Inertia::render('RegisterPage', [
+            'redirect' => RedirectPath::sanitize($request->query('redirect')),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -42,6 +45,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('home');
+        $target = RedirectPath::sanitize($request->input('redirect'));
+
+        return $target !== null ? redirect()->to($target) : redirect()->route('home');
     }
 }

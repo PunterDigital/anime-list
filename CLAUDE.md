@@ -116,6 +116,11 @@ as `php <that dir>/composer/composer.phar`.
 - Google tag IDs live in `config/analytics.php` (`GOOGLE_ANALYTICS_ID`, `GOOGLE_ADS_ID`); empty
   values leave the tag out. AdSense is `config/adsense.php`.
 - `env('X', fallback)` returns `''` for an empty `X=` line, so the fallback never applies.
+- Error pages: `bootstrap/app.php` renders `ErrorPage` with `App\Support\ErrorPageProps`. With the
+  `error-pages` flag on, 403/404/419/451 use the site layout (500/503 stay standalone). Errors
+  thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,
+  so `ErrorPageProps` shares them itself. Unknown URLs hit a `Route::any` fallback (no CSRF)
+  so they get a session; keep it `any`, since a GET-only fallback turns other methods into 405.
 - `resources/js/ssr.ts` renders the page app itself and hands Inertia the finished HTML: Vue
   3.5.44 turns `innerHTML` into a string (vuejs/core#15769), and Inertia 2.x puts a Promise
   there, so stock `render: renderToString` gives `[object Promise]` (#3408).

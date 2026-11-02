@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackSanctumTokenUsage;
+use App\Support\ErrorPageProps;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -63,9 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 Vite::useCspNonce($nonce);
             }
 
-            return Inertia::render('ErrorPage', [
-                'status' => $response->getStatusCode(),
-            ])
+            return Inertia::render('ErrorPage', ErrorPageProps::for($request, $response->getStatusCode()))
                 ->toResponse($request)
                 ->setStatusCode($response->getStatusCode());
         });

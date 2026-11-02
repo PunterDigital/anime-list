@@ -71,3 +71,29 @@ test('the sign-in link on an anime page and the login page keep the way back', a
     await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
     expect(errors).toEqual([]);
 });
+
+// The error pages render inside the site layout (E2ESeeder turns the `error-pages` flag on).
+for (const { path, status, heading, text } of [
+    { path: '/no-such-page', status: 404, heading: "We couldn&#39;t find that page", text: 'Privacy Policy' },
+    { path: '/anime/cowboy-bebop-the-movie', status: 404, heading: "We couldn&#39;t find that page", text: 'value="cowboy bebop the movie"' },
+    { path: '/anime/hidden-e2e-show', status: 451, heading: 'This anime page is no longer available', text: 'Cowboy Bebop' },
+]) {
+    test(`the ${status} page for ${path} arrives rendered and hydrates without errors`, async ({ page, request }) => {
+        const response = await request.get(path);
+        expect(response.status()).toBe(status);
+        const html = appHtml(await response.text());
+        expect(html).not.toContain('[object Promise]');
+        expect(html).toContain(heading);
+        expect(html).toContain(text);
+        expect(html).not.toContain('Hidden E2E Show');
+
+        const errors: string[] = [];
+        page.on('console', (msg) => {
+            if (msg.type() === 'error' && !/status of (404|451)/.test(msg.text())) errors.push(msg.text());
+        });
+        page.on('pageerror', (err) => errors.push(err.message));
+        await page.goto(path);
+        await expect(page.getByRole('button', { name: 'Go back' })).toBeVisible();
+        expect(errors).toEqual([]);
+    });
+}

@@ -79,5 +79,6 @@ class AppServiceProvider extends ServiceProvider
         Feature::define('landing-page', fn ($user) => false);
         Feature::define('ads', fn ($user) => false);
         Feature::define('company-pages', fn ($user) => false);
+        Feature::define('error-pages', fn ($user) => false);
     }
 }

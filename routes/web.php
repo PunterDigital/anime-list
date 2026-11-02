@@ -34,6 +34,7 @@ use App\Http\Controllers\TopAnimeController;
 use App\Http\Controllers\UserListController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\Anime;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -240,3 +241,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/jobs/failed/{uuid}/retry', [AdminJobObservabilityController::class, 'retryFailed'])->name('jobs.failed.retry');
     Route::delete('/jobs/failed/{uuid}', [AdminJobObservabilityController::class, 'forgetFailed'])->name('jobs.failed.forget');
 });
+
+// Unknown URLs go through the web middleware too, so the 404 page knows who is
+// signed in (session, shared props). Any method, so a POST to an unknown URL
+// stays a 404 (not 405); it only aborts, so it needs no CSRF check.
+Route::any('{fallbackPlaceholder}', fn () => abort(404))
+    ->where('fallbackPlaceholder', '.*')
+    ->fallback()
+    ->withoutMiddleware(ValidateCsrfToken::class);

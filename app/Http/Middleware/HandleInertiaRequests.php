@@ -39,10 +39,11 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $request->user()->roles->pluck('slug')->all(),
                 ] : null,
             ],
+            // No session when an error page renders before StartSession ran.
             'flash' => [
-                'message' => $request->session()->get('message'),
-                'status' => $request->session()->get('status'),
-                'newApiToken' => $request->session()->get('newApiToken'),
+                'message' => $request->hasSession() ? $request->session()->get('message') : null,
+                'status' => $request->hasSession() ? $request->session()->get('status') : null,
+                'newApiToken' => $request->hasSession() ? $request->session()->get('newApiToken') : null,
             ],
             'features' => fn () => app(FeatureFlagService::class)->allForUser($request->user()),
             'business' => config('business'),

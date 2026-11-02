@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Anime;
+use App\Models\Recommendation;
 use App\Models\User;
+use App\Services\FeatureFlagService;
 use Illuminate\Database\Seeder;
 
 /**
@@ -15,6 +17,8 @@ class E2ESeeder extends Seeder
     public const USER_EMAIL = 'e2e@example.com';
 
     public const USER_PASSWORD = 'e2e-password';
+
+    public const HIDDEN_SLUG = 'hidden-e2e-show';
 
     public function run(): void
     {
@@ -49,5 +53,28 @@ class E2ESeeder extends Seeder
                 'trending' => 900 - $i * 10,
             ]);
         }
+
+        // A page hidden by an admin (451), recommending two of the anime above.
+        $hidden = Anime::factory()->finished()->create([
+            'title_english' => 'Hidden E2E Show',
+            'title_romaji' => 'Hidden E2E Show',
+            'slug' => self::HIDDEN_SLUG,
+            'cover_image_large' => null,
+            'cover_image_medium' => null,
+            'banner_image' => null,
+            'synopsis' => 'Hidden synopsis that must never be shown.',
+            'hidden_at' => now(),
+            'hidden_reason' => 'E2E takedown',
+        ]);
+        foreach (['cowboy-bebop' => 90, 'mob-psycho-100' => 50] as $slug => $rating) {
+            Recommendation::create([
+                'anime_id' => $hidden->id,
+                'recommended_anime_id' => Anime::where('slug', $slug)->value('id'),
+                'source' => 'anilist',
+                'rating' => $rating,
+            ]);
+        }
+
+        app(FeatureFlagService::class)->setGlobalStatus('error-pages', 'everyone');
     }
 }

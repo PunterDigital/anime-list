@@ -8,9 +8,16 @@ const webpass = useWebpass()
 
 defineOptions({ layout: AppLayout })
 
+// A same-site path to come back to after signing in (e.g. the anime page whose
+// "Sign in" link brought the guest here). The server only passes safe paths.
+const props = defineProps<{ redirect?: string | null }>()
+
+const redirectQuery = props.redirect ? { redirect: props.redirect } : {}
+
 const form = useForm({
     email: '',
     password: '',
+    redirect: props.redirect ?? null,
 })
 
 const passkeySupported = ref(false)
@@ -30,16 +37,17 @@ async function signInWithPasskey() {
     passkeyBusy.value = true
 
     try {
-        const { success, error } = await webpass.assert(
+        const { success, user, error } = await webpass.assert(
             {
                 path: route('webauthn.login.options'),
                 body: form.email ? { email: form.email } : {},
             },
-            { path: route('webauthn.login') },
+            { path: route('webauthn.login', redirectQuery) },
         )
 
         if (success) {
-            window.location.href = route('home')
+            const target = typeof user === 'object' && user !== null && typeof user.redirect === 'string' ? user.redirect : null
+            window.location.href = target ?? route('home')
             return
         }
 
@@ -112,7 +120,7 @@ async function signInWithPasskey() {
         </template>
 
         <p class="text-gray-500 text-sm mt-6 text-center">
-            Don't have an account? <Link :href="route('register')" class="text-primary-400 hover:text-primary-300">Sign up</Link>
+            Don't have an account? <Link :href="route('register', redirectQuery)" class="text-primary-400 hover:text-primary-300">Sign up</Link>
         </p>
     </div>
 </template>

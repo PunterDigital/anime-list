@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\RedirectPath;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,9 +13,11 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('LoginPage');
+        return Inertia::render('LoginPage', [
+            'redirect' => RedirectPath::sanitize($request->query('redirect')),
+        ]);
     }
 
     public function store(LoginRequest $request): RedirectResponse
@@ -22,6 +25,14 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        $target = RedirectPath::sanitize($request->input('redirect'));
+
+        if ($target !== null) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->to($target);
+        }
 
         return redirect()->intended(route('home'));
     }

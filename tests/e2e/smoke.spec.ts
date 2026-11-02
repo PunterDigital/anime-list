@@ -76,3 +76,53 @@ test('register, add an anime to the list and see it on My List', async ({ page }
     await expect(page.getByText(ANIME).first()).toBeVisible();
     expect(errors).toEqual([]);
 });
+
+test('signing in from an anime page comes back to that anime page', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto('/anime');
+    await page.getByRole('link', { name: ANIME }).first().click();
+    await expect(page.getByText('to track this anime')).toBeVisible();
+    const animePath = new URL(page.url()).pathname;
+    expect(animePath).toMatch(/^\/anime\/[^/]+$/);
+
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    await page.locator('#email').fill('e2e@example.com');
+    await page.locator('#password').fill('e2e-password');
+    await page.getByRole('button', { name: 'Login', exact: true }).click();
+
+    await expect(page).toHaveURL((url) => url.pathname === animePath);
+    await expect(page.getByRole('heading', { name: ANIME }).first()).toBeVisible();
+    await expect(page.getByText('to track this anime')).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
+test('signing up via the login page from an anime page comes back to that anime page', async ({ page }) => {
+    const errors = collectErrors(page);
+    const id = Date.now();
+    await page.goto('/anime');
+    await page.getByRole('link', { name: ANIME }).first().click();
+    await expect(page.getByText('to track this anime')).toBeVisible();
+    const animePath = new URL(page.url()).pathname;
+    expect(animePath).toMatch(/^\/anime\/[^/]+$/);
+
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    await page.getByRole('link', { name: 'Sign up', exact: true }).click();
+    await expect(page).toHaveURL(/\/register\?redirect=/);
+    await page.locator('#name').fill('Returning Viewer');
+    await page.locator('#username').fill(`returner${id}`);
+    await page.locator('#email').fill(`returner${id}@example.com`);
+    await page.locator('#password').fill('a-long-test-password-1');
+    await page.locator('#password_confirmation').fill('a-long-test-password-1');
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+
+    await expect(page).toHaveURL((url) => url.pathname === animePath);
+    await expect(page.getByRole('button', { name: 'Add to List' })).toBeVisible();
+    expect(errors).toEqual([]);
+});
+
+test('an off-site redirect on the login page is ignored', async ({ page }) => {
+    await page.goto('/login?redirect=//example.com/');
+    await expect(page.getByRole('link', { name: 'Sign up', exact: true })).toHaveAttribute('href', /\/register$/);
+});

@@ -410,7 +410,7 @@ function displayScore(): string {
                 </template>
                 <template v-else>
                     <div class="text-sm text-gray-400">
-                        <Link :href="route('login')" class="text-primary-400 transition hover:text-primary-300">Sign in</Link>
+                        <Link :href="route('login', { redirect: page.url })" class="text-primary-400 transition hover:text-primary-300">Sign in</Link>
                         to track this anime
                     </div>
                 </template>

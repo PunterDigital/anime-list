@@ -4,12 +4,18 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 
 defineOptions({ layout: AppLayout })
 
+// Carried over from the login page: where to go once the account exists.
+const props = defineProps<{ redirect?: string | null }>()
+
+const redirectQuery = props.redirect ? { redirect: props.redirect } : {}
+
 const form = useForm({
     name: '',
     username: '',
     email: '',
     password: '',
     password_confirmation: '',
+    redirect: props.redirect ?? null,
 })
 
 function submit() {
@@ -87,7 +93,7 @@ function submit() {
             </button>
         </form>
         <p class="text-gray-500 text-sm mt-4 text-center">
-            Already have an account? <Link :href="route('login')" class="text-primary-400 hover:text-primary-300">Login</Link>
+            Already have an account? <Link :href="route('login', redirectQuery)" class="text-primary-400 hover:text-primary-300">Login</Link>
         </p>
     </div>
 </template>

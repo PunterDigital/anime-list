@@ -54,3 +54,20 @@ test('an anime page arrives with its title and synopsis', async ({ page, request
     await expect(page.getByRole('heading', { level: 1, name: ANIME })).toBeVisible();
     expect(errors).toEqual([]);
 });
+
+test('the sign-in link on an anime page and the login page keep the way back', async ({ page, request }) => {
+    const animeHtml = appHtml(await (await request.get('/anime/cowboy-bebop')).text());
+    expect(animeHtml).toMatch(/href="[^"]*\/login\?redirect=%2Fanime%2Fcowboy-bebop"/);
+
+    const response = await request.get('/login?redirect=/anime/cowboy-bebop');
+    expect(response.status()).toBe(200);
+    const loginHtml = appHtml(await response.text());
+    expect(loginHtml).not.toContain('[object Promise]');
+    expect(loginHtml).toMatch(/<h1[^>]*>\s*Login/);
+    expect(loginHtml).toMatch(/href="[^"]*\/register\?redirect=%2Fanime%2Fcowboy-bebop"/);
+
+    const errors = collectErrors(page);
+    await page.goto('/login?redirect=/anime/cowboy-bebop');
+    await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
+    expect(errors).toEqual([]);
+});

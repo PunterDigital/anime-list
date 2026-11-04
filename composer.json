@@ -15,7 +15,7 @@
         "laravel/pennant": "^1.21",
         "laravel/sanctum": "^4.3",
         "laravel/scout": "^10.24",
-        "laravel/tinker": "^2.10.1",
+        "laravel/tinker": "^3.0.2",
         "sentry/sentry-laravel": "^4.21",
         "spatie/laravel-data": "^4.20",
         "spatie/laravel-query-builder": "^6.4",

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { createSSRApp, h, type App, type DefineComponent } from 'vue'
+import { createSSRApp, h, type DefineComponent } from 'vue'
 import { createInertiaApp, Link, Head } from '@inertiajs/vue3'
 import createServer from '@inertiajs/vue3/server'
 import { renderToString } from 'vue/server-renderer'
@@ -11,24 +11,11 @@ import Aura from '@primevue/themes/aura'
 import { ZiggyVue } from 'ziggy-js'
 
 createServer((page) => {
-    // Inertia 2.x puts the page app inside a wrapper div with `innerHTML: render(app)`,
-    // which is a Promise. Vue 3.5.44 turns innerHTML into a string (vuejs/core#15769),
-    // so every page came out as "[object Promise]". Render the page app before the
-    // wrapper, and hand Inertia the finished HTML when it asks for it.
-    let pageApp: App | undefined
-    let pageHtml: string | undefined
-    const render = (app: App): string | Promise<string> => {
-        if (app === pageApp) return pageHtml ?? renderToString(app)
-        if (!pageApp) return renderToString(app)
-        return renderToString(pageApp).then((html) => {
-            pageHtml = html
-            return renderToString(app)
-        })
-    }
-
+    // Inertia 3 awaits renderToString and builds the #app markup as a string, so the
+    // Inertia 2 workaround for "[object Promise]" (#3408, vuejs/core#15769) is gone.
     return createInertiaApp({
         page,
-        render: render as (app: App) => Promise<string>,
+        render: renderToString,
         title: (title) => title ? `${title} — AniTrack` : 'AniTrack',
         resolve: (name) => {
             const pages = import.meta.glob<DefineComponent>('./Pages/**/*.vue', { eager: true })
@@ -77,7 +64,6 @@ createServer((page) => {
             // eslint-disable-next-line vue/multi-word-component-names, vue/no-reserved-component-names
             app.component('Head', Head)
 
-            pageApp = app
             return app
         },
     })

@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title inertia>{{ config('app.name', 'AniTrack') }}</title>
+        <title data-inertia>{{ config('app.name', 'AniTrack') }}</title>
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32.png">
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48.png">

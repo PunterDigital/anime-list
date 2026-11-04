@@ -18,7 +18,7 @@
         "laravel/tinker": "^2.10.1",
         "sentry/sentry-laravel": "^4.21",
         "spatie/laravel-data": "^4.20",
-        "spatie/laravel-query-builder": "^6.4",
+        "spatie/laravel-query-builder": "^7.3",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {

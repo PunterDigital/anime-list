@@ -43,6 +43,20 @@ for (const { path, placeholder, text } of pages) {
     });
 }
 
+// The SSR head brings the page's own title, and the root view's fallback title stays
+// out, so crawlers that don't run JS read the right one (card 4242).
+for (const { path, title } of [
+    { path: '/login', title: 'Login — AniTrack' },
+    { path: '/anime', title: 'Browse &amp; Search Anime — AniTrack' },
+]) {
+    test(`${path} arrives with one title, its own`, async ({ request }) => {
+        const html = await (await request.get(path)).text();
+        const titles = html.match(/<title[^>]*>[^<]*<\/title>/g) ?? [];
+        expect(titles).toHaveLength(1);
+        expect(titles[0]).toContain(`>${title}</title>`);
+    });
+}
+
 test('an anime page arrives with its title and synopsis', async ({ page, request }) => {
     const path = '/anime/cowboy-bebop';
     const html = appHtml(await (await request.get(path)).text());

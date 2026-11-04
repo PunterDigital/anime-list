@@ -3,7 +3,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title data-inertia>{{ config('app.name', 'AniTrack') }}</title>
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32.png">
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48.png">
@@ -21,7 +20,11 @@
         <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode(['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'AniTrack', 'url' => config('app.url')], JSON_UNESCAPED_SLASHES) !!}</script>
         @routes(nonce: app('csp-nonce'))
         @vite(['resources/js/app.ts'])
-        @inertiaHead
+        {{-- The SSR head carries the page's own title; the fallback is only for pages
+             rendered without SSR, so a page never has two titles (card 4242). --}}
+        <x-inertia::head>
+            <title data-inertia>{{ config('app.name', 'AniTrack') }}</title>
+        </x-inertia::head>
     </head>
     <body class="antialiased bg-gray-950 text-gray-100">
         @inertia

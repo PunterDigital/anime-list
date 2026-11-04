@@ -20,6 +20,19 @@ test('home page loads without console errors', async ({ page }) => {
     expect(errors).toEqual([]);
 });
 
+// No SSR on this server: the root view's fallback title is the only one, and the
+// page sets its own after it loads (card 4242).
+test('without SSR a page has the fallback title until it sets its own', async ({ page, request }) => {
+    const html = await (await request.get('/login')).text();
+    // The fallback is config('app.name'), which differs between .env files.
+    const titles = html.match(/<title[^>]*>[^<]*<\/title>/g) ?? [];
+    expect(titles).toHaveLength(1);
+    expect(titles[0]).toMatch(/^<title data-inertia>[^<]+<\/title>$/);
+
+    await page.goto('/login');
+    await expect(page).toHaveTitle('Login — AniTrack');
+});
+
 test('browse and open an anime detail page', async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto('/anime');

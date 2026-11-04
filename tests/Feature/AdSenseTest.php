@@ -48,4 +48,19 @@ class AdSenseTest extends TestCase
         $this->assertStringContainsString('https://pagead2.googlesyndication.com', $csp);
         $this->assertStringContainsString('https://googleads.g.doubleclick.net', $csp);
     }
+
+    public function test_the_content_security_policy_allows_the_consent_message(): void
+    {
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+        $directives = [];
+        foreach (array_filter(array_map('trim', explode(';', $csp))) as $directive) {
+            $parts = explode(' ', $directive);
+            $directives[array_shift($parts)] = $parts;
+        }
+
+        foreach (['script-src', 'connect-src', 'frame-src'] as $name) {
+            $this->assertContains('https://fundingchoicesmessages.google.com', $directives[$name], $name);
+        }
+    }
 }

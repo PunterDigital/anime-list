@@ -32,10 +32,13 @@ class SecurityHeaders
         // AdSense loads its ad code from several Google hosts and frames the
         // creatives from others. The nonce on the loader tag is propagated by
         // AdSense to the scripts it injects, so no 'unsafe-inline' is needed.
+        // fundingchoicesmessages.google.com is Google's Privacy & messaging
+        // consent message, which AdSense loads for EEA/UK visitors (card 4241).
         $adsense = 'https://pagead2.googlesyndication.com https://partner.googleadservices.com '
             .'https://tpc.googlesyndication.com https://googleads.g.doubleclick.net '
             .'https://www.googletagservices.com https://adservice.google.com '
-            .'https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google';
+            .'https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google '
+            .'https://fundingchoicesmessages.google.com';
 
         // Cloudflare Turnstile (contact form captcha) loads its widget script
         // from, and renders its challenge iframe on, this single host.

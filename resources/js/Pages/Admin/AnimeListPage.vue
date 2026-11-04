@@ -16,6 +16,7 @@ const props = defineProps<{
         rewritten_only: boolean
         thin_only: boolean
         hidden_only: boolean
+        nsfw_only: boolean
         sort: AdminAnimeSort
     }
     thin_content: AdminThinContentSummary
@@ -31,6 +32,7 @@ const search = ref(props.filters.search ?? '')
 const rewrittenOnly = ref(props.filters.rewritten_only)
 const thinOnly = ref(props.filters.thin_only)
 const hiddenOnly = ref(props.filters.hidden_only)
+const nsfwOnly = ref(props.filters.nsfw_only)
 const sort = ref<AdminAnimeSort>(props.filters.sort)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -43,6 +45,7 @@ function pushFilters() {
             rewritten_only: rewrittenOnly.value ? 1 : undefined,
             thin_only: thinOnly.value ? 1 : undefined,
             hidden_only: hiddenOnly.value ? 1 : undefined,
+            nsfw_only: nsfwOnly.value ? 1 : undefined,
             sort: sort.value !== 'popularity' ? sort.value : undefined,
         },
         { preserveState: true, preserveScroll: true },
@@ -57,6 +60,7 @@ watch(search, () => {
 watch(rewrittenOnly, () => pushFilters())
 watch(thinOnly, () => pushFilters())
 watch(hiddenOnly, () => pushFilters())
+watch(nsfwOnly, () => pushFilters())
 watch(sort, () => pushFilters())
 
 function toggleWordSort() {
@@ -140,6 +144,14 @@ function formatDate(iso: string | null): string | null {
                 Hidden only
             </label>
             <label class="inline-flex items-center gap-2 text-sm text-gray-300">
+                <input
+                    v-model="nsfwOnly"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"
+                />
+                NSFW only
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-300">
                 <span class="sr-only">Sort by</span>
                 <select
                     v-model="sort"
@@ -206,6 +218,12 @@ function formatDate(iso: string | null): string | null {
                                     >
                                         Hidden
                                     </span>
+                                    <span
+                                        v-if="item.is_nsfw || item.is_adult"
+                                        class="mt-1 ml-1 inline-block rounded bg-amber-600/20 px-2 py-0.5 text-[11px] font-medium text-amber-300"
+                                    >
+                                        {{ item.is_nsfw ? 'NSFW' : 'Adult (AniList)' }}
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -246,7 +264,7 @@ function formatDate(iso: string | null): string | null {
                     </tr>
                     <tr v-if="anime.data.length === 0">
                         <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500">
-                            {{ hiddenOnly ? 'No anime are hidden.' : thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
+                            {{ nsfwOnly ? 'No anime are marked NSFW.' : hiddenOnly ? 'No anime are hidden.' : thinOnly ? 'No anime are flagged for review.' : 'No anime match your search.' }}
                         </td>
                     </tr>
                 </tbody>

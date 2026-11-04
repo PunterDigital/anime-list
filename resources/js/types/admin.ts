@@ -56,6 +56,8 @@ export interface AdminAnimeListItem {
     is_thin: boolean
     synopsis_rewritten_at: string | null
     is_hidden: boolean
+    is_nsfw: boolean
+    is_adult: boolean
 }
 
 export type AdminAnimeSort = 'popularity' | 'words_desc' | 'words_asc'
@@ -83,4 +85,7 @@ export interface AdminAnimeEdit {
     is_hidden: boolean
     hidden_at: string | null
     hidden_reason: string | null
+    is_nsfw: boolean
+    nsfw_at: string | null
+    is_adult: boolean
 }

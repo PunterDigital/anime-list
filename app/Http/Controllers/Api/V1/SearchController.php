@@ -32,7 +32,7 @@ class SearchController extends Controller
         }
 
         $results = Anime::query()
-            ->where('is_adult', false)->visible()
+            ->safeForWork()->visible()
             ->searchTitle($query)
             ->orderByDesc('popularity')
             ->with('genres')

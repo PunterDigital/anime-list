@@ -143,7 +143,7 @@ class ErrorPageProps
     {
         return Anime::query()
             ->visible()
-            ->where('is_adult', false)
+            ->safeForWork()
             ->whereKeyNot($hidden->id)
             ->with(['genres', 'nextAiringEpisode']);
     }

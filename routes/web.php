@@ -220,6 +220,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/anime/{anime:id}/edit', [AdminAnimeController::class, 'edit'])->name('anime.edit');
     Route::patch('/anime/{anime:id}', [AdminAnimeController::class, 'update'])->name('anime.update');
     Route::patch('/anime/{anime:id}/visibility', [AdminAnimeController::class, 'updateVisibility'])->name('anime.visibility');
+    Route::patch('/anime/{anime:id}/nsfw', [AdminAnimeController::class, 'updateNsfw'])->name('anime.nsfw');
     Route::delete('/anime/{anime:id}/rewrite', [AdminAnimeController::class, 'reset'])->name('anime.reset');
 
     Route::get('/features', [AdminFeatureFlagController::class, 'index'])->name('features');

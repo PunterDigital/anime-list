@@ -102,6 +102,12 @@ class AnimeController extends Controller
             abort(451);
         }
 
+        // Card 4198: a title an admin marked NSFW opens only for signed-in
+        // users; guests get a sign-in page that returns here (noindex).
+        if ($anime->isNsfw() && ! $request->user()) {
+            return Inertia::render('AnimeNsfwGatePage', ['slug' => $anime->slug]);
+        }
+
         $cacheKey = "anime:v3:{$anime->id}";
         $model = Cache::get($cacheKey);
 

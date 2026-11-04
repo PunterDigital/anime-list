@@ -70,8 +70,8 @@ class StudioController extends Controller
 
         $query = Studio::query()
             ->where('is_animation_studio', $isAnimationStudio)
-            ->whereHas('anime', fn ($q) => $q->where('is_adult', false)->visible())
-            ->withCount(['anime' => fn ($q) => $q->where('is_adult', false)->visible()]);
+            ->whereHas('anime', fn ($q) => $q->safeForWork()->visible())
+            ->withCount(['anime' => fn ($q) => $q->safeForWork()->visible()]);
 
         if ($search !== '') {
             $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $search).'%';
@@ -110,7 +110,7 @@ class StudioController extends Controller
     {
         $paginator = QueryBuilder::for(
             Anime::query()
-                ->where('is_adult', false)->visible()
+                ->safeForWork()->visible()
                 ->whereHas('studios', fn ($q) => $q->where('studios.id', $studio->id))
         )
             ->allowedSorts([
@@ -139,7 +139,7 @@ class StudioController extends Controller
                 'is_animation_studio' => $studio->is_animation_studio,
                 'website_url' => $studio->website_url,
                 'anime_count' => $studio->anime()
-                    ->where('is_adult', false)->visible()
+                    ->safeForWork()->visible()
                     ->count(),
             ],
             'anime' => AnimeCardResource::collection($paginator),

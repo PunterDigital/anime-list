@@ -108,8 +108,9 @@ as `php <that dir>/composer/composer.phar`.
 - Production runs Inertia SSR: a Forge daemon runs `php artisan inertia:start-ssr`, and the
   deploy script runs `npm run build` and ends with `php artisan inertia:stop-ssr` (the daemon
   restarts on the new bundle). `bootstrap/ssr/` is built, not committed (gitignored).
-- Check SSR on the live site with `curl -s https://anitrack.app/ | grep -o '<div id="app"[^>]*>.\{0,80\}'`
-  (strip the long `data-page`): the page's HTML should follow, not an empty div.
+- Check SSR on the live site with `curl -s https://anitrack.app/ | grep -o '<div data-server-rendered="true" id="app">.\{0,80\}'`:
+  the page's HTML should follow. Without SSR the page has only `<div id="app"></div>` (the props
+  are in a `<script data-page="app" type="application/json">` before it, since Inertia 3).
 
 ## Quirks
 
@@ -129,6 +130,9 @@ as `php <that dir>/composer/composer.phar`.
   signed-in users get the page. Guests' views of public lists and playlists leave NSFW items out.
   Search results are cached 15 min per query, so `SearchController` drops ids that became
   adult/NSFW/hidden since from the cached result. AniList adult titles stay 404 for everyone.
-- `resources/js/ssr.ts` renders the page app itself and hands Inertia the finished HTML: Vue
-  3.5.44 turns `innerHTML` into a string (vuejs/core#15769), and Inertia 2.x puts a Promise
-  there, so stock `render: renderToString` gives `[object Promise]` (#3408).
+- Inertia 3 (card 3820): `resources/js/ssr.ts` uses stock `render: renderToString` again. The
+  Inertia 2.x workaround for `[object Promise]` (#3408, vuejs/core#15769) went with the upgrade:
+  v3 awaits the render and builds the `#app` markup as a string. `config/inertia.php` is the v3
+  file with AniTrack's values re-applied (SSR off unless `INERTIA_SSR_ENABLED`, bundle
+  `bootstrap/ssr/ssr.js`, pages in `js/Pages`); the root view uses `<title data-inertia>`.
+  A page without a layout leaves `layout` out (v3's types refuse `layout: false`).

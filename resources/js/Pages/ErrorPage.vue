@@ -5,8 +5,6 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import AnimeCard from '@/Components/AnimeCard.vue'
 import type { AnimeCard as AnimeCardType } from '@/types/anime'
 
-defineOptions({ layout: false })
-
 const props = defineProps<{
     status: number
     // Set (with the props below) when the `error-pages` flag is on and the

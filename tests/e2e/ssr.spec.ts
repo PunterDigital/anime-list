@@ -13,10 +13,10 @@ function collectErrors(page: Page): string[] {
     return errors;
 }
 
-// What the server put inside #app, before any JS runs. The data-page attribute is
-// left out: it holds the page props as JSON, titles included.
+// What the server put inside #app, before any JS runs. The page props (Inertia 3's
+// `<script data-page="app" type="application/json">`, titles included) are left out.
 function appHtml(html: string): string {
-    const match = html.match(/<div id="app" data-page="[^"]*">([\s\S]*)<\/div>\s*<\/body>/);
+    const match = html.match(/<div data-server-rendered="true" id="app">([\s\S]*)<\/div>\s*<\/body>/);
     expect(match, 'the page has a server-rendered #app').not.toBeNull();
     return match![1];
 }

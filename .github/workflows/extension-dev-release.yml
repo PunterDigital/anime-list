@@ -97,7 +97,7 @@ jobs:
         run: gh release delete extension-dev-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
 
       - name: Publish dev release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: extension-dev-latest
           name: Chrome Extension (dev build ${{ steps.version.outputs.version }})

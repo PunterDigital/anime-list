@@ -25,7 +25,7 @@ class WelcomeController extends Controller
         $featuredAnime = Cache::remember('welcome:featured_anime', 21600, function () {
             return AnimeCardResource::collection(
                 Anime::query()
-                    ->where('is_adult', false)->visible()
+                    ->safeForWork()->visible()
                     ->whereNotNull('cover_image_medium')
                     ->orderByDesc('popularity')
                     ->with('genres')
@@ -37,7 +37,7 @@ class WelcomeController extends Controller
         $totalAnime = Cache::remember(
             'welcome:total_anime',
             86400,
-            fn () => Anime::query()->where('is_adult', false)->visible()->count(),
+            fn () => Anime::query()->safeForWork()->visible()->count(),
         );
 
         return Inertia::render('WelcomePage', [

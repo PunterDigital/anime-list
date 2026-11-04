@@ -26,6 +26,17 @@ const visibilityChanged = computed(() =>
     || (!visibilityForm.shown && visibilityForm.hidden_reason !== (props.anime.hidden_reason ?? '')),
 )
 
+// Card 4198: NSFW is saved as soon as the box changes.
+const nsfwForm = useForm({
+    nsfw: props.anime.is_nsfw,
+})
+
+function submitNsfw() {
+    nsfwForm.patch(route('admin.anime.nsfw', { anime: props.anime.id }), {
+        preserveScroll: true,
+    })
+}
+
 function submitVisibility() {
     visibilityForm.patch(route('admin.anime.visibility', { anime: props.anime.id }), {
         preserveScroll: true,
@@ -212,6 +223,32 @@ const wordsNeeded = computed(() => Math.max(0, props.min_words - wordCount.value
                     {{ visibilityForm.processing ? 'Saving…' : visibilityForm.shown ? 'Show page' : (anime.is_hidden ? 'Save reason' : 'Hide page') }}
                 </button>
             </div>
+        </form>
+
+        <form
+            class="space-y-2 rounded-lg border border-gray-800 bg-gray-900/40 px-4 py-3"
+            data-testid="nsfw-form"
+            @submit.prevent="submitNsfw"
+        >
+            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-200">
+                <input
+                    v-model="nsfwForm.nsfw"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-primary-600 focus:ring-primary-500"
+                    :disabled="nsfwForm.processing"
+                    @change="submitNsfw"
+                />
+                NSFW
+            </label>
+            <p class="text-xs text-gray-500">
+                An NSFW title is left out of search, listings, recommendations and the sitemap. Signed-out visitors are asked to sign in to view the page.
+            </p>
+            <p class="text-xs text-gray-400" data-testid="anilist-adult">
+                AniList adult flag: {{ anime.is_adult ? 'yes (always left out, page not available)' : 'no' }}
+            </p>
+            <p v-if="anime.is_nsfw && anime.nsfw_at" class="text-sm text-amber-300">
+                Marked NSFW since {{ formatDateTime(anime.nsfw_at) }}.
+            </p>
         </form>
 
         <form class="space-y-4" @submit.prevent="submit">

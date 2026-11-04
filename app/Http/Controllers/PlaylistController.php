@@ -60,7 +60,7 @@ class PlaylistController extends Controller
             abort(403);
         }
 
-        $this->playlistService->getPlaylistWithItems($playlist);
+        $this->playlistService->getPlaylistWithItems($playlist, includeNsfw: $request->user() !== null);
 
         return Inertia::render('PlaylistDetailPage', [
             'playlist' => new PlaylistResource($playlist),

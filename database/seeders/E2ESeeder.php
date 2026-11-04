@@ -20,6 +20,10 @@ class E2ESeeder extends Seeder
 
     public const HIDDEN_SLUG = 'hidden-e2e-show';
 
+    public const ADMIN_EMAIL = 'e2e-admin@example.com';
+
+    public const NSFW_SLUG = 'nsfw-e2e-show';
+
     public function run(): void
     {
         User::factory()->create([
@@ -76,5 +80,25 @@ class E2ESeeder extends Seeder
         }
 
         app(FeatureFlagService::class)->setGlobalStatus('error-pages', 'everyone');
+
+        // Card 4198: an admin, and a title nsfw.spec.ts marks NSFW.
+        User::factory()->admin()->create([
+            'name' => 'E2E Admin',
+            'username' => 'e2e-admin',
+            'email' => self::ADMIN_EMAIL,
+            'password' => self::USER_PASSWORD,
+        ]);
+        Anime::factory()->finished()->create([
+            'title_english' => 'Nsfw E2E Show',
+            'title_romaji' => 'Nsfw E2E Show',
+            'slug' => self::NSFW_SLUG,
+            'format' => 'TV',
+            'episodes' => 12,
+            'cover_image_large' => null,
+            'cover_image_medium' => null,
+            'banner_image' => null,
+            'synopsis' => 'A show the NSFW end-to-end test marks.',
+            'popularity' => 1000,
+        ]);
     }
 }

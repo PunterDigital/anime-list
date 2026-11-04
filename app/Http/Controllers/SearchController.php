@@ -32,7 +32,7 @@ class SearchController extends Controller
             if (! $result) {
                 // Try local search first
                 $items = Anime::query()
-                    ->where('is_adult', false)->visible()
+                    ->safeForWork()->visible()
                     ->searchTitle($query)
                     ->orderByDesc('popularity')
                     ->with('genres')
@@ -64,6 +64,19 @@ class SearchController extends Controller
                 'total' => 0,
                 'error' => 'Search is temporarily unavailable.',
             ], 503);
+        }
+
+        // Card 4198: results are cached for 15 minutes, so drop titles an
+        // admin hid or marked NSFW since then (one id lookup).
+        $ids = array_column($result['data'], 'id');
+        if ($ids !== []) {
+            $removed = Anime::query()->whereIn('id', $ids)
+                ->where(fn ($q) => $q->where('is_adult', true)->orWhereNotNull('nsfw_at')->orWhereNotNull('hidden_at'))
+                ->pluck('id')->all();
+            if ($removed !== []) {
+                $result['data'] = array_values(array_filter($result['data'], fn (array $item) => ! in_array($item['id'] ?? null, $removed, true)));
+                $result['total'] = count($result['data']);
+            }
         }
 
         return response()->json([

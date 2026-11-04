@@ -121,6 +121,14 @@ as `php <that dir>/composer/composer.phar`.
   thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,
   so `ErrorPageProps` shares them itself. Unknown URLs hit a `Route::any` fallback (no CSRF)
   so they get a session; keep it `any`, since a GET-only fallback turns other methods into 405.
+- NSFW (card 4198): `anime.nsfw_at`, set by admins on the anime edit page (`admin.anime.nsfw`),
+  never written by an AniList refresh (that writes `is_adult`). Public queries use
+  `Anime::safeForWork()` (not adult, not NSFW) next to `visible()` (not hidden); raw joins on
+  `anime` (PeopleController) and in-memory filters (DiscoverService) check `nsfw_at` themselves.
+  Guests opening an NSFW title get `AnimeNsfwGatePage` (sign-in link with `redirect`, noindex);
+  signed-in users get the page. Guests' views of public lists and playlists leave NSFW items out.
+  Search results are cached 15 min per query, so `SearchController` drops ids that became
+  adult/NSFW/hidden since from the cached result. AniList adult titles stay 404 for everyone.
 - `resources/js/ssr.ts` renders the page app itself and hands Inertia the finished HTML: Vue
   3.5.44 turns `innerHTML` into a string (vuejs/core#15769), and Inertia 2.x puts a Promise
   there, so stock `render: renderToString` gives `[object Promise]` (#3408).

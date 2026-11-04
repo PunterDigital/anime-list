@@ -28,16 +28,22 @@ class UserListService
         ];
     }
 
-    public function getPublicListForPage(User $user): array
+    /**
+     * The entries anyone may see. Signed-out viewers don't get titles an
+     * admin marked NSFW (card 4198), in the entries or the counts.
+     */
+    public function getPublicListForPage(User $user, bool $includeNsfw = true): array
     {
         $entries = $user->animeList()
             ->where('is_private', false)
+            ->when(! $includeNsfw, fn ($q) => $q->whereDoesntHave('anime', fn ($a) => $a->whereNotNull('nsfw_at')))
             ->with(['anime:id,slug,title_romaji,title_english,format,episodes,cover_image_large,cover_image_medium,cover_image_color,average_score,status as anime_status'])
             ->with(['anime.genres'])
             ->get();
 
         $counts = $user->animeList()
             ->where('is_private', false)
+            ->when(! $includeNsfw, fn ($q) => $q->whereDoesntHave('anime', fn ($a) => $a->whereNotNull('nsfw_at')))
             ->selectRaw('status, count(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')

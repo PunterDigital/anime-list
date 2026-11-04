@@ -36,6 +36,8 @@ class AdminAnimeController extends Controller
                 'synopsis_word_count',
                 'synopsis_rewritten_at',
                 'hidden_at',
+                'is_adult',
+                'nsfw_at',
             ]);
 
         if ($search = trim((string) $request->input('search'))) {
@@ -57,6 +59,10 @@ class AdminAnimeController extends Controller
 
         if ($request->boolean('hidden_only')) {
             $query->whereNotNull('hidden_at');
+        }
+
+        if ($request->boolean('nsfw_only')) {
+            $query->whereNotNull('nsfw_at');
         }
 
         $sort = (string) $request->input('sort', 'popularity');
@@ -88,6 +94,8 @@ class AdminAnimeController extends Controller
                 'is_thin' => $a->hasThinContent(),
                 'synopsis_rewritten_at' => $a->synopsis_rewritten_at?->toIso8601String(),
                 'is_hidden' => $a->isHidden(),
+                'is_nsfw' => $a->isNsfw(),
+                'is_adult' => $a->is_adult,
             ]);
 
         return Inertia::render('Admin/AnimeListPage', [
@@ -111,6 +119,7 @@ class AdminAnimeController extends Controller
                 'rewritten_only' => $request->boolean('rewritten_only'),
                 'thin_only' => $request->boolean('thin_only'),
                 'hidden_only' => $request->boolean('hidden_only'),
+                'nsfw_only' => $request->boolean('nsfw_only'),
                 'sort' => $sort,
             ],
             'thin_content' => [
@@ -141,6 +150,9 @@ class AdminAnimeController extends Controller
                 'is_hidden' => $anime->isHidden(),
                 'hidden_at' => $anime->hidden_at?->toIso8601String(),
                 'hidden_reason' => $anime->hidden_reason,
+                'is_nsfw' => $anime->isNsfw(),
+                'nsfw_at' => $anime->nsfw_at?->toIso8601String(),
+                'is_adult' => $anime->is_adult,
             ],
             'min_words' => Anime::MIN_INDEXABLE_SYNOPSIS_WORDS,
         ]);
@@ -183,8 +195,42 @@ class AdminAnimeController extends Controller
             'hidden_reason' => $shown ? null : trim($validated['hidden_reason']),
         ])->save();
 
-        // Drop the page cache and the long-lived public listings that can
-        // link to it, so the change shows at once.
+        $this->forgetPublicCaches($anime);
+
+        return redirect()
+            ->route('admin.anime.edit', $anime)
+            ->with('message', $shown ? 'Page is now shown.' : 'Page is now hidden.');
+    }
+
+    /**
+     * Card 4198: mark a title NSFW (or clear it). Kept apart from AniList's
+     * is_adult, so a refresh never undoes it.
+     */
+    public function updateNsfw(Request $request, Anime $anime): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nsfw' => ['required', 'boolean'],
+        ]);
+
+        $nsfw = (bool) $validated['nsfw'];
+
+        $anime->forceFill([
+            'nsfw_at' => $nsfw ? ($anime->nsfw_at ?? now()) : null,
+        ])->save();
+
+        $this->forgetPublicCaches($anime);
+
+        return redirect()
+            ->route('admin.anime.edit', $anime)
+            ->with('message', $nsfw ? 'Marked NSFW.' : 'No longer marked NSFW.');
+    }
+
+    /**
+     * Drop the page cache and the long-lived public listings that can link
+     * to the title, so a visibility or NSFW change shows at once.
+     */
+    private function forgetPublicCaches(Anime $anime): void
+    {
         foreach ([
             "anime:v3:{$anime->id}",
             'sitemap:xml',
@@ -200,10 +246,6 @@ class AdminAnimeController extends Controller
         if ($anime->season_year && $anime->season) {
             Cache::forget("anime:seasonal:{$anime->season_year}:{$anime->season}");
         }
-
-        return redirect()
-            ->route('admin.anime.edit', $anime)
-            ->with('message', $shown ? 'Page is now shown.' : 'Page is now hidden.');
     }
 
     public function reset(Anime $anime): RedirectResponse

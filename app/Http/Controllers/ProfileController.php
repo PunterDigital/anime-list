@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\UserProfileResource;
 use App\Models\User;
 use App\Services\UserListService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,7 +35,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function list(User $user, UserListService $listService): Response
+    public function list(Request $request, User $user, UserListService $listService): Response
     {
         if (! $user->list_is_public) {
             return Inertia::render('PublicListPage', [
@@ -45,7 +46,7 @@ class ProfileController extends Controller
             ]);
         }
 
-        $data = $listService->getPublicListForPage($user);
+        $data = $listService->getPublicListForPage($user, includeNsfw: $request->user() !== null);
 
         return Inertia::render('PublicListPage', [
             'profile' => new UserProfileResource($user),

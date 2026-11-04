@@ -56,6 +56,7 @@ class Anime extends Model
         'refresh_exclusion_reason',
         'hidden_at',
         'hidden_reason',
+        'nsfw_at',
     ];
 
     protected function casts(): array
@@ -72,6 +73,7 @@ class Anime extends Model
             'synopsis_rewritten_at' => 'datetime',
             'refresh_excluded_at' => 'datetime',
             'hidden_at' => 'datetime',
+            'nsfw_at' => 'datetime',
         ];
     }
 
@@ -92,7 +94,7 @@ class Anime extends Model
      */
     public function isIndexable(): bool
     {
-        if ($this->is_adult || $this->isHidden()) {
+        if ($this->is_adult || $this->isNsfw() || $this->isHidden()) {
             return false;
         }
 
@@ -385,6 +387,25 @@ class Anime extends Model
     public function scopeVisible(Builder $query): Builder
     {
         return $query->whereNull($query->qualifyColumn('hidden_at'));
+    }
+
+    /**
+     * True when an admin has marked the title NSFW (card 4198). Separate
+     * from AniList's own is_adult, which every refresh overwrites.
+     */
+    public function isNsfw(): bool
+    {
+        return $this->nsfw_at !== null;
+    }
+
+    /**
+     * Anime that AniList does not flag as adult and no admin marked NSFW:
+     * the titles search, listings and the sitemap may show (card 4198).
+     */
+    public function scopeSafeForWork(Builder $query): Builder
+    {
+        return $query->where($query->qualifyColumn('is_adult'), false)
+            ->whereNull($query->qualifyColumn('nsfw_at'));
     }
 
     /**

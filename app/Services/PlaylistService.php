@@ -19,10 +19,15 @@ class PlaylistService
             ->get();
     }
 
-    public function getPlaylistWithItems(Playlist $playlist): Playlist
+    /**
+     * Signed-out viewers don't get items for titles an admin marked NSFW
+     * (card 4198); signed-in viewers and the owner see every item.
+     */
+    public function getPlaylistWithItems(Playlist $playlist, bool $includeNsfw = true): Playlist
     {
         return $playlist->load([
             'user:id,username,avatar_url',
+            'items' => fn ($q) => $includeNsfw ? $q : $q->whereDoesntHave('anime', fn ($a) => $a->whereNotNull('nsfw_at')),
             'items.anime:id,slug,title_romaji,title_english,cover_image_medium,cover_image_large,cover_image_color,format,status,episodes,average_score,season,season_year,anilist_id',
             'items.anime.genres',
         ]);

@@ -23,8 +23,8 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@': resolve(__dirname, 'resources/js'),
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+            '@': resolve(import.meta.dirname, 'resources/js'),
+            'ziggy-js': resolve(import.meta.dirname, 'vendor/tightenco/ziggy'),
         },
     },
     optimizeDeps: {

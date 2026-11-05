@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useToast } from 'primevue/usetoast'
+import { useToast } from '@/composables/useToast'
 import { useListMutations } from '@/composables/useListMutations'
 import type { AnimeCard, ListEntryResource, ListStatus } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
-import Dialog from 'primevue/dialog'
-import Select from 'primevue/select'
-import Slider from 'primevue/slider'
+import AppDialog from '@/Components/ui/AppDialog.vue'
+import AppSelect from '@/Components/ui/AppSelect.vue'
+import AppSlider from '@/Components/ui/AppSlider.vue'
 import AppInputText from '@/Components/ui/AppInputText.vue'
 import AppTextarea from '@/Components/ui/AppTextarea.vue'
 import AppButton from '@/Components/ui/AppButton.vue'
@@ -96,9 +96,8 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
 </script>
 
 <template>
-    <Dialog
+    <AppDialog
         :visible="visible"
-        modal
         :header="entry ? 'Edit Entry' : 'Add to List'"
         class="w-full max-w-lg"
         @update:visible="(v) => { if (!v) close() }"
@@ -108,8 +107,9 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
 
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Status</label>
-                <Select
+                <AppSelect
                     v-model="status"
+                    aria-label="Status"
                     :options="statusOptions"
                     option-label="label"
                     option-value="value"
@@ -121,13 +121,13 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
                 <label class="block text-sm text-gray-400 mb-1">
                     Score: {{ displayScore > 0 ? displayScore : '-' }}
                 </label>
-                <Slider
-                    :model-value="displayScore"
+                <AppSlider
+                    v-model="displayScore"
+                    aria-label="Score"
                     :min="0"
                     :max="10"
                     :step="1"
                     class="w-full"
-                    @update:model-value="(v: number | number[]) => displayScore = Array.isArray(v) ? v[0] : v"
                 />
             </div>
 
@@ -197,5 +197,5 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
                 </div>
             </div>
         </template>
-    </Dialog>
+    </AppDialog>
 </template>

@@ -45,7 +45,7 @@ All new user-facing features MUST be gated behind a feature flag using Laravel P
 ## Tech Stack
 
 - **Backend:** Laravel 12, PHP 8.4 (the lockfile needs 8.4; CI and production run 8.4)
-- **Frontend:** Vue 3 + TypeScript, Inertia.js, PrimeVue, Tailwind CSS
+- **Frontend:** Vue 3 + TypeScript, Inertia.js, Tailwind CSS (local controls in `resources/js/Components/ui`, no component library)
 - **Database:** MySQL
 - **Queue:** Redis + Laravel Horizon
 - **External API:** AniList GraphQL API
@@ -139,14 +139,22 @@ as `php <that dir>/composer/composer.phar`.
 - TypeScript 7 (card 3820): the extension is on TS 6.0, the last JS-based TypeScript. TS 7 has
   no JS compiler API, so `vue-tsc` can't run on it (`typescript/lib/tsc` isn't exported).
   `dependabot.yml` ignores `typescript >=7` for `/chrome-extension` until vue-tsc supports it.
-- PrimeVue 5 (card 3820) is no longer MIT: it is a commercial PrimeUI package that needs a
-  licence key (`@primeui/license-manager`). Shay chose to stay on 4.5.x (card 4252):
-  `dependabot.yml` ignores `primevue` and `@primevue/*` >=5. Moving off PrimeVue is card 4272.
-- Form controls (card 4272, part 1): `resources/js/Components/ui` has `AppButton` (label,
+- PrimeVue is gone (card 4272): PrimeVue 5 became a commercial PrimeUI package that needs a
+  licence key, so AniTrack moved to its own components. Don't add it back.
+- Form controls (card 4272): `resources/js/Components/ui` has `AppButton` (label,
   severity primary/secondary/danger, text, outlined, size small, loading), `AppInputText`,
   `AppTextarea`, `AppToggleSwitch` (checkbox with `role="switch"`), `AppPassword` (toggle-mask
-  is a labelled Show/Hide password button) and `AppProgressBar`, styled to look like PrimeVue's
-  Aura dark theme with the `--color-control-*` tokens in `resources/css/app.css` (Aura's
-  Tailwind 3 hex palette). Still on PrimeVue until part 2: Select, Slider, Dialog, Toast/useToast
-  and the PrimeVue setup in `app.ts`/`ssr.ts`. The smoke spec's register test covers the
-  controls' keyboard behaviour on /settings (a separate sign-in would hit `throttle:auth`).
+  is a labelled Show/Hide password button), `AppProgressBar`, `AppSelect` (combobox +
+  listbox; `options`/`option-label`/`option-value`, `show-clear`, `filter`, `invalid`; give it
+  an `aria-label`), `AppDialog` (modal, `v-model:visible`, `header`, `#footer` slot; Escape,
+  focus trap, scroll lock, focus back to the opener), `AppSlider` (role="slider" handle) and
+  `AppToast` (in AppLayout) with `useToast().add({ severity, summary, detail, life })` from
+  `composables/useToast.ts` (`createToast()` is installed in `app.ts` and `ssr.ts`, one store
+  per app). They look like PrimeVue's Aura dark theme through the `--color-control-*` and
+  `--color-toast-*` tokens in `resources/css/app.css` (Aura's Tailwind 3 hex palette).
+  `.dark { color-scheme: dark }` there replaces what Aura set, so native controls (date picker
+  icons, spinners, scrollbars) stay dark. The Select list and the Dialog are teleported to
+  `<body>` only after mount, so SSR output and hydration agree. `data-ui="…"` attributes name
+  each part. E2E: `controls.spec.ts` (Select on /anime) and the smoke spec's register test
+  (Dialog, Select, Slider, Toast, the filter box on /settings; a separate sign-in would hit
+  `throttle:auth`).

@@ -4,7 +4,7 @@ import { usePage } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import AdBanner from '@/Components/AdBanner.vue'
-import Toast from 'primevue/toast'
+import AppToast from '@/Components/ui/AppToast.vue'
 import { useFlashToast } from '@/composables/useFlashToast'
 
 const page = usePage<{ auth: { user: import('@/types').User | null } }>()
@@ -22,6 +22,6 @@ useFlashToast()
         </main>
         <AdBanner />
         <AppFooter />
-        <Toast position="top-right" />
+        <AppToast />
     </div>
 </template>

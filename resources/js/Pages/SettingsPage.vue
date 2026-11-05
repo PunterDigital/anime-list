@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import type { User } from '@/types'
 import AppInputText from '@/Components/ui/AppInputText.vue'
 import AppTextarea from '@/Components/ui/AppTextarea.vue'
-import Select from 'primevue/select'
+import AppSelect from '@/Components/ui/AppSelect.vue'
 import AppPassword from '@/Components/ui/AppPassword.vue'
 import AppButton from '@/Components/ui/AppButton.vue'
 import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
@@ -270,8 +270,9 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Timezone</label>
-                    <Select
+                    <AppSelect
                         v-model="profileForm.timezone"
+                        aria-label="Timezone"
                         :options="timezoneOptions"
                         option-label="label"
                         option-value="value"

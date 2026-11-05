@@ -49,8 +49,26 @@
     --color-control-knob-hover: #d4d4d8;
     --color-control-danger: #f87171;
     --color-control-danger-border: #b91c1c;
+    /* Part 2: Select, Dialog, Slider and Toast. */
+    --color-control-invalid: #fca5a5;
+    --color-control-overlay: #18181b;
+    --color-control-ring: #d4d4d8;
+    --color-toast-success: #22c55e;
+    --color-toast-success-border: #15803d;
+    --color-toast-info: #3b82f6;
+    --color-toast-info-border: #1d4ed8;
+    --color-toast-warn: #eab308;
+    --color-toast-warn-border: #a16207;
+    --color-toast-error: #ef4444;
+    --color-toast-error-border: #b91c1c;
 }
 
 body {
     font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* PrimeVue's dark theme set this (card 4272): native controls such as the
+   date picker icon, number spinners and scrollbars follow the dark look. */
+.dark {
+    color-scheme: dark;
 }

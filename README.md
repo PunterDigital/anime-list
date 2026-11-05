@@ -15,7 +15,7 @@ Part of [Shay's personal apps](https://punterdigital.github.io/personal-apps/).
 
 ## Stack
 
-Laravel 12 (PHP 8.4), Inertia 2 + Vue 3 + TypeScript, PrimeVue, Tailwind CSS 4, MySQL,
+Laravel 12 (PHP 8.4), Inertia 3 + Vue 3 + TypeScript, Tailwind CSS 4 (own form controls, no component library), MySQL,
 Redis + Horizon, Inertia SSR. Hosted on Laravel Forge: every push to `main` deploys.
 
 ## Development

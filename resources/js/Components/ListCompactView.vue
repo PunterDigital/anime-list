@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ListEntryResource, ListStatus } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
-import Select from 'primevue/select'
+import AppSelect from '@/Components/ui/AppSelect.vue'
 
 defineProps<{
     entries: ListEntryResource[]
@@ -47,8 +47,9 @@ function incrementProgress(entry: ListEntryResource) {
             >
                 {{ displayTitle(entry) }}
             </Link>
-            <Select
+            <AppSelect
                 v-if="!readonly"
+                aria-label="Status"
                 :model-value="entry.status"
                 :options="statusOptions"
                 option-label="label"

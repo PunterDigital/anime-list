@@ -46,11 +46,11 @@ The `name` parameter comes from the Laravel controller's `Inertia::render('PageN
 2. **ZiggyVue** -- makes Laravel's `route()` helper available in all components
 3. **Pinia** (`createPinia()`) -- state management
 4. **VueQueryPlugin** (TanStack Vue Query) -- async data fetching and caching
-5. **PrimeVue** -- UI component library, configured with:
-   - `unstyled: false` (uses PrimeVue's built-in styles)
-   - `theme.preset: Aura` (the Aura visual theme)
-   - `theme.options.darkModeSelector: '.dark'` (activates dark mode when a `.dark` class is present on an ancestor element)
-6. **ToastService** -- PrimeVue toast notification service
+5. **createToast()** (`composables/useToast.ts`) -- the toast store behind `useToast()` and `<AppToast>`
+
+Form controls (buttons, inputs, Select, Dialog, Slider, Toast and others) are AniTrack's own
+components in `resources/js/Components/ui` (card 4272 replaced PrimeVue, whose v5 needs a
+commercial licence).
 
 ### Global Components
 
@@ -89,7 +89,7 @@ The single shared layout wrapping all pages (except `ErrorPage`, which opts out)
 
 ### Dark Mode
 
-The root `<div>` has `class="dark"` hardcoded. Combined with PrimeVue's `darkModeSelector: '.dark'` configuration, this means the entire application is always in dark mode. The background is `bg-gray-950` and default text is `text-gray-100`.
+The root `<div>` has `class="dark"` hardcoded. Together with `.dark { color-scheme: dark }` in `resources/css/app.css` (so native controls are dark too), the entire application is always in dark mode. The background is `bg-gray-950` and default text is `text-gray-100`.
 
 ### Auth State
 
@@ -105,7 +105,7 @@ These are passed down to `AppNavbar` as props.
 
 ### Flash Messages
 
-The `useFlashToast()` composable is called at layout level. It watches the `flash.message` shared prop and automatically displays a PrimeVue toast whenever the server sets a flash message.
+The `useFlashToast()` composable is called at layout level. It watches the `flash.message` shared prop and automatically shows a toast (`useToast()`, rendered by `<AppToast>`) whenever the server sets a flash message.
 
 ---
 
@@ -352,9 +352,9 @@ Two Inertia forms:
 1. **Profile form** -- edits name, email, bio, timezone (searchable `Select`), and avatar URL. Submits via `PATCH` to `settings.profile`.
 2. **Password form** -- changes password (current password, new password, confirmation). Submits via `PATCH` to `settings.password`. Resets on success.
 
-Uses PrimeVue components: `InputText`, `Textarea`, `Select`, `Password`, `Button`.
+Uses the local form controls: `AppInputText`, `AppTextarea`, `AppSelect`, `AppPassword`, `AppButton`.
 
-**Components used:** `AppLayout`, PrimeVue form components
+**Components used:** `AppLayout`, the form controls in `Components/ui`
 
 ---
 
@@ -600,7 +600,7 @@ Table showing upcoming episodes with columns: Episode number, Date (localized vi
 
 **Behavior:**
 Displays either:
-- "Add to List" button (PrimeVue `Button`) when no entry exists
+- "Add to List" button (`AppButton`) when no entry exists
 - Status label button (showing current status like "Watching") when an entry exists
 
 Clicking either opens the `ListEntryModal`.
@@ -627,7 +627,7 @@ Clicking either opens the `ListEntryModal`.
 | `deleted` | -- | Entry successfully deleted |
 
 **Behavior:**
-PrimeVue `Dialog` modal with form fields:
+`AppDialog` modal with form fields:
 - **Status:** dropdown (`Select`) with all 5 MAL statuses
 - **Score:** slider (`Slider`) from 0-10 in 0.5 increments (stored as 0-100 internally)
 - **Progress:** number input with total episode count displayed
@@ -748,7 +748,7 @@ Minimal row-based layout. Each row shows: linked title, inline status `Select` d
 | `clear` | -- | Filters should be cleared |
 
 **Behavior:**
-Vertical stack of PrimeVue `Select` dropdowns for: Format (7 options), Status (5 options), Season (4 options), Year (dynamically generated from current year back to 1940), Genre (searchable, from server), Studio (searchable, from server). Each dropdown has a "show-clear" option to unset. A "Clear Filters" button at the bottom emits `clear`. Changing any filter immediately emits both `update:filters` and `apply`.
+Vertical stack of `AppSelect` dropdowns for: Format (7 options), Status (5 options), Season (4 options), Year (dynamically generated from current year back to 1940), Genre (searchable, from server), Studio (searchable, from server). Each dropdown has a "show-clear" option to unset. A "Clear Filters" button at the bottom emits `clear`. Changing any filter immediately emits both `update:filters` and `apply`.
 
 ---
 
@@ -893,7 +893,7 @@ Multi-step wizard for importing MAL XML exports. Steps:
 
 1. **Upload** -- file input (`.xml` only). Posts via `axios.post(route('import.upload'))` with `FormData`. Receives a token, preview entries, and total count.
 2. **Preview** -- shows first 20 entries in a table (title, status, score, progress). Checkbox for "Overwrite existing entries". Confirm/Cancel buttons.
-3. **Processing** -- progress bar (PrimeVue `ProgressBar`). Polls `route('import.status')` every 2 seconds.
+3. **Processing** -- progress bar (`AppProgressBar`). Polls `route('import.status')` every 2 seconds.
 4. **Done** -- shows import results (imported, skipped, errors, total). Links to "Go to My List" and "Import Another".
 
 Error handling displays a red banner above the current step.
@@ -988,7 +988,7 @@ Initializes filter state from the current URL query parameters (e.g., `filter[fo
 **Returns:** Nothing (side effect only)
 
 **Behavior:**
-Watches the `flash.message` shared Inertia prop. When a non-null message appears, displays a PrimeVue toast with:
+Watches the `flash.message` shared Inertia prop. When a non-null message appears, displays a toast (`useToast()`) with:
 - **Severity** mapped from `flash.status`: `success`, `error` (mapped to `error`), `warning` (mapped to `warn`), `info`
 - **Summary:** capitalized status string
 - **Detail:** the flash message text
@@ -1717,7 +1717,7 @@ Search uses a two-layer approach: the `useAnimeSearch` composable for data fetch
 
 ### Architecture
 
-List management uses `useListMutations` (TanStack Vue Query mutations via axios) for all CRUD operations and `ListEntryModal` (PrimeVue Dialog) for the edit form.
+List management uses `useListMutations` (TanStack Vue Query mutations via axios) for all CRUD operations and `ListEntryModal` (`AppDialog`) for the edit form.
 
 ### Adding an Entry
 

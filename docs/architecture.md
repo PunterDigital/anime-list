@@ -41,7 +41,7 @@ AniList's public GraphQL API (`https://graphql.anilist.co`) is the primary data 
 | TypeScript | Type safety |
 | Vite | Build tool and dev server |
 | Tailwind CSS v4 | Utility-first CSS |
-| PrimeVue 4 | UI component library (Aura theme, `.dark` selector) |
+| `Components/ui` | Own form controls (Button, Select, Dialog, Slider, Toast, ...), styled like the old PrimeVue Aura dark theme |
 | Pinia | State management (anime, userList stores) |
 | TanStack Vue Query | Server state / async data management |
 | Ziggy | Laravel named routes in JavaScript |
@@ -329,7 +329,7 @@ Browser GET /anime/123
        v
   resources/js/app.ts bootstraps:
        |  1. createInertiaApp() resolves page component via import.meta.glob
-       |  2. Registers plugins: ZiggyVue, Pinia, VueQueryPlugin, PrimeVue, ToastService
+       |  2. Registers plugins: ZiggyVue, Pinia, VueQueryPlugin, createToast()
        |  3. Registers global components: <Link>, <Head>
        |  4. Mounts Vue app to #app element
        |
@@ -410,8 +410,8 @@ The single Blade template that serves all pages (`resources/views/app.blade.php`
 `AppLayout.vue` wraps all page content and provides:
 - The `AppNavbar` component with user authentication state
 - A `<slot>` for page content inside a responsive container
-- PrimeVue `Toast` component for flash notifications
-- The `useFlashToast()` composable that converts Laravel flash messages into PrimeVue toasts
+- The `AppToast` component for flash notifications
+- The `useFlashToast()` composable that converts Laravel flash messages into toasts
 
 ```vue
 <!-- resources/js/Layouts/AppLayout.vue -->

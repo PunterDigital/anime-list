@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import Button from 'primevue/button'
+import AppButton from '@/Components/ui/AppButton.vue'
 
 defineOptions({ layout: AppLayout })
 
@@ -477,12 +477,12 @@ Accept: application/json</code></pre>
                     </div>
 
                     <div class="relative">
-                        <Button
+                        <AppButton
                             type="button"
                             size="small"
                             severity="secondary"
                             text
-                            class="!absolute !right-2 !top-2 !text-xs"
+                            class="!absolute !right-2 !top-2 !text-xs !leading-4"
                             :label="copiedId === endpoint.id ? 'Copied' : 'Copy'"
                             @click="copy(renderExample(endpoint.example), endpoint.id)"
                         />

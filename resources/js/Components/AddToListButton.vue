@@ -4,7 +4,7 @@ import { useToast } from 'primevue/usetoast'
 import type { AnimeCard, ListEntryResource } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
 import ListEntryModal from '@/Components/ListEntryModal.vue'
-import Button from 'primevue/button'
+import AppButton from '@/Components/ui/AppButton.vue'
 
 const props = defineProps<{
     anime: AnimeCard
@@ -41,7 +41,7 @@ function onDeleted() {
 
 <template>
     <div>
-        <Button
+        <AppButton
             v-if="!currentEntry"
             label="Add to List"
             size="small"

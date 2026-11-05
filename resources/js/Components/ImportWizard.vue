@@ -2,8 +2,8 @@
 import { ref, onUnmounted } from 'vue'
 import axios from 'axios'
 import type { MalPreviewEntry, ImportResult, ImportStatus } from '@/types'
-import Button from 'primevue/button'
-import ProgressBar from 'primevue/progressbar'
+import AppButton from '@/Components/ui/AppButton.vue'
+import AppProgressBar from '@/Components/ui/AppProgressBar.vue'
 
 type Step = 'upload' | 'preview' | 'processing' | 'done'
 
@@ -192,8 +192,8 @@ function reset() {
             </label>
 
             <div class="flex gap-2">
-                <Button label="Cancel" severity="secondary" text @click="reset" />
-                <Button
+                <AppButton label="Cancel" severity="secondary" text @click="reset" />
+                <AppButton
                     :label="`Import ${total} entries`"
                     :loading="confirming"
                     @click="confirmImport"
@@ -204,8 +204,8 @@ function reset() {
         <!-- Step 3: Processing -->
         <div v-else-if="step === 'processing'" class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center space-y-4">
             <h2 class="text-lg font-semibold">{{ fetching ? 'Fetching missing anime...' : 'Importing...' }}</h2>
-            <ProgressBar v-if="!fetching" :value="total > 0 ? Math.round((progress / total) * 100) : 0" />
-            <ProgressBar v-else mode="indeterminate" />
+            <AppProgressBar v-if="!fetching" :value="total > 0 ? Math.round((progress / total) * 100) : 0" />
+            <AppProgressBar v-else mode="indeterminate" />
             <p class="text-sm text-gray-400">
                 {{ fetching ? 'Looking up anime not yet in our database' : `${progress} / ${total} entries processed` }}
             </p>
@@ -270,9 +270,9 @@ function reset() {
 
             <div class="flex gap-2">
                 <Link :href="route('list')">
-                    <Button label="Go to My List" />
+                    <AppButton label="Go to My List" />
                 </Link>
-                <Button label="Import Another" severity="secondary" text @click="reset" />
+                <AppButton label="Import Another" severity="secondary" text @click="reset" />
             </div>
         </div>
     </div>

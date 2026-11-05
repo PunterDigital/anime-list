@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import ToggleSwitch from 'primevue/toggleswitch'
+import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
 import LibraryCardsView from '@/Components/LibraryCardsView.vue'
 import LibraryRowsView from '@/Components/LibraryRowsView.vue'
 import LibraryDataTable from '@/Components/LibraryDataTable.vue'
@@ -225,7 +225,7 @@ const sortOptions = [
         <!-- Top actions -->
         <div class="flex flex-wrap items-center gap-3 border-b border-gray-800 pb-5">
             <div class="flex items-center gap-2">
-                <ToggleSwitch v-model="listIsPublic" @update:model-value="togglePublic" />
+                <AppToggleSwitch v-model="listIsPublic" @update:model-value="togglePublic" />
                 <span class="text-sm text-gray-400">Public</span>
             </div>
             <button

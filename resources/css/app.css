@@ -24,6 +24,31 @@
     --color-surface-700: #e5e7eb;
     --color-surface-800: #f3f4f6;
     --color-surface-900: #f9fafb;
+
+    /*
+     * Form controls (card 4272): the colours PrimeVue's Aura dark theme gave
+     * them, so the local components in resources/js/Components/ui look the
+     * same. Aura uses Tailwind 3's hex palette (emerald, zinc, red), which
+     * differs slightly from Tailwind 4's OKLCH one, hence plain hex values.
+     */
+    --color-control-accent: #34d399;
+    --color-control-accent-hover: #6ee7b7;
+    --color-control-accent-active: #a7f3d0;
+    --color-control-on-accent: #18181b;
+    --color-control-field: #09090b;
+    --color-control-border: #52525b;
+    --color-control-border-hover: #71717a;
+    --color-control-muted: #a1a1aa;
+    --color-control-secondary: #27272a;
+    --color-control-secondary-hover: #3f3f46;
+    --color-control-secondary-active: #52525b;
+    --color-control-secondary-text: #d4d4d8;
+    --color-control-secondary-text-hover: #e4e4e7;
+    --color-control-track: #3f3f46;
+    --color-control-track-hover: #52525b;
+    --color-control-knob-hover: #d4d4d8;
+    --color-control-danger: #f87171;
+    --color-control-danger-border: #b91c1c;
 }
 
 body {

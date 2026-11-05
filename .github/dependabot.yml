@@ -15,6 +15,13 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # PrimeVue 5 is a commercial PrimeUI package that needs a licence key.
+      # Stay on 4.5 (MIT) until AniTrack moves off PrimeVue (card #4272).
+      - dependency-name: primevue
+        versions: [">=5"]
+      - dependency-name: "@primevue/*"
+        versions: [">=5"]
 
   - package-ecosystem: npm
     directory: /chrome-extension

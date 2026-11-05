@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Select from 'primevue/select'
+import AppSelect from '@/Components/ui/AppSelect.vue'
 
 defineProps<{
     sort: string | undefined
@@ -30,7 +30,8 @@ const sortOptions = [
             {{ total.toLocaleString() }} results
         </p>
         <div class="flex items-center gap-3">
-            <Select
+            <AppSelect
+                aria-label="Sort by"
                 :model-value="sort || '-popularity'"
                 :options="sortOptions"
                 option-label="name"

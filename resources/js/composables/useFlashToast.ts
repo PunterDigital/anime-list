@@ -1,6 +1,6 @@
 import { watch, onUnmounted } from 'vue'
 import { usePage } from '@inertiajs/vue3'
-import { useToast } from 'primevue/usetoast'
+import { useToast } from '@/composables/useToast'
 
 export function useFlashToast() {
     const page = usePage()

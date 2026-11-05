@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Select from 'primevue/select'
+import AppSelect from '@/Components/ui/AppSelect.vue'
 import type { BrowseFilters, FilterOption } from '@/types/anime'
 
 const props = defineProps<{
@@ -55,7 +55,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
     <div class="space-y-4">
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Format</label>
-            <Select
+            <AppSelect
+                aria-label="Format"
                 :model-value="filters.format"
                 :options="formatOptions"
                 option-label="name"
@@ -69,7 +70,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
 
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Status</label>
-            <Select
+            <AppSelect
+                aria-label="Status"
                 :model-value="filters.status"
                 :options="statusOptions"
                 option-label="name"
@@ -83,7 +85,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
 
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Season</label>
-            <Select
+            <AppSelect
+                aria-label="Season"
                 :model-value="filters.season"
                 :options="seasonOptions"
                 option-label="name"
@@ -97,7 +100,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
 
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Year</label>
-            <Select
+            <AppSelect
+                aria-label="Year"
                 :model-value="filters.season_year"
                 :options="yearOptions"
                 option-label="name"
@@ -111,7 +115,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
 
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Genre</label>
-            <Select
+            <AppSelect
+                aria-label="Genre"
                 :model-value="filters.genre"
                 :options="genres"
                 option-label="name"
@@ -126,7 +131,8 @@ function updateFilter(key: keyof BrowseFilters, value: unknown) {
 
         <div>
             <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-400">Studio</label>
-            <Select
+            <AppSelect
+                aria-label="Studio"
                 :model-value="filters.studio"
                 :options="studios"
                 option-label="name"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useToast } from 'primevue/usetoast'
+import { useToast } from '@/composables/useToast'
 import type { AnimeCard, ListEntryResource } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
 import ListEntryModal from '@/Components/ListEntryModal.vue'

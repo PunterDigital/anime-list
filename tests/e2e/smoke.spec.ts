@@ -81,9 +81,48 @@ test('register, add an anime to the list and see it on My List', async ({ page }
 
     await page.goto('/anime');
     await page.getByRole('link', { name: ANIME }).first().click();
-    await page.getByRole('button', { name: 'Add to List' }).click();
-    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Added to List').first()).toBeVisible();
+    const addButton = page.getByRole('button', { name: 'Add to List' });
+    await addButton.click();
+
+    // Card 4272: the local Dialog, Select, Slider and Toast. The dialog is a
+    // titled modal; Escape closes it and focus goes back to the button.
+    const dialog = page.getByRole('dialog', { name: 'Add to List' });
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(addButton).toBeFocused();
+
+    await addButton.click();
+    const status = dialog.getByRole('combobox', { name: 'Status' });
+    await expect(status).toHaveText('Plan to Watch');
+    await status.focus();
+    await page.keyboard.press('Home'); // closed: Home does nothing
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Enter');
+    await expect(status).toHaveText('Watching');
+    // Escape on an open list closes the list, not the dialog.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await expect(dialog).toBeVisible();
+
+    const score = dialog.getByRole('slider', { name: 'Score' });
+    await expect(score).toHaveAttribute('aria-valuenow', '0');
+    await score.focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowLeft');
+    await expect(score).toHaveAttribute('aria-valuenow', '9');
+    await expect(dialog.getByText('Score: 9')).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    const toast = page.getByRole('alert').filter({ hasText: 'Added to List' });
+    await expect(toast).toContainText('Watching');
+    await toast.getByRole('button', { name: 'Close' }).click();
+    await expect(toast).toHaveCount(0);
 
     await page.goto('/list');
     await expect(page.getByText(ANIME).first()).toBeVisible();
@@ -118,12 +157,29 @@ test('register, add an anime to the list and see it on My List', async ({ page }
     await hide.click();
     await expect(current).toHaveAttribute('type', 'password');
 
-    // Saving goes through the button and keeps the bio and the switch.
+    // The timezone select has a filter box: typing narrows the list, the
+    // arrows still move through it and Enter picks.
+    const timezone = page.getByRole('combobox', { name: 'Timezone' });
+    await timezone.click();
+    const filter = page.getByRole('searchbox', { name: 'Filter options' });
+    await expect(filter).toBeFocused();
+    await filter.fill('europe/pra');
+    await expect(page.getByRole('option')).toHaveText(['Europe/Prague']);
+    await page.keyboard.press('Enter');
+    await expect(timezone).toHaveText('Europe/Prague');
+    await timezone.click();
+    await page.getByRole('searchbox', { name: 'Filter options' }).fill('no such zone');
+    await expect(page.getByRole('option')).toHaveText('No results found');
+    await page.keyboard.press('Escape');
+    await expect(timezone).toBeFocused();
+
+    // Saving goes through the button and keeps the bio, the switch and the timezone.
     const saved = page.waitForResponse((r) => r.request().method() === 'PATCH');
     await page.getByRole('button', { name: 'Save Profile' }).click();
     expect((await saved).status()).toBeLessThan(400);
     await page.reload();
     await expect(page.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByRole('combobox', { name: 'Timezone' })).toHaveText('Europe/Prague');
     await expect(page.locator('label:text-is("Bio") + textarea')).toHaveValue('Watching everything.');
     expect(errors).toEqual([]);
 });

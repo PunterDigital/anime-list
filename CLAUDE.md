@@ -140,4 +140,5 @@ as `php <that dir>/composer/composer.phar`.
   no JS compiler API, so `vue-tsc` can't run on it (`typescript/lib/tsc` isn't exported).
   `dependabot.yml` ignores `typescript >=7` for `/chrome-extension` until vue-tsc supports it.
 - PrimeVue 5 (card 3820) is no longer MIT: it is a commercial PrimeUI package that needs a
-  licence key (`@primeui/license-manager`). Stay on 4.5.x until Shay decides.
+  licence key (`@primeui/license-manager`). Shay chose to stay on 4.5.x (card 4252):
+  `dependabot.yml` ignores `primevue` and `@primevue/*` >=5. Moving off PrimeVue is card 4272.

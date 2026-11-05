@@ -7,9 +7,9 @@ import { LIST_STATUS_LABELS } from '@/types'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 import Slider from 'primevue/slider'
-import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
-import Button from 'primevue/button'
+import AppInputText from '@/Components/ui/AppInputText.vue'
+import AppTextarea from '@/Components/ui/AppTextarea.vue'
+import AppButton from '@/Components/ui/AppButton.vue'
 
 const props = defineProps<{
     anime: AnimeCard
@@ -149,7 +149,7 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Start Date</label>
-                    <InputText
+                    <AppInputText
                         v-model="startedAt"
                         type="date"
                         class="w-full"
@@ -157,7 +157,7 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
                 </div>
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Finish Date</label>
-                    <InputText
+                    <AppInputText
                         v-model="completedAt"
                         type="date"
                         class="w-full"
@@ -175,14 +175,14 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
                 </button>
                 <div v-else>
                     <label class="block text-sm text-gray-400 mb-1">Notes</label>
-                    <Textarea v-model="notes" rows="2" class="w-full" />
+                    <AppTextarea v-model="notes" rows="2" class="w-full" />
                 </div>
             </div>
         </div>
 
         <template #footer>
             <div class="flex items-center justify-between w-full">
-                <Button
+                <AppButton
                     v-if="entry"
                     label="Remove"
                     severity="danger"
@@ -192,8 +192,8 @@ const displayTitle = computed(() => props.anime.title_english || props.anime.tit
                 />
                 <span v-else />
                 <div class="flex gap-2">
-                    <Button label="Cancel" severity="secondary" text @click="close" />
-                    <Button label="Save" :loading="saving" @click="save" />
+                    <AppButton label="Cancel" severity="secondary" text @click="close" />
+                    <AppButton label="Save" :loading="saving" @click="save" />
                 </div>
             </div>
         </template>

@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import type { PlaylistResource } from '@/types'
-import Button from 'primevue/button'
+import AppButton from '@/Components/ui/AppButton.vue'
 
 defineOptions({ layout: AppLayout })
 
@@ -34,7 +34,7 @@ function displayTitle(anime: { title_english: string | null; title_romaji: strin
                     </p>
                 </div>
                 <Link v-if="isOwner" :href="route('playlists.edit', { playlist: playlist.slug })">
-                    <Button label="Edit" size="small" severity="secondary" />
+                    <AppButton label="Edit" size="small" severity="secondary" />
                 </Link>
             </div>
             <p v-if="playlist.description" class="text-gray-400 text-sm mt-3">{{ playlist.description }}</p>

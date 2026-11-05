@@ -3,12 +3,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import type { User } from '@/types'
-import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
+import AppInputText from '@/Components/ui/AppInputText.vue'
+import AppTextarea from '@/Components/ui/AppTextarea.vue'
 import Select from 'primevue/select'
-import Password from 'primevue/password'
-import Button from 'primevue/button'
-import ToggleSwitch from 'primevue/toggleswitch'
+import AppPassword from '@/Components/ui/AppPassword.vue'
+import AppButton from '@/Components/ui/AppButton.vue'
+import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
 import { useWebpass, Webpass } from '@/composables/useWebpass'
 
 defineOptions({ layout: AppLayout })
@@ -219,7 +219,7 @@ function summariseUserAgent(ua: string | null): string {
             <form class="space-y-4" @submit.prevent="submitProfile">
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Name</label>
-                    <InputText
+                    <AppInputText
                         v-model="profileForm.name"
                         class="w-full"
                         :invalid="!!profileForm.errors.name"
@@ -231,7 +231,7 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Username</label>
-                    <InputText
+                    <AppInputText
                         v-model="profileForm.username"
                         class="w-full"
                         :invalid="!!profileForm.errors.username"
@@ -244,7 +244,7 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Email</label>
-                    <InputText
+                    <AppInputText
                         v-model="profileForm.email"
                         type="email"
                         class="w-full"
@@ -257,7 +257,7 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Bio</label>
-                    <Textarea
+                    <AppTextarea
                         v-model="profileForm.bio"
                         rows="3"
                         class="w-full"
@@ -286,7 +286,7 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Avatar URL</label>
-                    <InputText
+                    <AppInputText
                         v-model="profileForm.avatar_url"
                         class="w-full"
                         placeholder="https://example.com/avatar.jpg"
@@ -298,11 +298,11 @@ function summariseUserAgent(ua: string | null): string {
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <ToggleSwitch v-model="profileForm.list_is_public" />
+                    <AppToggleSwitch v-model="profileForm.list_is_public" />
                     <label class="text-sm text-gray-400">Make my anime list public</label>
                 </div>
 
-                <Button
+                <AppButton
                     type="submit"
                     label="Save Profile"
                     :loading="profileForm.processing"
@@ -317,9 +317,8 @@ function summariseUserAgent(ua: string | null): string {
             <form class="space-y-4" @submit.prevent="submitPassword">
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Current Password</label>
-                    <Password
+                    <AppPassword
                         v-model="passwordForm.current_password"
-                        :feedback="false"
                         toggle-mask
                         class="w-full"
                         input-class="w-full"
@@ -332,9 +331,8 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">New Password</label>
-                    <Password
+                    <AppPassword
                         v-model="passwordForm.password"
-                        :feedback="false"
                         toggle-mask
                         class="w-full"
                         input-class="w-full"
@@ -347,16 +345,15 @@ function summariseUserAgent(ua: string | null): string {
 
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Confirm New Password</label>
-                    <Password
+                    <AppPassword
                         v-model="passwordForm.password_confirmation"
-                        :feedback="false"
                         toggle-mask
                         class="w-full"
                         input-class="w-full"
                     />
                 </div>
 
-                <Button
+                <AppButton
                     type="submit"
                     label="Change Password"
                     severity="secondary"
@@ -382,14 +379,14 @@ function summariseUserAgent(ua: string | null): string {
 
             <form v-else class="flex gap-2 mb-6" @submit.prevent="addPasskey">
                 <div class="flex-1">
-                    <InputText
+                    <AppInputText
                         v-model="passkeyAlias"
                         placeholder="e.g. YubiKey 5C, MacBook Touch ID"
                         class="w-full"
                         :disabled="passkeyBusy"
                     />
                 </div>
-                <Button
+                <AppButton
                     type="submit"
                     :label="passkeyBusy ? 'Waiting for passkey…' : 'Add passkey'"
                     :loading="passkeyBusy"
@@ -415,7 +412,7 @@ function summariseUserAgent(ua: string | null): string {
                             Added {{ formatWhen(passkey.created_at) }}
                         </div>
                     </div>
-                    <Button
+                    <AppButton
                         type="button"
                         size="small"
                         label="Remove"
@@ -460,14 +457,14 @@ function summariseUserAgent(ua: string | null): string {
                         >{{ justCreatedToken.plain_text }}</code>
                     </div>
                     <div class="flex flex-col gap-2 shrink-0">
-                        <Button
+                        <AppButton
                             type="button"
                             size="small"
                             label="Copy"
                             severity="secondary"
                             @click="copyToken(justCreatedToken.plain_text)"
                         />
-                        <Button
+                        <AppButton
                             type="button"
                             size="small"
                             label="Dismiss"
@@ -482,7 +479,7 @@ function summariseUserAgent(ua: string | null): string {
             <!-- Create form -->
             <form class="flex gap-2 mb-6" @submit.prevent="submitTokenForm">
                 <div class="flex-1">
-                    <InputText
+                    <AppInputText
                         v-model="tokenForm.name"
                         placeholder="e.g. Chrome Extension — Work Laptop"
                         class="w-full"
@@ -492,7 +489,7 @@ function summariseUserAgent(ua: string | null): string {
                         {{ tokenForm.errors.name }}
                     </p>
                 </div>
-                <Button
+                <AppButton
                     type="submit"
                     label="Create Token"
                     :loading="tokenForm.processing"
@@ -526,7 +523,7 @@ function summariseUserAgent(ua: string | null): string {
                             Created {{ formatWhen(token.created_at) }}
                         </div>
                     </div>
-                    <Button
+                    <AppButton
                         type="button"
                         size="small"
                         label="Revoke"

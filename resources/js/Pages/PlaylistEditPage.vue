@@ -4,10 +4,10 @@ import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import type { PlaylistResource, PlaylistItem, AnimeCard } from '@/types'
 import { usePlaylistMutations } from '@/composables/usePlaylistMutations'
-import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
-import ToggleSwitch from 'primevue/toggleswitch'
+import AppButton from '@/Components/ui/AppButton.vue'
+import AppInputText from '@/Components/ui/AppInputText.vue'
+import AppTextarea from '@/Components/ui/AppTextarea.vue'
+import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
 import axios from 'axios'
 
 defineOptions({ layout: AppLayout })
@@ -157,9 +157,9 @@ async function deletePlaylist() {
             <h1 class="text-2xl font-bold">{{ isNew ? 'Create Playlist' : 'Edit Playlist' }}</h1>
             <div v-if="!isNew" class="flex gap-2">
                 <Link :href="route('playlist.show', { playlist: playlist!.slug })">
-                    <Button label="View" size="small" severity="secondary" text />
+                    <AppButton label="View" size="small" severity="secondary" text />
                 </Link>
-                <Button label="Delete" size="small" severity="danger" text @click="deletePlaylist" />
+                <AppButton label="Delete" size="small" severity="danger" text @click="deletePlaylist" />
             </div>
         </div>
 
@@ -167,17 +167,17 @@ async function deletePlaylist() {
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4 mb-6">
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Title</label>
-                <InputText v-model="title" class="w-full" placeholder="e.g. Gundam Watch Order" />
+                <AppInputText v-model="title" class="w-full" placeholder="e.g. Gundam Watch Order" />
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Description</label>
-                <Textarea v-model="description" class="w-full" rows="3" placeholder="Describe this watch order..." />
+                <AppTextarea v-model="description" class="w-full" rows="3" placeholder="Describe this watch order..." />
             </div>
             <div class="flex items-center gap-3">
-                <ToggleSwitch v-model="isPublic" />
+                <AppToggleSwitch v-model="isPublic" />
                 <label class="text-sm text-gray-300 cursor-pointer" @click="isPublic = !isPublic">Public</label>
             </div>
-            <Button
+            <AppButton
                 :label="isNew ? 'Create Playlist' : 'Save Changes'"
                 :loading="saving"
                 :disabled="!title.trim()"
@@ -190,7 +190,7 @@ async function deletePlaylist() {
             <!-- Add anime search -->
             <div class="mb-4">
                 <label class="block text-sm text-gray-400 mb-1">Add anime</label>
-                <InputText
+                <AppInputText
                     v-model="searchQuery"
                     class="w-full"
                     placeholder="Search for anime to add..."

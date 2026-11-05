@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/Layouts/AppLayout.vue'
 import type { PlaylistCard } from '@/types'
-import Button from 'primevue/button'
+import AppButton from '@/Components/ui/AppButton.vue'
 
 defineOptions({ layout: AppLayout })
 
@@ -16,7 +16,7 @@ defineProps<{
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">My Playlists</h1>
             <Link :href="route('playlists.create')">
-                <Button label="Create Playlist" size="small" />
+                <AppButton label="Create Playlist" size="small" />
             </Link>
         </div>
 

@@ -87,6 +87,44 @@ test('register, add an anime to the list and see it on My List', async ({ page }
 
     await page.goto('/list');
     await expect(page.getByText(ANIME).first()).toBeVisible();
+
+    // Card 4272: the local form controls that replaced PrimeVue's keep their
+    // keyboard and screen-reader behaviour. Here, not in a spec of its own:
+    // another sign-in would hit throttle:auth (5 a minute).
+    await page.goto('/settings');
+    const name = page.locator('label:text-is("Name") + input');
+    await expect(name).toHaveValue('New Viewer');
+    await expect(name).toHaveAttribute('type', 'text');
+    const bio = page.locator('label:text-is("Bio") + textarea');
+    await bio.fill('Watching everything.');
+
+    // The switch is a focusable checkbox with role="switch": Space toggles it.
+    const listSwitch = page.getByRole('switch');
+    await expect(listSwitch).toHaveCount(1);
+    await expect(listSwitch).toHaveAttribute('aria-checked', 'false');
+    await listSwitch.focus();
+    await page.keyboard.press('Space');
+    await expect(listSwitch).toHaveAttribute('aria-checked', 'true');
+
+    // Show/hide password is a labelled button that says whether it is on.
+    const current = page.locator('label:text-is("Current Password") + div input');
+    await current.fill('secret-value');
+    await expect(current).toHaveAttribute('type', 'password');
+    await page.getByRole('button', { name: 'Show password' }).first().focus();
+    await page.keyboard.press('Enter');
+    await expect(current).toHaveAttribute('type', 'text');
+    const hide = page.getByRole('button', { name: 'Hide password' });
+    await expect(hide).toHaveAttribute('aria-pressed', 'true');
+    await hide.click();
+    await expect(current).toHaveAttribute('type', 'password');
+
+    // Saving goes through the button and keeps the bio and the switch.
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH');
+    await page.getByRole('button', { name: 'Save Profile' }).click();
+    expect((await saved).status()).toBeLessThan(400);
+    await page.reload();
+    await expect(page.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('label:text-is("Bio") + textarea')).toHaveValue('Watching everything.');
     expect(errors).toEqual([]);
 });
 

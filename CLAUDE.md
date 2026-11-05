@@ -142,3 +142,11 @@ as `php <that dir>/composer/composer.phar`.
 - PrimeVue 5 (card 3820) is no longer MIT: it is a commercial PrimeUI package that needs a
   licence key (`@primeui/license-manager`). Shay chose to stay on 4.5.x (card 4252):
   `dependabot.yml` ignores `primevue` and `@primevue/*` >=5. Moving off PrimeVue is card 4272.
+- Form controls (card 4272, part 1): `resources/js/Components/ui` has `AppButton` (label,
+  severity primary/secondary/danger, text, outlined, size small, loading), `AppInputText`,
+  `AppTextarea`, `AppToggleSwitch` (checkbox with `role="switch"`), `AppPassword` (toggle-mask
+  is a labelled Show/Hide password button) and `AppProgressBar`, styled to look like PrimeVue's
+  Aura dark theme with the `--color-control-*` tokens in `resources/css/app.css` (Aura's
+  Tailwind 3 hex palette). Still on PrimeVue until part 2: Select, Slider, Dialog, Toast/useToast
+  and the PrimeVue setup in `app.ts`/`ssr.ts`. The smoke spec's register test covers the
+  controls' keyboard behaviour on /settings (a separate sign-in would hit `throttle:auth`).

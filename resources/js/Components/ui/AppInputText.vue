@@ -11,6 +11,7 @@ const model = defineModel<string | null | undefined>()
 <template>
     <input
         v-model="model"
+        type="text"
         :class="fieldClasses(invalid)"
         :aria-invalid="invalid || undefined"
     />

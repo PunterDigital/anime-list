@@ -23,6 +23,11 @@ updates:
     groups:
       extension-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 (the native compiler) has no JS compiler API, and vue-tsc
+      # needs one (`typescript/lib/tsc`). Stay on 6.x until vue-tsc supports 7.
+      - dependency-name: typescript
+        versions: [">=7"]
 
   - package-ecosystem: github-actions
     directory: /

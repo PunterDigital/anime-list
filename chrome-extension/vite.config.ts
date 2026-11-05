@@ -9,9 +9,9 @@ function copyStaticAssets() {
     return {
         name: 'copy-static-assets',
         closeBundle() {
-            const out = resolve(__dirname, 'dist');
+            const out = resolve(import.meta.dirname, 'dist');
             if (!existsSync(out)) mkdirSync(out, { recursive: true });
-            copyFileSync(resolve(__dirname, 'public/manifest.json'), resolve(out, 'manifest.json'));
+            copyFileSync(resolve(import.meta.dirname, 'public/manifest.json'), resolve(out, 'manifest.json'));
         },
     };
 }
@@ -19,15 +19,15 @@ function copyStaticAssets() {
 export default defineConfig({
     plugins: [vue(), copyStaticAssets()],
     resolve: {
-        alias: { '@': resolve(__dirname, 'src') },
+        alias: { '@': resolve(import.meta.dirname, 'src') },
     },
     build: {
         outDir: 'dist',
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                popup: resolve(__dirname, 'src/popup/index.html'),
-                background: resolve(__dirname, 'src/background/service-worker.ts'),
+                popup: resolve(import.meta.dirname, 'src/popup/index.html'),
+                background: resolve(import.meta.dirname, 'src/background/service-worker.ts'),
             },
             output: {
                 entryFileNames: (chunk) =>

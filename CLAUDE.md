@@ -136,3 +136,8 @@ as `php <that dir>/composer/composer.phar`.
   file with AniTrack's values re-applied (SSR off unless `INERTIA_SSR_ENABLED`, bundle
   `bootstrap/ssr/ssr.js`, pages in `js/Pages`); the root view uses `<title data-inertia>`.
   A page without a layout leaves `layout` out (v3's types refuse `layout: false`).
+- TypeScript 7 (card 3820): the extension is on TS 6.0, the last JS-based TypeScript. TS 7 has
+  no JS compiler API, so `vue-tsc` can't run on it (`typescript/lib/tsc` isn't exported).
+  `dependabot.yml` ignores `typescript >=7` for `/chrome-extension` until vue-tsc supports it.
+- PrimeVue 5 (card 3820) is no longer MIT: it is a commercial PrimeUI package that needs a
+  licence key (`@primeui/license-manager`). Stay on 4.5.x until Shay decides.

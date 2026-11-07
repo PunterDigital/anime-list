@@ -107,6 +107,16 @@ test('register, add an anime to the list and see it on My List', async ({ page }
     await page.keyboard.press('Escape');
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(dialog).toBeVisible();
+    // Card 4329: with the mouse too. The list must sit above the dialog's
+    // mask: Playwright's click refuses an option that the mask covers.
+    await status.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.getByRole('option', { name: 'Completed' }).click();
+    await expect(status).toHaveText('Completed');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await status.click();
+    await page.getByRole('option', { name: 'Watching' }).click();
+    await expect(status).toHaveText('Watching');
 
     const score = dialog.getByRole('slider', { name: 'Score' });
     await expect(score).toHaveAttribute('aria-valuenow', '0');

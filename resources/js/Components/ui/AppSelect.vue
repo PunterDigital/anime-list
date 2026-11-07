@@ -8,6 +8,8 @@ import { useSplitAttrs } from './splitAttrs'
 // close it, Delete/Backspace clear it when `showClear` is on. The list goes
 // to <body> so table and card containers with overflow don't clip it.
 // `class`/`style` go on the outer box, other attributes on the combobox.
+// Layers (card 4329): the list (z 1103) sits above AppDialog's mask (1101)
+// and AppToast (1102), or a Select inside a dialog opens hidden under it.
 defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(defineProps<{
@@ -261,7 +263,7 @@ onBeforeUnmount(() => hide(false))
                 v-if="open"
                 ref="overlay"
                 data-ui="select-overlay"
-                class="absolute z-[1001] cursor-default rounded-md border border-control-track bg-control-overlay text-base leading-normal text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]"
+                class="absolute z-[1103] cursor-default rounded-md border border-control-track bg-control-overlay text-base leading-normal text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]"
                 :style="{ top: `${position.top}px`, left: `${position.left}px`, minWidth: `${position.minWidth}px` }"
                 @click.stop
             >

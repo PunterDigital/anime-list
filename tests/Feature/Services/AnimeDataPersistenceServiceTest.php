@@ -3,6 +3,7 @@
 namespace Tests\Feature\Services;
 
 use App\Models\Anime;
+use App\Models\Genre;
 use App\Services\AnimeDataPersistenceService;
 use Illuminate\Support\Facades\Redis;
 use Mockery;
@@ -128,6 +129,39 @@ class AnimeDataPersistenceServiceTest extends TestCase
             'komi san wa komyushou desu | komisanwakomyushoudesu | komi cant communicate | komicantcommunicate',
             Anime::where('anilist_id', 1)->value('search_text'),
         );
+    }
+
+    public function test_persist_batch_survives_a_genre_listed_twice(): void
+    {
+        // Card 4394: AniList listed one genre twice for one anime, the pivot
+        // insert hit the primary key and the whole page's batch rolled back.
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+        Genre::create(['name' => 'Comedy']);
+
+        $first = $this->minimalMedia(1);
+        $first['genres'] = ['Action', 'Drama', 'Drama', 'comedy'];
+        $second = $this->minimalMedia(2);
+        $second['genres'] = ['Drama', 'Action'];
+
+        app(AnimeDataPersistenceService::class)->persistBatch([$first, $second]);
+
+        $anime = Anime::where('anilist_id', 1)->first();
+        $this->assertEqualsCanonicalizing(['Action', 'Comedy', 'Drama'], $anime->genres()->pluck('name')->all());
+        $this->assertSame(2, Anime::where('anilist_id', 2)->first()->genres()->count());
+        $this->assertSame(3, Genre::count());
+    }
+
+    public function test_persist_single_survives_a_genre_listed_twice(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $media = $this->minimalMedia(7);
+        $media['genres'] = ['Romance', 'Romance', 'ROMANCE'];
+
+        $anime = app(AnimeDataPersistenceService::class)->persistSingle($media);
+
+        $this->assertSame(['Romance'], $anime->fresh()->genres()->pluck('name')->all());
+        $this->assertSame(1, Genre::count());
     }
 
     /**

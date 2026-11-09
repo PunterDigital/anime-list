@@ -155,19 +155,10 @@ class AnimeDataPersistenceService
         }
 
         // Ensure all genres exist
-        $existing = Genre::whereIn('name', $allGenreNames)->pluck('id', 'name');
-        $missing = array_diff($allGenreNames, $existing->keys()->all());
+        $existing = $this->genreIds($allGenreNames);
 
-        if (! empty($missing)) {
-            Genre::insert(array_map(fn ($name) => [
-                'name' => $name,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ], $missing));
-            $existing = Genre::whereIn('name', $allGenreNames)->pluck('id', 'name');
-        }
-
-        // Build pivot rows
+        // Build pivot rows, one per anime and genre (card 4394: AniList can
+        // list a genre twice, which broke the insert and the whole batch).
         $pivotRows = [];
         foreach ($dtos as $dto) {
             $animeId = $animeMap->get($dto->anilist_id);
@@ -176,12 +167,13 @@ class AnimeDataPersistenceService
             }
 
             foreach ($dto->genres as $genre) {
-                $genreId = $existing->get($genre->name);
+                $genreId = $existing->get(mb_strtolower(trim((string) $genre->name)));
                 if ($genreId) {
-                    $pivotRows[] = ['anime_id' => $animeId, 'genre_id' => $genreId];
+                    $pivotRows[$animeId.'-'.$genreId] = ['anime_id' => $animeId, 'genre_id' => $genreId];
                 }
             }
         }
+        $pivotRows = array_values($pivotRows);
 
         if (! empty($pivotRows)) {
             // Delete existing and re-insert for the batch
@@ -643,20 +635,51 @@ class AnimeDataPersistenceService
             return;
         }
 
-        $genreNames = collect($dto->genres)->pluck('name')->all();
-        $existing = Genre::whereIn('name', $genreNames)->pluck('id', 'name');
+        $genreIds = $this->genreIds(collect($dto->genres)->pluck('name')->all());
 
-        $missing = array_diff($genreNames, $existing->keys()->all());
-        if (! empty($missing)) {
-            Genre::insert(array_map(fn ($name) => [
+        $anime->genres()->sync($genreIds->values()->unique()->all());
+    }
+
+    /**
+     * Genre ids keyed by lower-case name, creating the missing genres once.
+     *
+     * Card 4394: AniList can list the same genre twice for one anime, and
+     * MySQL compares names case-insensitively, so names are matched on
+     * their lower-case form and every name is inserted at most once.
+     *
+     * @param  array<int, string>  $names
+     * @return Collection<string, int>
+     */
+    private function genreIds(array $names): Collection
+    {
+        $unique = collect($names)
+            ->map(fn ($name) => trim((string) $name))
+            ->filter(fn (string $name) => $name !== '')
+            ->unique(fn (string $name) => mb_strtolower($name))
+            ->values();
+
+        if ($unique->isEmpty()) {
+            return collect();
+        }
+
+        // LOWER() so SQLite (tests) matches like MySQL's case-insensitive collation.
+        $lookup = fn () => Genre::whereIn(DB::raw('LOWER(name)'), $unique->map(fn (string $name) => mb_strtolower($name))->all())
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (Genre $genre) => [mb_strtolower($genre->name) => $genre->id]);
+
+        $existing = $lookup();
+        $missing = $unique->reject(fn (string $name) => $existing->has(mb_strtolower($name)));
+
+        if ($missing->isNotEmpty()) {
+            Genre::insert($missing->map(fn (string $name) => [
                 'name' => $name,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ], $missing));
-            $existing = Genre::whereIn('name', $genreNames)->pluck('id', 'name');
+            ])->values()->all());
+            $existing = $lookup();
         }
 
-        $anime->genres()->sync($existing->values()->all());
+        return $existing;
     }
 
     private function syncStudiosForAnime(Anime $anime, AnimeData $dto): void

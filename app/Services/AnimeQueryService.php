@@ -20,7 +20,7 @@ class AnimeQueryService
         $paginator = QueryBuilder::for(
             Anime::query()->safeForWork()->visible()
         )
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('format'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('season'),
@@ -42,8 +42,8 @@ class AnimeQueryService
                     }
                     $query->searchTitle($term);
                 }),
-            ])
-            ->allowedSorts([
+            )
+            ->allowedSorts(
                 AllowedSort::field('popularity'),
                 AllowedSort::field('average_score'),
                 AllowedSort::field('trending'),
@@ -51,7 +51,7 @@ class AnimeQueryService
                 AllowedSort::field('title_romaji'),
                 AllowedSort::field('season_year'),
                 AllowedSort::field('aired_from'),
-            ])
+            )
             ->defaultSort('-popularity')
             ->with(['genres', 'nextAiringEpisode'])
             ->paginate($perPage)

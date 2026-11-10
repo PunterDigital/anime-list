@@ -113,7 +113,7 @@ class StudioController extends Controller
                 ->safeForWork()->visible()
                 ->whereHas('studios', fn ($q) => $q->where('studios.id', $studio->id))
         )
-            ->allowedSorts([
+            ->allowedSorts(
                 AllowedSort::field('popularity'),
                 AllowedSort::field('average_score'),
                 AllowedSort::field('trending'),
@@ -121,7 +121,7 @@ class StudioController extends Controller
                 AllowedSort::field('title_romaji'),
                 AllowedSort::field('season_year'),
                 AllowedSort::field('aired_from'),
-            ])
+            )
             ->defaultSort('-popularity')
             ->with(['genres', 'nextAiringEpisode'])
             ->paginate(24)

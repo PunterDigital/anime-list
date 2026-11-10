@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AnimeRatingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,6 +37,21 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         'mal_access_token',
         'mal_refresh_token',
     ];
+
+    protected static function booted(): void
+    {
+        // Card 4476: a deleted account's scores leave the AniTrack rating
+        // (and come back if the account is restored).
+        $forgetRatings = function (User $user): void {
+            $user->animeList()
+                ->where('score', '>', 0)
+                ->pluck('anime_id')
+                ->each(fn (int $animeId) => AnimeRatingService::forget($animeId));
+        };
+
+        static::deleted($forgetRatings);
+        static::restored($forgetRatings);
+    }
 
     protected function casts(): array
     {

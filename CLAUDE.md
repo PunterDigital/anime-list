@@ -144,6 +144,16 @@ as `php <that dir>/composer/composer.phar`.
 - TypeScript 7 (card 3820): the extension is on TS 6.0, the last JS-based TypeScript. TS 7 has
   no JS compiler API, so `vue-tsc` can't run on it (`typescript/lib/tsc` isn't exported).
   `dependabot.yml` ignores `typescript >=7` for `/chrome-extension` until vue-tsc supports it.
+- AniTrack rating (card 4476, flag `anitrack-rating`): the anime page's `anitrack_rating` prop
+  is the average of users' list scores (1-10; 0 is "no score"), private entries included,
+  removed entries and deleted accounts not, or `null` under 10 scores ("No Rating Yet").
+  `App\Services\AnimeRatingService` caches sum + count per anime (`anime:rating:v1:{id}`,
+  outside the cached page model); `UserAnimeList` saved/deleted/restored and `User`
+  deleted/restored events forget it, so every write path that goes through Eloquent (list
+  form, API, MAL import) shows at once. A raw `DB::table('user_anime_lists')` write wouldn't:
+  forget the key there. The page's list edits reload `list_entry` and `anitrack_rating`.
+  E2E: `anitrack-rating.spec.ts` and `ssr.spec.ts` on the seeded `rated-e2e-show` (8.4,
+  10 ratings) and `unrated-e2e-show` (9).
 - PrimeVue is gone (card 4272): PrimeVue 5 became a commercial PrimeUI package that needs a
   licence key, so AniTrack moved to its own components. Don't add it back.
 - Form controls (card 4272): `resources/js/Components/ui` has `AppButton` (label,

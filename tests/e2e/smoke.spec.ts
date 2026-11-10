@@ -243,3 +243,14 @@ test('an off-site redirect on the login page is ignored', async ({ page }) => {
     await page.goto('/login?redirect=//example.com/');
     await expect(page.getByRole('link', { name: 'Sign up', exact: true })).toHaveAttribute('href', /\/register$/);
 });
+
+test('/version shows the deployed commit as JSON (#4453)', async ({ request }) => {
+    const response = await request.get('/version');
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toContain('application/json');
+    expect(response.headers()['cache-control']).toContain('no-store');
+    expect(response.headers()['set-cookie']).toBeUndefined();
+    const body = await response.json();
+    expect(body.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(body.version).toBe(body.commit.slice(0, 7));
+});

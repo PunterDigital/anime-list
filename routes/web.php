@@ -32,6 +32,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StudioController;
 use App\Http\Controllers\TopAnimeController;
 use App\Http\Controllers\UserListController;
+use App\Http\Controllers\VersionController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\Anime;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -41,6 +42,11 @@ use Inertia\Inertia;
 
 // Sitemap
 Route::get('/sitemap.xml', SitemapController::class);
+
+// What's deployed (card 4453). Outside the web group: no session, no cookies.
+Route::get('/version', VersionController::class)
+    ->withoutMiddleware('web')
+    ->name('version');
 
 // Public pages
 Route::get('/', [DiscoverController::class, 'index'])->name('home');

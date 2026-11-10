@@ -108,6 +108,11 @@ as `php <that dir>/composer/composer.phar`.
 - Production runs Inertia SSR: a Forge daemon runs `php artisan inertia:start-ssr`, and the
   deploy script runs `npm run build` and ends with `php artisan inertia:stop-ssr` (the daemon
   restarts on the new bundle). `bootstrap/ssr/` is built, not committed (gitignored).
+- `GET /version` (card 4453) answers `{"version","commit","deployed_at"}` from the deployed
+  checkout's `.git` (`App\Support\DeployedVersion`, plain file reads, no `git` process), so
+  `curl -s https://anitrack.app/version` confirms a deploy went live. The route skips the `web`
+  group (no session cookie, no CSP headers) and sends `Cache-Control: no-store`; without a
+  `.git` it reports `unknown`. Other methods hit the `Route::any` fallback (404).
 - Check SSR on the live site with `curl -s https://anitrack.app/ | grep -o '<div data-server-rendered="true" id="app">.\{0,80\}'`:
   the page's HTML should follow. Without SSR the page has only `<div id="app"></div>` (the props
   are in a `<script data-page="app" type="application/json">` before it, since Inertia 3).

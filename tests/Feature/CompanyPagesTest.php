@@ -24,8 +24,10 @@ class CompanyPagesTest extends TestCase
     }
 
     #[DataProvider('pages')]
-    public function test_pages_are_hidden_while_the_flag_is_off(string $path): void
+    public function test_pages_are_hidden_while_the_flag_is_off(string $path, string $component): void
     {
+        unset($component); // PHPUnit 13 warns when a test takes fewer arguments than its data set has.
+
         $this->get($path)->assertNotFound();
 
         $this->actingAs(User::factory()->create())

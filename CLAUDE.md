@@ -44,7 +44,7 @@ All new user-facing features MUST be gated behind a feature flag using Laravel P
 
 ## Tech Stack
 
-- **Backend:** Laravel 12, PHP 8.4 (the lockfile needs 8.4; CI and production run 8.4)
+- **Backend:** Laravel 13, PHP 8.4 (the lockfile needs 8.4; CI and production run 8.4)
 - **Frontend:** Vue 3 + TypeScript, Inertia.js, Tailwind CSS (local controls in `resources/js/Components/ui`, no component library)
 - **Database:** MySQL
 - **Queue:** Redis + Laravel Horizon

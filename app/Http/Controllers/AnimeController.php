@@ -16,7 +16,9 @@ use App\Services\AniListClient;
 use App\Services\AniListQueryBuilder;
 use App\Services\AnimeDataPersistenceService;
 use App\Services\AnimeQueryService;
+use App\Services\AnimeRatingService;
 use App\Services\DiscoverService;
+use App\Services\FeatureFlagService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -94,8 +96,13 @@ class AnimeController extends Controller
         return redirect()->route('anime.show', $anime);
     }
 
-    public function show(Request $request, Anime $anime, DiscoverService $discover): Response
-    {
+    public function show(
+        Request $request,
+        Anime $anime,
+        DiscoverService $discover,
+        AnimeRatingService $ratings,
+        FeatureFlagService $features,
+    ): Response {
         // Checked before the cache so a page hidden by an admin (for example
         // after a copyright takedown request) goes down at once.
         if ($anime->isHidden()) {
@@ -160,6 +167,11 @@ class AnimeController extends Controller
             'list_entry' => $listEntry ? (new ListEntryResource($listEntry))->resolve() : null,
             'seasons' => $this->getSeasonChain($model),
             'recommendations' => $recommendations,
+            // Card 4476: outside the cached page model, so a new score shows at once.
+            // A closure, so a partial reload after a list edit can ask for it alone.
+            'anitrack_rating' => fn () => $features->active('anitrack-rating', $request->user())
+                ? $ratings->forAnime($model->id)
+                : null,
             'og' => [
                 'title' => $title,
                 'description' => $description,

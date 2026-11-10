@@ -69,6 +69,24 @@ test('an anime page arrives with its title and synopsis', async ({ page, request
     expect(errors).toEqual([]);
 });
 
+// Card 4476: the AniTrack rating is in the server HTML in both states, and hydrates cleanly.
+for (const { slug, text } of [
+    { slug: 'rated-e2e-show', text: '· 10 ratings' },
+    { slug: 'unrated-e2e-show', text: 'No Rating Yet' },
+]) {
+    test(`/anime/${slug} arrives with its AniTrack rating`, async ({ page, request }) => {
+        const html = appHtml(await (await request.get(`/anime/${slug}`)).text());
+        expect(html).toContain('AniTrack rating');
+        expect(html).toContain(text);
+        if (slug === 'rated-e2e-show') expect(html).toContain('★ 8.4');
+
+        const errors = collectErrors(page);
+        await page.goto(`/anime/${slug}`);
+        await expect(page.locator('[data-test="anitrack-rating"]')).toContainText(text);
+        expect(errors).toEqual([]);
+    });
+}
+
 test('the sign-in link on an anime page and the login page keep the way back', async ({ page, request }) => {
     const animeHtml = appHtml(await (await request.get('/anime/cowboy-bebop')).text());
     expect(animeHtml).toMatch(/href="[^"]*\/login\?redirect=%2Fanime%2Fcowboy-bebop"/);

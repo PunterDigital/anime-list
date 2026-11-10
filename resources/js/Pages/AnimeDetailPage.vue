@@ -29,12 +29,15 @@ const props = defineProps<{
     seasons: SeasonEntry[]
     recommendations: AnimeCard[]
     og: OgMeta
+    // Card 4476: average of every user's score; null until 10 users scored it.
+    anitrack_rating: { average: number, count: number } | null
 }>()
 
 const page = usePage<{ auth: { user: User | null } }>()
 const isAuthenticated = computed(() => !!page.props.auth.user)
 const studioPagesEnabled = useFeature('studio-pages')
 const voiceActorPagesEnabled = useFeature('voice-actor-pages')
+const anitrackRatingEnabled = useFeature('anitrack-rating')
 
 const { formatCountdown, formatLocalDate } = useCountdown()
 
@@ -181,7 +184,8 @@ const editModalOpen = ref(false)
 const { updateMutation } = useListMutations()
 
 function reloadEntry() {
-    router.reload({ only: ['list_entry'] })
+    // The AniTrack rating too: a new or changed score moves it.
+    router.reload({ only: ['list_entry', 'anitrack_rating'] })
 }
 
 function toggleStatusMenu() {
@@ -720,6 +724,14 @@ function displayScore(): string {
                             <div>
                                 <div class="mb-1 font-mono text-[10px] uppercase tracking-[0.1em] text-gray-500">Score</div>
                                 <div class="text-sm font-medium text-gray-100">★ {{ displayScore() }}</div>
+                            </div>
+                            <div v-if="anitrackRatingEnabled" data-test="anitrack-rating">
+                                <div class="mb-1 font-mono text-[10px] uppercase tracking-[0.1em] text-gray-500">AniTrack rating</div>
+                                <div v-if="anitrack_rating" class="text-sm font-medium text-gray-100">
+                                    ★ {{ anitrack_rating.average.toFixed(1) }}
+                                    <span class="font-normal text-gray-500">· {{ anitrack_rating.count.toLocaleString('en-US') }} ratings</span>
+                                </div>
+                                <div v-else class="text-sm font-medium text-gray-400">No Rating Yet</div>
                             </div>
                             <div v-if="anime.popularity">
                                 <div class="mb-1 font-mono text-[10px] uppercase tracking-[0.1em] text-gray-500">Popularity</div>

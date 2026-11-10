@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AnimeRatingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,20 @@ class UserAnimeList extends Model
         'is_private',
         'is_rewatching',
     ];
+
+    protected static function booted(): void
+    {
+        // Card 4476: the AniTrack rating is cached per anime; forget it when
+        // a score is added, changed or removed. Every write path (list form,
+        // API, MAL import, re-adding a removed entry) goes through Eloquent.
+        static::saved(function (UserAnimeList $entry) {
+            if ($entry->wasRecentlyCreated || $entry->wasChanged('score')) {
+                AnimeRatingService::forget($entry->anime_id);
+            }
+        });
+        static::deleted(fn (UserAnimeList $entry) => AnimeRatingService::forget($entry->anime_id));
+        static::restored(fn (UserAnimeList $entry) => AnimeRatingService::forget($entry->anime_id));
+    }
 
     protected function casts(): array
     {

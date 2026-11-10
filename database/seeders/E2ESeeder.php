@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Anime;
 use App\Models\Recommendation;
 use App\Models\User;
+use App\Models\UserAnimeList;
 use App\Services\FeatureFlagService;
 use Illuminate\Database\Seeder;
 
@@ -23,6 +24,10 @@ class E2ESeeder extends Seeder
     public const ADMIN_EMAIL = 'e2e-admin@example.com';
 
     public const NSFW_SLUG = 'nsfw-e2e-show';
+
+    public const RATED_SLUG = 'rated-e2e-show';
+
+    public const UNRATED_SLUG = 'unrated-e2e-show';
 
     public function run(): void
     {
@@ -99,6 +104,56 @@ class E2ESeeder extends Seeder
             'banner_image' => null,
             'synopsis' => 'A show the NSFW end-to-end test marks.',
             'popularity' => 1000,
+        ]);
+
+        // Card 4476: the AniTrack rating. Ten users score one title (8.4 on
+        // average) and nine score another (too few, "No Rating Yet"). Their
+        // own titles, so the smoke spec's list edits never move these numbers.
+        app(FeatureFlagService::class)->setGlobalStatus('anitrack-rating', 'everyone');
+        $rated = $this->ratingTitle('Rated E2E Show', self::RATED_SLUG);
+        $unrated = $this->ratingTitle('Unrated E2E Show', self::UNRATED_SLUG);
+        foreach ([8, 8, 8, 8, 8, 8, 9, 9, 9, 9] as $i => $score) {
+            $rater = User::factory()->create([
+                'name' => "E2E Rater {$i}",
+                'username' => "e2e-rater-{$i}",
+                'email' => "e2e-rater-{$i}@example.com",
+            ]);
+            // Private entries count too; only the average and the count are shown.
+            $rater->animeList()->create([
+                'anime_id' => $rated->id,
+                'status' => UserAnimeList::STATUS_COMPLETED,
+                'score' => $score,
+                'is_private' => $i % 2 === 0,
+            ]);
+            if ($i < 9) {
+                $rater->animeList()->create([
+                    'anime_id' => $unrated->id,
+                    'status' => UserAnimeList::STATUS_COMPLETED,
+                    'score' => $score,
+                ]);
+            }
+        }
+        // An entry without a score doesn't count.
+        User::where('email', self::USER_EMAIL)->firstOrFail()->animeList()->create([
+            'anime_id' => $unrated->id,
+            'status' => UserAnimeList::STATUS_PLAN_TO_WATCH,
+            'score' => 0,
+        ]);
+    }
+
+    private function ratingTitle(string $title, string $slug): Anime
+    {
+        return Anime::factory()->finished()->create([
+            'title_english' => $title,
+            'title_romaji' => $title,
+            'slug' => $slug,
+            'format' => 'TV',
+            'episodes' => 12,
+            'cover_image_large' => null,
+            'cover_image_medium' => null,
+            'banner_image' => null,
+            'synopsis' => 'A show the AniTrack rating end-to-end test uses.',
+            'popularity' => 500,
         ]);
     }
 }

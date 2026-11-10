@@ -17,7 +17,9 @@
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gtagIds[0] }}" nonce="{{ app('csp-nonce') }}"></script>
             <script nonce="{{ app('csp-nonce') }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());@foreach ($gtagIds as $gtagId)gtag('config',@js($gtagId));@endforeach</script>
         @endif
-        <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode(['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'AniTrack', 'url' => config('app.url')], JSON_UNESCAPED_SLASHES) !!}</script>
+        {{-- "@@context" is Blade's escape for a literal "@context": unescaped, Laravel's
+             @context directive compiles the JSON-LD key into PHP (card 4456). --}}
+        <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode(['@@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'AniTrack', 'url' => config('app.url')], JSON_UNESCAPED_SLASHES) !!}</script>
         @routes(nonce: app('csp-nonce'))
         @vite(['resources/js/app.ts'])
         {{-- The SSR head carries the page's own title; the fallback is only for pages

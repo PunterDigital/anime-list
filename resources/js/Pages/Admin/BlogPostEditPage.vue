@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useToast } from '@/composables/useToast'
+import { BLOG_IMAGE_ACCEPT, uploadBlogImage } from '@/composables/useBlogImageUpload'
 import { router, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
@@ -19,12 +21,48 @@ const form = useForm({
     title: props.post?.title ?? '',
     slug: props.post?.slug ?? '',
     excerpt: props.post?.excerpt ?? '',
+    cover_image: props.post?.cover_image ?? '',
     body: props.post?.body ?? '',
     seo_title: props.post?.seo_title ?? '',
     meta_description: props.post?.meta_description ?? '',
 })
 
 const isPublished = computed(() => props.post?.status === 'published')
+
+// Card 4480: the cover image, also the post's Open Graph / Twitter image.
+// The upload answers a disk path (saved with the form) and a URL to preview.
+const toast = useToast()
+const coverInput = ref<HTMLInputElement | null>(null)
+const coverUrl = ref<string | null>(props.post?.cover_image_url ?? null)
+const coverUploading = ref(false)
+
+async function onCoverChosen(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    coverUploading.value = true
+    try {
+        const image = await uploadBlogImage(file)
+        form.cover_image = image.path
+        coverUrl.value = image.url
+        form.clearErrors('cover_image')
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Upload failed',
+            detail: error instanceof Error ? error.message : 'The image could not be uploaded.',
+            life: 6000,
+        })
+    } finally {
+        coverUploading.value = false
+    }
+}
+
+function removeCover() {
+    form.cover_image = ''
+    coverUrl.value = null
+}
 
 function submit() {
     if (props.post) {
@@ -114,6 +152,35 @@ function formatDateTime(iso: string | null): string | null {
                 <AppTextarea id="blog-excerpt" v-model="form.excerpt" class="w-full" rows="2" maxlength="500" :invalid="!!form.errors.excerpt" />
                 <p class="text-xs text-gray-500">A sentence or two shown in post listings.</p>
                 <p v-if="form.errors.excerpt" class="text-sm text-red-400">{{ form.errors.excerpt }}</p>
+            </div>
+
+            <div class="space-y-2" data-testid="blog-cover">
+                <span class="text-sm font-medium text-gray-200">Cover image</span>
+                <div v-if="coverUrl" class="overflow-hidden rounded-md border border-gray-800 bg-gray-900/40">
+                    <img :src="coverUrl" alt="Cover image preview" class="max-h-64 w-full object-cover" data-testid="blog-cover-preview" />
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <AppButton
+                        :label="coverUrl ? 'Replace cover' : 'Upload cover'"
+                        severity="secondary"
+                        outlined
+                        size="small"
+                        :loading="coverUploading"
+                        :disabled="coverUploading"
+                        @click="coverInput?.click()"
+                    />
+                    <AppButton v-if="coverUrl" label="Remove cover" severity="danger" text size="small" @click="removeCover" />
+                    <input
+                        ref="coverInput"
+                        type="file"
+                        class="hidden"
+                        :accept="BLOG_IMAGE_ACCEPT"
+                        data-testid="blog-cover-file"
+                        @change="onCoverChosen"
+                    />
+                </div>
+                <p class="text-xs text-gray-500">Shown with the post and used when it's shared (Open Graph / Twitter). 1200 × 630 works best. JPEG, PNG, WebP or GIF, up to 5 MB.</p>
+                <p v-if="form.errors.cover_image" class="text-sm text-red-400">{{ form.errors.cover_image }}</p>
             </div>
 
             <div class="space-y-1">

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AdminAnimeController;
+use App\Http\Controllers\Admin\AdminBlogImageController;
 use App\Http\Controllers\Admin\AdminBlogPostController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\V1\UserController as ApiUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\BlogImageController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DevelopersController;
 use App\Http\Controllers\DiscoverController;
@@ -36,6 +38,7 @@ use App\Http\Controllers\UserListController;
 use App\Http\Controllers\VersionController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\Anime;
+use App\Support\BlogImages;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +51,13 @@ Route::get('/sitemap.xml', SitemapController::class);
 Route::get('/version', VersionController::class)
     ->withoutMiddleware('web')
     ->name('version');
+
+// Blog images (card 4480), served from the public disk. Outside the web
+// group like /version: no session, no cookies.
+Route::get('/media/blog/{path}', BlogImageController::class)
+    ->where('path', BlogImages::RELATIVE_PATTERN)
+    ->withoutMiddleware('web')
+    ->name('blog.image');
 
 // Public pages
 Route::get('/', [DiscoverController::class, 'index'])->name('home');
@@ -238,6 +248,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/blog/{post:id}', [AdminBlogPostController::class, 'update'])->name('blog.update');
     Route::patch('/blog/{post:id}/publish', [AdminBlogPostController::class, 'publish'])->name('blog.publish');
     Route::delete('/blog/{post:id}', [AdminBlogPostController::class, 'destroy'])->name('blog.destroy');
+    // Card 4480: image uploads from the editor and the cover image field.
+    Route::post('/blog/images', [AdminBlogImageController::class, 'store'])->name('blog.images.store');
 
     Route::get('/features', [AdminFeatureFlagController::class, 'index'])->name('features');
     Route::patch('/features/{feature}', [AdminFeatureFlagController::class, 'update'])->name('features.update');

@@ -172,8 +172,26 @@ as `php <that dir>/composer/composer.phar`.
   The create page redirects to the same component (`BlogPostEditPage`), which isn't
   remounted, so the store's `onSuccess` copies the generated slug into the form. Flash
   messages show as the layout's toast (`useFlashToast`), not a page banner. Image-by-URL
-  only shows hosts the CSP's `img-src` allows (self, AniList) until uploads land (4480).
+  only shows hosts the CSP's `img-src` allows (self, AniList).
   E2E: `blog-admin.spec.ts` (admin writes, toggles Markdown, saves, publishes, deletes).
+- Blog images (card 4480): `POST /admin/blog/images` (`AdminBlogImageController`, admin-only)
+  takes JPEG/PNG/WebP/GIF up to 5 MB and `App\Support\BlogImages` stores it on the `public`
+  disk as `blog/Y/m/<ulid>-<w>x<h>.<ext>`. JPEG/PNG/WebP are re-encoded with GD (needs
+  `ext-gd`; CI's setup-php lists it): wider than 1600px is scaled down, EXIF (GPS) is dropped,
+  phone rotation applied first. GIFs are stored as uploaded (GD would keep one frame of an
+  animation), so a wide GIF keeps its size. Over 30 MP is refused before decoding.
+  They're served by `BlogImageController` at `/media/blog/...` (outside the web group: no
+  cookie; `Cache-Control: immutable`), so nothing depends on a `public/storage` symlink.
+  Forge's zero-downtime deploys share `storage/` between releases by default, so uploads
+  should survive a deploy: check that an older upload still loads after the next one.
+  `BlogMarkdown` adds `loading="lazy" decoding="async"` to every image and width/height to
+  ours, read from the name (no DB). The editor uploads from the "Upload image" button, a paste
+  or a drop (rich and Markdown mode) and asks for alt text (the file name as a start). A post's
+  `cover_image` holds the disk path (validated: must be an existing upload);
+  `BlogPost::socialImageUrl()` is the absolute URL for the public page's OG/Twitter tags (4481).
+  Uploads are never deleted (a removed cover or image stays on disk).
+  E2E: `blog-admin.spec.ts`' second test makes PNGs with a canvas, uploads by button and paste,
+  sets/removes a cover and fetches the image as a guest.
 - PrimeVue is gone (card 4272): PrimeVue 5 became a commercial PrimeUI package that needs a
   licence key, so AniTrack moved to its own components. Don't add it back.
 - Form controls (card 4272): `resources/js/Components/ui` has `AppButton` (label,

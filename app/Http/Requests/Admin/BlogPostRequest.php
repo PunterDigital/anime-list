@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\BlogPost;
+use App\Support\BlogImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,6 +43,17 @@ class BlogPostRequest extends FormRequest
                 Rule::unique('blog_posts', 'slug')->ignore($post?->id),
             ],
             'excerpt' => ['nullable', 'string', 'max:500'],
+            // Card 4480: a path the image upload returned, still on the disk.
+            'cover_image' => [
+                'nullable',
+                'string',
+                'max:255',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! is_string($value) || ! BlogImages::exists($value)) {
+                        $fail('Upload the cover image again.');
+                    }
+                },
+            ],
             'body' => ['required', 'string', 'max:200000'],
             'seo_title' => ['nullable', 'string', 'max:200'],
             'meta_description' => ['nullable', 'string', 'max:320'],

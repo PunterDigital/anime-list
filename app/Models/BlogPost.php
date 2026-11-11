@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BlogImages;
 use App\Support\BlogMarkdown;
 use Database\Factories\BlogPostFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
  * @property string $title
  * @property string $slug
  * @property string|null $excerpt
+ * @property string|null $cover_image
  * @property string $body
  * @property string $status
  * @property Carbon|null $published_at
@@ -39,6 +41,7 @@ class BlogPost extends Model
         'title',
         'slug',
         'excerpt',
+        'cover_image',
         'body',
         'seo_title',
         'meta_description',
@@ -77,6 +80,23 @@ class BlogPost extends Model
     public function bodyHtml(): string
     {
         return BlogMarkdown::toHtml($this->body);
+    }
+
+    /** The cover image's `/media/blog/...` path, or null (card 4480). */
+    public function coverImageUrl(): ?string
+    {
+        return BlogImages::urlFor($this->cover_image);
+    }
+
+    /**
+     * The absolute cover image URL for Open Graph / Twitter cards (card
+     * 4480; the public pages in 4481 print it), or null without a cover.
+     */
+    public function socialImageUrl(): ?string
+    {
+        $path = $this->coverImageUrl();
+
+        return $path === null ? null : url($path);
     }
 
     /**

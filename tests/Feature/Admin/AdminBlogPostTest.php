@@ -91,7 +91,8 @@ class AdminBlogPostTest extends TestCase
                 ->component('Admin/BlogPostEditPage')
                 ->where('post.slug', 'new-slug')
                 ->where('post.body', $post->body)
-                ->where('post.body_html', fn (string $html) => str_contains($html, '<h1>Hi</h1>')
+                // "# Hi" is an <h2>: the public page's title is its only <h1> (card 4481).
+                ->where('post.body_html', fn (string $html) => str_contains($html, '<h2>Hi</h2>')
                     && ! str_contains($html, '<script')
                     && ! str_contains($html, 'javascript:')));
     }

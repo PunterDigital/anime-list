@@ -5,6 +5,7 @@ namespace App\Support;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Event\DocumentParsedEvent;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\MarkdownConverter;
@@ -38,6 +39,14 @@ class BlogMarkdown
     public static function decorateImages(DocumentParsedEvent $event): void
     {
         foreach ($event->getDocument()->iterator() as $node) {
+            // The page's title is its only <h1> (card 4481): a "# Heading"
+            // in a pasted draft becomes an <h2>.
+            if ($node instanceof Heading && $node->getLevel() === 1) {
+                $node->setLevel(2);
+
+                continue;
+            }
+
             if (! $node instanceof Image) {
                 continue;
             }

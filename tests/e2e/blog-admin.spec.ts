@@ -104,7 +104,8 @@ test('an admin writes a post in the rich editor, edits the Markdown and saves a 
     page.once('dialog', (dialog) => dialog.accept());
     await row.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByRole('alert').getByText('Post deleted.')).toBeVisible();
-    await expect(page.getByText('No posts yet.')).toBeVisible();
+    // The seeded posts (card 4481) stay; this one is gone.
+    await expect(row).toHaveCount(0);
 
     expect(errors).toEqual([]);
 });

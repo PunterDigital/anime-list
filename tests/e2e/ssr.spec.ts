@@ -129,3 +129,38 @@ for (const { path, status, heading, text } of [
         expect(errors).toEqual([]);
     });
 }
+
+// Card 4481: a blog post arrives rendered, with its meta tags and BlogPosting
+// JSON-LD in the first HTML, so crawlers that don't run JS see all of it.
+test('a blog post arrives rendered with its meta tags and JSON-LD', async ({ page, request, baseURL }) => {
+    const slug = 'welcome-to-the-anitrack-blog';
+    const response = await request.get(`/blog/${slug}`);
+    expect(response.status()).toBe(200);
+    const full = await response.text();
+
+    const html = appHtml(full);
+    expect(html).toContain('Welcome to the AniTrack Blog</h1>');
+    expect(html).toContain('<h2>What to expect</h2>');
+
+    const head = full.slice(0, full.indexOf('</head>'));
+    const url = `${baseURL}/blog/${slug}`;
+    expect(head).toMatch(/<title[^>]*>Welcome to the AniTrack Blog \(SEO\) — AniTrack<\/title>/);
+    expect(head).toMatch(new RegExp(`<link[^>]+rel="canonical"[^>]+href="${url}"`));
+    expect(head).toMatch(/<meta[^>]+name="description"[^>]+content="Seasonal picks, guides and news from AniTrack\."/);
+    expect(head).toMatch(/<meta[^>]+property="og:title"[^>]+content="Welcome to the AniTrack Blog \(SEO\)"/);
+    expect(head).toMatch(/<meta[^>]+property="og:type"[^>]+content="article"/);
+    expect(head).toMatch(/<meta[^>]+name="twitter:card"/);
+
+    const blocks = [...head.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+    const posting = blocks.find((b) => b['@type'] === 'BlogPosting');
+    expect(posting).toBeTruthy();
+    expect(posting.headline).toBe('Welcome to the AniTrack Blog');
+    expect(posting.author).toEqual({ '@type': 'Person', name: expect.any(String) });
+    expect(posting.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(posting.mainEntityOfPage['@id']).toBe(url);
+
+    const errors = collectErrors(page);
+    await page.goto(`/blog/${slug}`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Welcome to the AniTrack Blog');
+    expect(errors).toEqual([]);
+});

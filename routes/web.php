@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\V1\UserController as ApiUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasskeyController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogFeedController;
 use App\Http\Controllers\BlogImageController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DevelopersController;
@@ -58,6 +60,17 @@ Route::get('/media/blog/{path}', BlogImageController::class)
     ->where('path', BlogImages::RELATIVE_PATTERN)
     ->withoutMiddleware('web')
     ->name('blog.image');
+
+// Blog (card 4481). BlogController checks the `blog` flag (admins always
+// see the pages, drafts included). The feed is for guests only, outside the
+// web group: no session, no cookies.
+Route::get('/blog/feed.xml', BlogFeedController::class)
+    ->withoutMiddleware('web')
+    ->name('blog.feed');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('blog.show');
 
 // Public pages
 Route::get('/', [DiscoverController::class, 'index'])->name('home');

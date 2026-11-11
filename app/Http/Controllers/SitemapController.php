@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Anime;
+use App\Models\BlogPost;
 use App\Models\User;
 use App\Services\FeatureFlagService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class SitemapController extends Controller
@@ -42,6 +44,27 @@ class SitemapController extends Controller
             $urls[] = $this->url(route('about'), 'monthly', '0.4');
             $urls[] = $this->url(route('how-it-works'), 'monthly', '0.4');
             $urls[] = $this->url(route('contact'), 'monthly', '0.3');
+        }
+
+        // Blog (card 4481): like the company pages, only once guests can see it.
+        if (app(FeatureFlagService::class)->active('blog', null)) {
+            $latest = BlogPost::query()->published()->max('updated_at');
+            $urls[] = $this->url(route('blog.index'), 'daily', '0.6', $latest ? Carbon::parse($latest)->toDateString() : null);
+
+            BlogPost::query()
+                ->published()
+                ->select(['id', 'slug', 'updated_at', 'published_at'])
+                ->orderBy('id')
+                ->chunk(500, function ($posts) use (&$urls) {
+                    foreach ($posts as $post) {
+                        $urls[] = $this->url(
+                            route('blog.show', $post->slug),
+                            'monthly',
+                            '0.6',
+                            ($post->updated_at ?? $post->published_at)?->toDateString(),
+                        );
+                    }
+                });
         }
 
         // Anime pages. Thin title pages (see Anime::isIndexable) carry a

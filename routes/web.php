@@ -148,12 +148,12 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:auth');
 
-    Route::post('/webauthn/login/options', [PasskeyController::class, 'loginOptions'])
+    Route::get('/passkeys/login/options', [PasskeyController::class, 'loginOptions'])
         ->middleware('throttle:auth')
-        ->name('webauthn.login.options');
-    Route::post('/webauthn/login', [PasskeyController::class, 'login'])
+        ->name('passkeys.login.options');
+    Route::post('/passkeys/login', [PasskeyController::class, 'login'])
         ->middleware('throttle:auth')
-        ->name('webauthn.login');
+        ->name('passkeys.login');
 });
 
 // Authenticated
@@ -192,8 +192,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/api-tokens', [SettingsController::class, 'createApiToken'])->name('settings.api-tokens.store');
     Route::delete('/settings/api-tokens/{token}', [SettingsController::class, 'destroyApiToken'])->whereNumber('token')->name('settings.api-tokens.destroy');
 
-    Route::post('/webauthn/register/options', [PasskeyController::class, 'registerOptions'])->name('webauthn.register.options');
-    Route::post('/webauthn/register', [PasskeyController::class, 'register'])->name('webauthn.register');
+    Route::get('/settings/passkeys/options', [PasskeyController::class, 'registerOptions'])->name('settings.passkeys.options');
+    Route::post('/settings/passkeys', [PasskeyController::class, 'register'])->name('settings.passkeys.store');
     Route::patch('/settings/passkeys/{passkey}', [PasskeyController::class, 'update'])->name('settings.passkeys.update');
     Route::delete('/settings/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('settings.passkeys.destroy');
 

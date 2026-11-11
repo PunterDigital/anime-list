@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Passkey;
 use App\Services\AniListClient;
 use App\Services\FeatureFlagService;
 use GuzzleHttp\Client;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passkeys\Passkeys;
 use Laravel\Pennant\Feature;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // AniTrack's own passkey routes (routes/web.php) use laravel/passkeys' actions.
+        Passkeys::ignoreRoutes();
+        Passkeys::usePasskeyModel(Passkey::class);
+
         $this->app->scoped(FeatureFlagService::class);
 
         $this->app->singleton(AniListClient::class, function ($app) {
@@ -56,10 +62,16 @@ class AppServiceProvider extends ServiceProvider
             return config('app.frontend_url')."/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";
         });
 
-        RateLimiter::for('auth', fn (Request $request) => [
-            Limit::perMinute(config('auth.throttle_per_minute'))->by($request->ip()),
-            Limit::perMinute(config('auth.throttle_per_minute'))->by($request->string('email')->lower()->toString()),
-        ]);
+        // Per IP, and per email when the request has one. Passkey requests carry no
+        // email: keyed by '' they would all share one bucket for the whole site.
+        RateLimiter::for('auth', function (Request $request) {
+            $email = $request->string('email')->lower()->toString();
+
+            return array_values(array_filter([
+                Limit::perMinute(config('auth.throttle_per_minute'))->by($request->ip()),
+                $email !== '' ? Limit::perMinute(config('auth.throttle_per_minute'))->by('email:'.$email) : null,
+            ]));
+        });
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
 

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import { useWebpass, Webpass } from '@/composables/useWebpass'
+import { Passkeys } from '@laravel/passkeys'
 import AppLayout from '@/Layouts/AppLayout.vue'
-
-const webpass = useWebpass()
 
 defineOptions({ layout: AppLayout })
 
@@ -25,7 +23,7 @@ const passkeyError = ref<string | null>(null)
 const passkeyBusy = ref(false)
 
 onMounted(() => {
-    passkeySupported.value = Webpass.isSupported()
+    passkeySupported.value = Passkeys.isSupported()
 })
 
 function submit() {
@@ -37,21 +35,14 @@ async function signInWithPasskey() {
     passkeyBusy.value = true
 
     try {
-        const { success, user, error } = await webpass.assert(
-            {
-                path: route('webauthn.login.options'),
-                body: form.email ? { email: form.email } : {},
+        const { redirect } = await Passkeys.verify({
+            routes: {
+                options: route('passkeys.login.options'),
+                submit: route('passkeys.login', redirectQuery),
             },
-            { path: route('webauthn.login', redirectQuery) },
-        )
+        })
 
-        if (success) {
-            const target = typeof user === 'object' && user !== null && typeof user.redirect === 'string' ? user.redirect : null
-            window.location.href = target ?? route('home')
-            return
-        }
-
-        passkeyError.value = error instanceof Error ? error.message : "Couldn't sign in with a passkey."
+        window.location.href = typeof redirect === 'string' ? redirect : route('home')
     } catch (e) {
         passkeyError.value = e instanceof Error ? e.message : "Couldn't sign in with a passkey."
     } finally {

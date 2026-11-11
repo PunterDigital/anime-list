@@ -8,7 +8,10 @@ use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserAnimeList;
 use App\Services\FeatureFlagService;
+use App\Support\LegacyPasskeys;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Data for the Playwright E2E suite (tests/e2e). Runs against a throwaway
@@ -35,6 +38,19 @@ class E2ESeeder extends Seeder
     public const BLOG_DRAFT_SLUG = 'unfinished-draft';
 
     public const SLUGLESS_TITLE = 'Slugless E2E Show';
+
+    public const LEGACY_PASSKEY_EMAIL = 'e2e-legacy-passkey@example.com';
+
+    public const LEGACY_PASSKEY_CREDENTIAL_ID = '_JTjK-fK6TE2NI77Mj8BFUmBk4D18Sg97vlLV-cxxL0';
+
+    // Laragear's user handle: a UUID as 32 hex characters.
+    public const LEGACY_PASSKEY_USER_HANDLE = '693d1b8f955849aabef1ab5395fd411e';
+
+    // Public half of the throwaway P-256 test key in tests/e2e/passkeys.spec.ts.
+    public const LEGACY_PASSKEY_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n"
+        ."MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEvDm2vZla8G0c8esCra23e2Ew2rF\n"
+        ."uvymgowsL1axU0gTA1itq97YMfgrrisHqE3TWXB7u+Y59qxPAc63aTuJWQ==\n"
+        ."-----END PUBLIC KEY-----\n";
 
     public function run(): void
     {
@@ -187,6 +203,45 @@ class E2ESeeder extends Seeder
             'popularity' => 1,
         ]);
         Anime::query()->whereKey($slugless->id)->update(['slug' => null]);
+
+        $this->seedLegacyPasskey();
+    }
+
+    /**
+     * Card 4237: a passkey as laragear/webauthn stored it, copied to
+     * `passkeys` by the same code the production migration runs.
+     * `passkeys.spec.ts` gives a virtual authenticator the matching private
+     * key (a throwaway test key, see the spec) and signs in with it on
+     * http://localhost (WebAuthn refuses an IP address as RP ID).
+     */
+    private function seedLegacyPasskey(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Legacy Passkey',
+            'username' => 'legacy_passkey',
+            'email' => self::LEGACY_PASSKEY_EMAIL,
+        ]);
+
+        DB::table('webauthn_credentials')->insert([
+            'id' => self::LEGACY_PASSKEY_CREDENTIAL_ID,
+            'authenticatable_type' => User::class,
+            'authenticatable_id' => $user->id,
+            'user_id' => self::LEGACY_PASSKEY_USER_HANDLE,
+            'alias' => 'Old laptop',
+            'counter' => 0,
+            'rp_id' => 'localhost',
+            'origin' => 'http://localhost',
+            'transports' => json_encode(['internal']),
+            'aaguid' => '00000000-0000-0000-0000-000000000000',
+            'public_key' => Crypt::encryptString(self::LEGACY_PASSKEY_PUBLIC_KEY),
+            'attestation_format' => 'none',
+            'certificates' => null,
+            'disabled_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        LegacyPasskeys::copyAll();
     }
 
     private function ratingTitle(string $title, string $slug): Anime

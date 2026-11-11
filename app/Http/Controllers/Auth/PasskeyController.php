@@ -3,53 +3,85 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Passkey;
+use App\Models\User;
 use App\Support\RedirectPath;
-use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Laragear\WebAuthn\Http\Requests\AssertedRequest;
-use Laragear\WebAuthn\Http\Requests\AssertionRequest;
-use Laragear\WebAuthn\Http\Requests\AttestationRequest;
-use Laragear\WebAuthn\Http\Requests\AttestedRequest;
-use Laragear\WebAuthn\Models\WebAuthnCredential;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Passkeys\Actions\DeletePasskey;
+use Laravel\Passkeys\Actions\GenerateRegistrationOptions;
+use Laravel\Passkeys\Actions\GenerateVerificationOptions;
+use Laravel\Passkeys\Actions\StorePasskey;
+use Laravel\Passkeys\Actions\VerifyPasskey;
+use Laravel\Passkeys\Exceptions\InvalidPasskeyException;
+use Laravel\Passkeys\Http\Requests\PasskeyRegistrationRequest;
+use Laravel\Passkeys\Http\Requests\PasskeyVerificationRequest;
+use Laravel\Passkeys\Passkeys;
+use Laravel\Passkeys\Support\WebAuthn;
 
+/**
+ * Passkey sign-in and management on laravel/passkeys' actions (card 4237). The
+ * package's own routes are off (AppServiceProvider): these keep AniTrack's
+ * throttle, redirect handling and Settings page. The browser side is the
+ * `@laravel/passkeys` client with these routes passed in.
+ */
 class PasskeyController extends Controller
 {
-    public function registerOptions(AttestationRequest $request): Responsable
+    public function registerOptions(Request $request, GenerateRegistrationOptions $generate): JsonResponse
     {
-        return $request->fastRegistration()->toCreate();
+        $options = $generate($request->user());
+
+        $request->session()->put('passkey.registration_options', WebAuthn::toJson($options));
+
+        return response()->json(['options' => WebAuthn::toBrowserArray($options)]);
     }
 
-    public function register(AttestedRequest $request): JsonResponse
+    public function register(PasskeyRegistrationRequest $request, StorePasskey $store): JsonResponse
     {
         $request->validate([
-            'alias' => ['nullable', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:50'],
         ]);
 
-        $request->save(function (WebAuthnCredential $credential) use ($request) {
-            $credential->alias = $request->input('alias') ?: 'Passkey';
-        });
+        $passkey = $store(
+            $request->user(),
+            trim($request->string('name')->toString()) ?: 'Passkey',
+            $request->credential(),
+            $request->registrationOptions(),
+        );
 
-        return response()->json(['message' => 'Passkey registered.']);
-    }
-
-    public function loginOptions(AssertionRequest $request): Responsable
-    {
-        $validated = $request->validate([
-            'email' => ['sometimes', 'email'],
+        return response()->json([
+            'id' => (string) $passkey->id,
+            'name' => $passkey->name,
+            'message' => 'Passkey registered.',
         ]);
-
-        return $request->toVerify($validated);
     }
 
-    public function login(AssertedRequest $request): JsonResponse
+    public function loginOptions(Request $request, GenerateVerificationOptions $generate): JsonResponse
     {
-        $user = $request->login();
+        $options = $generate();
 
-        if (! $user) {
-            return response()->json(['message' => 'Authentication failed.'], 422);
+        $request->session()->put('passkey.verification_options', WebAuthn::toJson($options));
+
+        return response()->json(['options' => WebAuthn::toBrowserArray($options)]);
+    }
+
+    public function login(PasskeyVerificationRequest $request, VerifyPasskey $verify): JsonResponse
+    {
+        $passkey = $verify($request->credential(), $request->verificationOptions());
+
+        // A soft-deleted account's passkey still verifies (App\Models\Passkey
+        // loads deleted users, so the package's event gets one): refuse it here.
+        $user = $passkey->user;
+
+        if (! $user instanceof User || $user->trashed() || ! Passkeys::allowsLogin($request, $passkey)) {
+            throw InvalidPasskeyException::make('Unable to sign in with this account.');
         }
+
+        Auth::login($user, $request->remember());
+
+        $request->session()->regenerate();
 
         // Where the page should send the browser next: the safe `redirect` the
         // login page was opened with, else the page the auth middleware stopped
@@ -68,32 +100,31 @@ class PasskeyController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, string $id): RedirectResponse
+    public function destroy(Request $request, Passkey $passkey, DeletePasskey $delete): RedirectResponse
     {
-        $deleted = $request->user()
-            ->webAuthnCredentials()
-            ->whereKey($id)
-            ->delete();
+        abort_unless($this->owns($request, $passkey), 404);
 
-        abort_if($deleted === 0, 404);
+        $delete($request->user(), $passkey);
 
         return back()->with('message', 'Passkey removed.');
     }
 
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(Request $request, Passkey $passkey): RedirectResponse
     {
+        abort_unless($this->owns($request, $passkey), 404);
+
         $data = $request->validate([
             'alias' => ['required', 'string', 'max:50'],
         ]);
 
-        $credential = $request->user()
-            ->webAuthnCredentials()
-            ->whereKey($id)
-            ->firstOrFail();
-
-        $credential->alias = $data['alias'];
-        $credential->save();
+        $passkey->name = $data['alias'];
+        $passkey->save();
 
         return back()->with('message', 'Passkey renamed.');
+    }
+
+    private function owns(Request $request, Passkey $passkey): bool
+    {
+        return (string) $passkey->user_id === (string) $request->user()->getKey();
     }
 }

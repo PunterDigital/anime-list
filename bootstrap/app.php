@@ -31,7 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->preventRequestForgery(except: [
-            'webauthn/*',
             'api/v1/*',
         ]);
 

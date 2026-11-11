@@ -89,3 +89,28 @@ export interface AdminAnimeEdit {
     nsfw_at: string | null
     is_adult: boolean
 }
+
+// Card 4479: blog posts in the admin area.
+export interface AdminBlogPostRow {
+    id: number
+    title: string
+    slug: string
+    status: 'draft' | 'published'
+    published_at: string | null
+    updated_at: string | null
+    author: string | null
+}
+
+export interface AdminBlogPost {
+    id: number
+    title: string
+    slug: string
+    excerpt: string | null
+    body: string
+    body_html: string
+    status: 'draft' | 'published'
+    published_at: string | null
+    seo_title: string | null
+    meta_description: string | null
+    updated_at: string | null
+}

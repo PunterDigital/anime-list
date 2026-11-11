@@ -10,6 +10,7 @@ const links = [
     { label: 'Users', route: 'admin.users' },
     { label: 'Roles', route: 'admin.roles' },
     { label: 'Anime', route: 'admin.anime.index' },
+    { label: 'Blog', route: 'admin.blog.index' },
     { label: 'Jobs', route: 'admin.jobs' },
     { label: 'Feature Flags', route: 'admin.features' },
 ]

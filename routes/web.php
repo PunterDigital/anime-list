@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AdminAnimeController;
+use App\Http\Controllers\Admin\AdminBlogPostController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminJobObservabilityController;
@@ -228,6 +229,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/anime/{anime:id}/visibility', [AdminAnimeController::class, 'updateVisibility'])->name('anime.visibility');
     Route::patch('/anime/{anime:id}/nsfw', [AdminAnimeController::class, 'updateNsfw'])->name('anime.nsfw');
     Route::delete('/anime/{anime:id}/rewrite', [AdminAnimeController::class, 'reset'])->name('anime.reset');
+
+    // Card 4479: blog posts.
+    Route::get('/blog', [AdminBlogPostController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [AdminBlogPostController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [AdminBlogPostController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{post:id}/edit', [AdminBlogPostController::class, 'edit'])->name('blog.edit');
+    Route::patch('/blog/{post:id}', [AdminBlogPostController::class, 'update'])->name('blog.update');
+    Route::patch('/blog/{post:id}/publish', [AdminBlogPostController::class, 'publish'])->name('blog.publish');
+    Route::delete('/blog/{post:id}', [AdminBlogPostController::class, 'destroy'])->name('blog.destroy');
 
     Route::get('/features', [AdminFeatureFlagController::class, 'index'])->name('features');
     Route::patch('/features/{feature}', [AdminFeatureFlagController::class, 'update'])->name('features.update');

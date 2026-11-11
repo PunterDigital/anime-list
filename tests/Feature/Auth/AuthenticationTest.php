@@ -55,4 +55,19 @@ class AuthenticationTest extends TestCase
 
         $response->assertRedirect('/login');
     }
+
+    // Production allows 5 auth requests a minute per IP and per email; only the
+    // E2E servers raise it (AUTH_THROTTLE_PER_MINUTE, card 4479).
+    public function test_the_sixth_login_attempt_in_a_minute_is_throttled(): void
+    {
+        $this->assertSame(5, config('auth.throttle_per_minute'));
+
+        for ($i = 1; $i <= 5; $i++) {
+            $this->post('/login', ['email' => "user{$i}@example.com", 'password' => 'wrong'])
+                ->assertStatus(302);
+        }
+
+        $this->post('/login', ['email' => 'user6@example.com', 'password' => 'wrong'])
+            ->assertStatus(429);
+    }
 }

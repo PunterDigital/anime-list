@@ -14,6 +14,37 @@ function collectErrors(page: Page): string[] {
     return errors;
 }
 
+// The Inertia page object from a server-rendered response (Inertia 3 puts it in a script tag).
+type InertiaPage = {
+    component: string;
+    props: { status: number; auth: { user: { email: string } | null } };
+};
+
+function inertiaPage(html: string): InertiaPage {
+    const json = html.match(/<script[^>]*data-page="app"[^>]*>([\s\S]*?)<\/script>/)?.[1];
+    expect(json, 'Inertia page data in the response').toBeTruthy();
+    return JSON.parse(json!);
+}
+
+// API requests send no Sec-Fetch-Site header, so like curl they need a CSRF token wherever
+// the app checks one. A browser form POST is same-origin and would pass the check anyway.
+test('POST, PUT and DELETE to an unknown URL show the 404 page, not 419 (card 4488)', async ({ request }) => {
+    for (const method of ['post', 'put', 'delete'] as const) {
+        const response = await request[method]('/no-such-page', { form: { anything: 'x' } });
+        expect(response.status(), `${method.toUpperCase()} /no-such-page`).toBe(404);
+        const page = inertiaPage(await response.text());
+        expect(page.component).toBe('ErrorPage');
+        expect(page.props.status).toBe(404);
+        expect(page.props.auth.user).toBeNull();
+    }
+});
+
+test('a real form still needs its CSRF token', async ({ request }) => {
+    const response = await request.post('/login', { form: { email: 'e2e@example.com', password: 'wrong' } });
+    expect(response.status()).toBe(419);
+    expect(inertiaPage(await response.text()).props.status).toBe(419);
+});
+
 test('a 404 page keeps the site layout and offers a way out', async ({ page }) => {
     const errors = collectErrors(page);
     const response = await page.goto('/no-such-page');
@@ -73,5 +104,12 @@ test('a signed-in user stays signed in on a 404 page', async ({ page }) => {
     expect(response?.status()).toBe(404);
     await expect(page.getByRole('link', { name: 'My List' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Login' })).toHaveCount(0);
+
+    // With the session cookie but no CSRF token: a POST to an unknown URL is a 404 for
+    // the signed-in user, and a real route still refuses it.
+    const post = await page.request.post('/definitely/not/here', { form: { anything: 'x' } });
+    expect(post.status()).toBe(404);
+    expect(inertiaPage(await post.text()).props.auth.user?.email).toBe('e2e@example.com');
+    expect((await page.request.post('/logout')).status()).toBe(419);
     expect(errors).toEqual([]);
 });

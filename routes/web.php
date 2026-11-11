@@ -35,7 +35,7 @@ use App\Http\Controllers\UserListController;
 use App\Http\Controllers\VersionController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\Anime;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -251,8 +251,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 // Unknown URLs go through the web middleware too, so the 404 page knows who is
 // signed in (session, shared props). Any method, so a POST to an unknown URL
-// stays a 404 (not 405); it only aborts, so it needs no CSRF check.
+// stays a 404 (not 405); it only aborts, so it needs no CSRF check. Laravel 13's
+// web group runs PreventRequestForgery: excluding the deprecated ValidateCsrfToken
+// subclass does nothing (a POST answered 419, card 4488).
 Route::any('{fallbackPlaceholder}', fn () => abort(404))
     ->where('fallbackPlaceholder', '.*')
     ->fallback()
-    ->withoutMiddleware(ValidateCsrfToken::class);
+    ->withoutMiddleware(PreventRequestForgery::class);

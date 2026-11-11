@@ -20,6 +20,11 @@
         {{-- "@@context" is Blade's escape for a literal "@context": unescaped, Laravel's
              @context directive compiles the JSON-LD key into PHP (card 4456). --}}
         <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode(['@@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'AniTrack', 'url' => config('app.url')], JSON_UNESCAPED_SLASHES) !!}</script>
+        {{-- A page's own structured data (card 4481: BlogPosting), from its `json_ld` prop.
+             JSON_HEX_TAG keeps a "</script>" in a post title from closing the tag. --}}
+        @if (! empty($page['props']['json_ld']) && is_array($page['props']['json_ld']))
+            <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode($page['props']['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+        @endif
         @routes(nonce: app('csp-nonce'))
         @vite(['resources/js/app.ts'])
         {{-- The SSR head carries the page's own title; the fallback is only for pages

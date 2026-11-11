@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Anime;
+use App\Models\BlogPost;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Models\UserAnimeList;
@@ -28,6 +29,10 @@ class E2ESeeder extends Seeder
     public const RATED_SLUG = 'rated-e2e-show';
 
     public const UNRATED_SLUG = 'unrated-e2e-show';
+
+    public const BLOG_SLUG = 'welcome-to-the-anitrack-blog';
+
+    public const BLOG_DRAFT_SLUG = 'unfinished-draft';
 
     public function run(): void
     {
@@ -139,6 +144,29 @@ class E2ESeeder extends Seeder
             'status' => UserAnimeList::STATUS_PLAN_TO_WATCH,
             'score' => 0,
         ]);
+
+        // Card 4481: the public blog. One published post and one draft
+        // (blog-public.spec.ts, ssr.spec.ts); blog-admin.spec.ts adds and
+        // deletes its own posts next to them.
+        app(FeatureFlagService::class)->setGlobalStatus('blog', 'everyone');
+        $admin = User::where('email', self::ADMIN_EMAIL)->firstOrFail();
+        $published = BlogPost::factory()->create([
+            'title' => 'Welcome to the AniTrack Blog',
+            'slug' => self::BLOG_SLUG,
+            'excerpt' => 'What we will write about here.',
+            'body' => "## What to expect\n\nSeasonal picks, guides and **news**.\n\n### Staying in touch\n\nFollow the feed.",
+            'seo_title' => 'Welcome to the AniTrack Blog (SEO)',
+            'meta_description' => 'Seasonal picks, guides and news from AniTrack.',
+        ]);
+        $published->forceFill([
+            'status' => BlogPost::STATUS_PUBLISHED,
+            'published_at' => now()->subDay(),
+            'author_id' => $admin->id,
+        ])->save();
+        BlogPost::factory()->create([
+            'title' => 'Unfinished Draft',
+            'slug' => self::BLOG_DRAFT_SLUG,
+        ])->forceFill(['author_id' => $admin->id])->save();
     }
 
     private function ratingTitle(string $title, string $slug): Anime

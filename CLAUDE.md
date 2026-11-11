@@ -192,6 +192,24 @@ as `php <that dir>/composer/composer.phar`.
   Uploads are never deleted (a removed cover or image stays on disk).
   E2E: `blog-admin.spec.ts`' second test makes PNGs with a canvas, uploads by button and paste,
   sets/removes a cover and fetches the image as a guest.
+- Public blog (card 4481, flag `blog`): `/blog` (12 a page, newest first; an empty page > 1 is
+  404) and `/blog/{slug}` (`BlogController`). The flag is checked in the controller, not with
+  `feature:` middleware, because admins always see the pages: drafts and future posts are 404
+  for everyone else and show admins a preview banner with `noindex` and no JSON-LD.
+  `BlogPost::isLive()` is "published and the date has come". SEO: `<Head>` tags in the Vue
+  pages (title/description from the overrides, else title/excerpt/body text; canonical;
+  OG `article` + Twitter, the cover as image), and the BlogPosting JSON-LD comes from the
+  page's `json_ld` prop, printed by `app.blade.php` (with `JSON_HEX_TAG`), so it's in the
+  first HTML with or without SSR. Dates are formatted in PHP (`published_label`) so SSR and
+  the browser agree. `BlogMarkdown` turns `#` headings into `<h2>` (the title is the only
+  `<h1>`). `/blog/feed.xml` (RSS 2.0, latest 20, `content:encoded`, outside the web group) and
+  the sitemap's blog URLs exist only while the flag is on for guests; a saved or deleted post
+  clears the cached sitemap (`sitemap:xml`). Footer "Blog" link follows the flag; the admin
+  edit page links to the post ("Preview" for drafts).
+  E2E: `E2ESeeder` turns `blog` on and seeds `welcome-to-the-anitrack-blog` (published) and
+  `unfinished-draft`, so `blog-admin.spec.ts` checks only its own rows. `blog-public.spec.ts`
+  (list, post, head tags, feed, sitemap, admin preview) and `ssr.spec.ts` (raw HTML: `<h1>`,
+  meta tags, JSON-LD).
 - PrimeVue is gone (card 4272): PrimeVue 5 became a commercial PrimeUI package that needs a
   licence key, so AniTrack moved to its own components. Don't add it back.
 - Form controls (card 4272): `resources/js/Components/ui` has `AppButton` (label,

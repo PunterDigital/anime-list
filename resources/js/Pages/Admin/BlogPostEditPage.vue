@@ -117,6 +117,13 @@ function formatDateTime(iso: string | null): string | null {
                 </p>
             </div>
             <div v-if="post" class="flex flex-shrink-0 items-center gap-2">
+                <a
+                    :href="route('blog.show', { slug: post.slug })"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-sm text-gray-300 transition hover:text-gray-100"
+                    data-testid="blog-view-post"
+                >{{ isPublished ? 'View post' : 'Preview' }}</a>
                 <AppButton
                     v-if="isPublished"
                     label="Unpublish"

@@ -81,5 +81,6 @@ class AppServiceProvider extends ServiceProvider
         Feature::define('company-pages', fn ($user) => false);
         Feature::define('error-pages', fn ($user) => false);
         Feature::define('anitrack-rating', fn ($user) => false);
+        Feature::define('blog', fn ($user) => false);
     }
 }

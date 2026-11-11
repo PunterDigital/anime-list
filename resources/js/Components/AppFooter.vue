@@ -9,6 +9,8 @@ const business = computed(() => page.props.business)
 
 const publicApiEnabled = useFeature('public-api')
 const companyPagesEnabled = useFeature('company-pages')
+// Card 4481: the public blog.
+const blogEnabled = useFeature('blog')
 </script>
 
 <template>
@@ -25,6 +27,7 @@ const companyPagesEnabled = useFeature('company-pages')
                         <li><Link :href="route('schedule')" class="text-gray-500 transition hover:text-gray-200">Schedule</Link></li>
                         <li><Link :href="route('top.rated')" class="text-gray-500 transition hover:text-gray-200">Top Anime</Link></li>
                         <li><Link :href="route('alternatives')" class="text-gray-500 transition hover:text-gray-200">MAL Alternatives</Link></li>
+                        <li v-if="blogEnabled"><Link :href="route('blog.index')" class="text-gray-500 transition hover:text-gray-200">Blog</Link></li>
                         <li v-if="publicApiEnabled"><Link :href="route('developers')" class="text-gray-500 transition hover:text-gray-200">Developers</Link></li>
                     </ul>
                 </div>

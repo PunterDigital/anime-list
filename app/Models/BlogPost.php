@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -75,6 +76,25 @@ class BlogPost extends Model
     public function isPublished(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    /** Published and its date has come: what guests can see (card 4481). */
+    public function isLive(): bool
+    {
+        return $this->isPublished()
+            && $this->published_at !== null
+            && $this->published_at->lessThanOrEqualTo(now());
+    }
+
+    /**
+     * The sitemap is cached for hours; publishing, editing or deleting a
+     * post refreshes it (card 4481).
+     */
+    protected static function booted(): void
+    {
+        $forget = fn () => Cache::forget('sitemap:xml');
+        static::saved($forget);
+        static::deleted($forget);
     }
 
     public function bodyHtml(): string

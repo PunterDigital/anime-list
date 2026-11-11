@@ -34,6 +34,8 @@ class E2ESeeder extends Seeder
 
     public const BLOG_DRAFT_SLUG = 'unfinished-draft';
 
+    public const SLUGLESS_TITLE = 'Slugless E2E Show';
+
     public function run(): void
     {
         User::factory()->create([
@@ -167,6 +169,24 @@ class E2ESeeder extends Seeder
             'title' => 'Unfinished Draft',
             'slug' => self::BLOG_DRAFT_SLUG,
         ])->forceFill(['author_id' => $admin->id])->save();
+
+        // Card 4505: a title without a slug (some AniList entries have none);
+        // its admin edit page crashed on route('anime.show').
+        // Model events always fill a slug, so it's cleared with a query
+        // update, as a bulk write would leave it.
+        $slugless = Anime::factory()->finished()->create([
+            'title_english' => self::SLUGLESS_TITLE,
+            'title_romaji' => self::SLUGLESS_TITLE,
+            'slug' => null,
+            'format' => 'TV',
+            'episodes' => 12,
+            'cover_image_large' => null,
+            'cover_image_medium' => null,
+            'banner_image' => null,
+            'synopsis' => 'A title without a slug.',
+            'popularity' => 1,
+        ]);
+        Anime::query()->whereKey($slugless->id)->update(['slug' => null]);
     }
 
     private function ratingTitle(string $title, string $slug): Anime

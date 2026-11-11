@@ -281,7 +281,10 @@ const wordsNeeded = computed(() => Math.max(0, props.min_words - wordCount.value
                 >
                     Cancel
                 </Link>
+                <!-- Card 4505: some AniList titles have no slug, so no public page;
+                     route() throws without one (on SSR and in the browser). -->
                 <a
+                    v-if="anime.slug"
                     :href="route('anime.show', { anime: anime.slug })"
                     target="_blank"
                     rel="noopener"

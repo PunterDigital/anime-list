@@ -81,6 +81,8 @@ class AdminBlogPostController extends Controller
                 'title' => $post->title,
                 'slug' => $post->slug,
                 'excerpt' => $post->excerpt,
+                'cover_image' => $post->cover_image,
+                'cover_image_url' => $post->coverImageUrl(),
                 'body' => $post->body,
                 'body_html' => $post->bodyHtml(),
                 'status' => $post->status,

@@ -191,7 +191,7 @@ class AdminBlogPostTest extends TestCase
         $this->assertStringNotContainsString('javascript:', $html);
         $this->assertStringNotContainsString('data:text/html', $html);
         $this->assertStringContainsString('<a href="https://anitrack.app">ok</a>', $html);
-        $this->assertStringContainsString('<img src="https://example.com/a.png" alt="pic" />', $html);
+        $this->assertStringContainsString('<img loading="lazy" decoding="async" src="https://example.com/a.png" alt="pic" />', $html);
         $this->assertStringContainsString('<table>', $html);
     }
 }

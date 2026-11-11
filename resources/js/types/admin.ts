@@ -106,6 +106,8 @@ export interface AdminBlogPost {
     title: string
     slug: string
     excerpt: string | null
+    cover_image: string | null
+    cover_image_url: string | null
     body: string
     body_html: string
     status: 'draft' | 'published'

@@ -192,17 +192,21 @@ class PasskeyTest extends TestCase
         $this->assertLegacyPasskeysSignIn($legacy);
     }
 
-    public function test_laragear_ed25519_passkeys_are_copied_and_still_sign_in(): void
+    public function test_laragear_ed25519_passkeys_are_reported_not_copied(): void
     {
-        if (! function_exists('sodium_crypto_sign_keypair')) {
-            $this->markTestSkipped('Needs ext-sodium (CI has it; Windows PHP here does not).');
-        }
-
+        // laravel/passkeys verifies ES256 and RS256 only: a copied Ed25519 key
+        // failed at sign-in with "Unsupported algorithm" (a 500, first CI run).
         $user = User::factory()->create();
-        $legacy = [[$user, $this->legacyRow($user, SoftwareAuthenticator::ed25519(), 'ab12cd34ef56ab12cd34ef56ab12cd34', 'Phone')]];
+        $this->legacyRow($user, SoftwareAuthenticator::es256(), 'ab12cd34ef56ab12cd34ef56ab12cd34', 'Phone', [
+            'public_key' => Crypt::encryptString(SoftwareAuthenticator::ed25519PublicKeyPem()),
+        ]);
 
-        $this->assertSame(['copied' => 1, 'skipped' => []], LegacyPasskeys::copyAll());
-        $this->assertLegacyPasskeysSignIn($legacy);
+        $result = LegacyPasskeys::copyAll();
+
+        $this->assertSame(0, $result['copied']);
+        $this->assertCount(1, $result['skipped']);
+        $this->assertStringContainsString('Ed25519 keys are not supported', $result['skipped'][0]);
+        $this->assertDatabaseCount('passkeys', 0);
     }
 
     /**

@@ -244,16 +244,18 @@ as `php <that dir>/composer/composer.phar`.
   of APP_URL's host (Forge's APP_URL is http://).
   Existing passkeys were copied by the migration `copy_webauthn_credentials_to_passkeys`
   (`App\Support\LegacyPasskeys`): laragear's encrypted PEM becomes a COSE key (P-256 → ES256,
-  RSA → RS256, Ed25519 → EdDSA; laragear always verified with SHA-256), and the record keeps
+  RSA → RS256; laragear always verified with SHA-256). Ed25519 rows are skipped: laravel/passkeys
+  only verifies ES256/RS256, and a copied EdDSA key 500'd at sign-in ("Unsupported algorithm",
+  first CI run). The record keeps
   laragear's user handle: `base64url_decode(<UUID as 32 hex chars>)`, the bytes SimpleWebAuthn
   13 made from laragear's `user.id`, which the authenticator returns at sign-in. Disabled or
   unconvertible rows are logged and printed by the migration. `webauthn_credentials` stays
   (its migration is written out by hand now) until a cleanup card drops it.
   The `auth` limiter keys its second bucket by email only when there is one: passkey requests
   have none, and `by('')` made every passkey sign-in on the site share one 5/min bucket.
-  Tests: `tests/Support/SoftwareAuthenticator.php` signs real assertions (ES256/RS256/Ed25519;
-  Ed25519 needs ext-sodium, so it's skipped on Windows PHP; key generation there needs PHP's
-  `extras/ssl/openssl.cnf`, which the helper finds). `passkeys.spec.ts` runs on
+  Tests: `tests/Support/SoftwareAuthenticator.php` signs real assertions (ES256/RS256; key
+  generation on Windows PHP needs its `extras/ssl/openssl.cnf`, which the helper finds).
+  Windows PHP here has no ext-sodium, so EdDSA paths only run in CI. `passkeys.spec.ts` runs on
   `http://localhost` (WebAuthn refuses an IP as RP ID) with a CDP virtual authenticator: a
   seeded laragear-format passkey (E2ESeeder, throwaway key) signs in, and a new one is added,
   used and removed.

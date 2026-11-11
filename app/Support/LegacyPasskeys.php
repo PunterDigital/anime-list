@@ -21,7 +21,8 @@ use Webauthn\TrustPath\EmptyTrustPath;
  *
  * Laragear kept the public key as an encrypted PEM; laravel/passkeys keeps a
  * webauthn-lib CredentialRecord whose key is COSE (CBOR). Laragear always verified
- * with SHA-256 (or Ed25519), so P-256 keys are ES256, RSA keys RS256 and Ed25519 EdDSA.
+ * with SHA-256, so P-256 keys are ES256 and RSA keys RS256. Ed25519 keys are left
+ * out: laravel/passkeys can't verify them (see pemToCose()).
  *
  * The user handle has to stay the bytes the authenticator holds. Laragear sent the
  * user's UUID as 32 hex characters, and its browser client (SimpleWebAuthn 13)
@@ -30,15 +31,11 @@ use Webauthn\TrustPath\EmptyTrustPath;
  */
 class LegacyPasskeys
 {
-    private const COSE_KTY_OKP = 1;
-
     private const COSE_KTY_EC2 = 2;
 
     private const COSE_KTY_RSA = 3;
 
     private const COSE_ALG_ES256 = -7;
-
-    private const COSE_ALG_EDDSA = -8;
 
     private const COSE_ALG_RS256 = -257;
 
@@ -149,6 +146,16 @@ class LegacyPasskeys
      */
     public static function pemToCose(string $pem): string
     {
+        // Laragear also accepted Ed25519, but laravel/passkeys only verifies ES256
+        // and RS256 (webauthn-lib's default algorithm manager): a copied Ed25519
+        // passkey failed at sign-in with "Unsupported algorithm", a 500. Report it
+        // instead; that user signs in with their password and adds a new passkey.
+        $der = base64_decode(preg_replace('/-----[^-]+-----|\s+/', '', $pem) ?? '', true);
+
+        if (is_string($der) && str_starts_with($der, "\x30\x2a\x30\x05\x06\x03\x2b\x65\x70")) {
+            throw new RuntimeException('Ed25519 keys are not supported by laravel/passkeys (ES256 and RS256 only)');
+        }
+
         $key = openssl_pkey_get_public($pem);
 
         if ($key === false) {
@@ -177,18 +184,6 @@ class LegacyPasskeys
                 3 => self::COSE_ALG_RS256,
                 -1 => ['bytes' => $details['rsa']['n']],
                 -2 => ['bytes' => $details['rsa']['e']],
-            ]);
-        }
-
-        // Ed25519: the SubjectPublicKeyInfo ends with the 32-byte key.
-        $der = base64_decode(preg_replace('/-----[^-]+-----|\s+/', '', $pem) ?? '', true);
-
-        if (is_string($der) && strlen($der) === 44 && str_starts_with($der, "\x30\x2a\x30\x05\x06\x03\x2b\x65\x70")) {
-            return self::cborMap([
-                1 => self::COSE_KTY_OKP,
-                3 => self::COSE_ALG_EDDSA,
-                -1 => 6, // Ed25519
-                -2 => ['bytes' => substr($der, -32)],
             ]);
         }
 

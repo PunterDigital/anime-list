@@ -59,13 +59,15 @@ class SoftwareAuthenticator
         return $key ?: throw new RuntimeException('openssl_pkey_new failed: '.openssl_error_string());
     }
 
-    public static function ed25519(string $userHandle = ''): self
+    /**
+     * An Ed25519 public key in PEM form (laragear accepted these; laravel/passkeys
+     * can't verify them). Only the key format matters, so no signing half.
+     */
+    public static function ed25519PublicKeyPem(): string
     {
-        $pair = sodium_crypto_sign_keypair();
-        $der = hex2bin('302a300506032b6570032100').sodium_crypto_sign_publickey($pair);
-        $pem = "-----BEGIN PUBLIC KEY-----\n".chunk_split(base64_encode($der), 64, "\n")."-----END PUBLIC KEY-----\n";
+        $der = hex2bin('302a300506032b6570032100').random_bytes(32);
 
-        return new self('ed25519', sodium_crypto_sign_secretkey($pair), $pem, $userHandle);
+        return "-----BEGIN PUBLIC KEY-----\n".chunk_split(base64_encode($der), 64, "\n")."-----END PUBLIC KEY-----\n";
     }
 
     public function credentialIdB64(): string
@@ -116,10 +118,6 @@ class SoftwareAuthenticator
 
     private function sign(string $data): string
     {
-        if ($this->type === 'ed25519') {
-            return sodium_crypto_sign_detached($data, $this->privateKey);
-        }
-
         if (! openssl_sign($data, $signature, $this->privateKey, OPENSSL_ALGO_SHA256)) {
             throw new RuntimeException('signing failed');
         }

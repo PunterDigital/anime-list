@@ -7,6 +7,7 @@ use App\Models\Genre;
 use App\Models\Recommendation;
 use App\Models\User;
 use App\Services\FeatureFlagService;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -159,5 +160,19 @@ class ErrorPageTest extends TestCase
     {
         $this->post('/no-such-page')->assertNotFound();
         $this->delete('/no-such-page')->assertNotFound();
+    }
+
+    // PHPUnit skips the CSRF check, so a POST above can't tell whether the
+    // fallback really skips it: check the route's middleware instead (card 4488).
+    public function test_the_fallback_skips_the_csrf_middleware_that_real_routes_run(): void
+    {
+        $router = app('router');
+        $fallback = collect($router->getRoutes()->getRoutes())->first(fn ($route) => $route->isFallback);
+        $login = $router->getRoutes()->getByName('login');
+
+        $this->assertNotNull($fallback);
+        $this->assertContains('web', $fallback->gatherMiddleware());
+        $this->assertNotContains(PreventRequestForgery::class, $router->gatherRouteMiddleware($fallback));
+        $this->assertContains(PreventRequestForgery::class, $router->gatherRouteMiddleware($login));
     }
 }

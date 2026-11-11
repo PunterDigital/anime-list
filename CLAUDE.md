@@ -127,6 +127,10 @@ as `php <that dir>/composer/composer.phar`.
   thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,
   so `ErrorPageProps` shares them itself. Unknown URLs hit a `Route::any` fallback (no CSRF)
   so they get a session; keep it `any`, since a GET-only fallback turns other methods into 405.
+  Laravel 13's CSRF middleware is `PreventRequestForgery`: excluding the deprecated
+  `ValidateCsrfToken` subclass does nothing (a POST to an unknown URL answered 419, card 4488).
+  PHPUnit skips CSRF, and a browser's same-origin POST passes it via `Sec-Fetch-Site`, so only
+  `request`-fixture E2E (no such header, like curl) catches it (`error-pages.spec.ts`).
 - NSFW (card 4198): `anime.nsfw_at`, set by admins on the anime edit page (`admin.anime.nsfw`),
   never written by an AniList refresh (that writes `is_adult`). Public queries use
   `Anime::safeForWork()` (not adult, not NSFW) next to `visible()` (not hidden); raw joins on

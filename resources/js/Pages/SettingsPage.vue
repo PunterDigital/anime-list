@@ -9,7 +9,7 @@ import AppSelect from '@/Components/ui/AppSelect.vue'
 import AppPassword from '@/Components/ui/AppPassword.vue'
 import AppButton from '@/Components/ui/AppButton.vue'
 import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
-import { useWebpass, Webpass } from '@/composables/useWebpass'
+import { Passkeys } from '@laravel/passkeys'
 
 defineOptions({ layout: AppLayout })
 
@@ -138,7 +138,6 @@ function formatWhen(iso: string | null): string {
 
 // ── Passkeys ────────────────────────────────────────────────────────────────
 
-const webpass = useWebpass()
 const passkeySupported = ref(false)
 const passkeyError = ref<string | null>(null)
 const passkeyBusy = ref(false)
@@ -146,7 +145,7 @@ const passkeyAlias = ref('')
 const passkeyDeletingId = ref<string | null>(null)
 
 onMounted(() => {
-    passkeySupported.value = Webpass.isSupported()
+    passkeySupported.value = Passkeys.isSupported()
 })
 
 async function addPasskey() {
@@ -155,18 +154,16 @@ async function addPasskey() {
     const alias = passkeyAlias.value.trim() || 'Passkey'
 
     try {
-        const { success, error } = await webpass.attest(
-            { path: route('webauthn.register.options') },
-            { path: route('webauthn.register'), body: { alias } },
-        )
+        await Passkeys.register({
+            name: alias,
+            routes: {
+                options: route('settings.passkeys.options'),
+                submit: route('settings.passkeys.store'),
+            },
+        })
 
-        if (success) {
-            passkeyAlias.value = ''
-            router.reload({ only: ['passkeys'] })
-            return
-        }
-
-        passkeyError.value = error instanceof Error ? error.message : "Couldn't register passkey."
+        passkeyAlias.value = ''
+        router.reload({ only: ['passkeys'] })
     } catch (e) {
         passkeyError.value = e instanceof Error ? e.message : "Couldn't register passkey."
     } finally {

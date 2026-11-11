@@ -4,12 +4,10 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
-use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
-use Laragear\WebAuthn\Http\Requests\AssertedRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\RegistersPasskeys;
 use Tests\TestCase;
 
 /**
@@ -18,6 +16,8 @@ use Tests\TestCase;
  */
 class SignInRedirectTest extends TestCase
 {
+    use RegistersPasskeys;
+
     private const ANIME_PATH = '/anime/cowboy-bebop';
 
     /**
@@ -149,9 +149,9 @@ class SignInRedirectTest extends TestCase
 
     public function test_passkey_login_returns_the_redirect_path(): void
     {
-        $this->fakePasskeyLogin(User::factory()->create());
+        $passkey = $this->registerPasskey(User::factory()->create());
 
-        $this->postJson(route('webauthn.login', ['redirect' => self::ANIME_PATH]))
+        $this->signInWith($passkey, ['redirect' => self::ANIME_PATH])
             ->assertOk()
             ->assertJsonPath('redirect', self::ANIME_PATH);
 
@@ -161,28 +161,28 @@ class SignInRedirectTest extends TestCase
     #[DataProvider('offSiteTargets')]
     public function test_passkey_login_ignores_an_off_site_redirect(string $target): void
     {
-        $this->fakePasskeyLogin(User::factory()->create());
+        $passkey = $this->registerPasskey(User::factory()->create());
 
-        $this->postJson(route('webauthn.login', ['redirect' => $target]))
+        $this->signInWith($passkey, ['redirect' => $target])
             ->assertOk()
             ->assertJsonPath('redirect', route('home'));
     }
 
     public function test_passkey_login_without_a_redirect_goes_to_the_intended_page_or_home(): void
     {
-        $this->fakePasskeyLogin(User::factory()->create());
+        $passkey = $this->registerPasskey(User::factory()->create());
 
-        $this->postJson(route('webauthn.login'))
+        $this->signInWith($passkey)
             ->assertOk()
             ->assertJsonPath('redirect', route('home'));
     }
 
     public function test_passkey_login_uses_the_intended_page_when_there_is_no_redirect(): void
     {
-        $this->fakePasskeyLogin(User::factory()->create());
+        $passkey = $this->registerPasskey(User::factory()->create());
 
         $this->withSession(['url.intended' => url('/list')])
-            ->postJson(route('webauthn.login'))
+            ->signInWith($passkey)
             ->assertOk()
             ->assertJsonPath('redirect', url('/list'));
     }
@@ -201,36 +201,5 @@ class SignInRedirectTest extends TestCase
             'password_confirmation' => 'password-123',
             ...$extra,
         ];
-    }
-
-    /**
-     * Skip the WebAuthn ceremony: the assertion "succeeds" and logs the user in,
-     * so the test covers only what the controller does afterwards.
-     */
-    private function fakePasskeyLogin(User $user): void
-    {
-        $this->app->bind(AssertedRequest::class, fn () => new class($user) extends AssertedRequest
-        {
-            public function __construct(private ?User $fakeUser = null)
-            {
-                parent::__construct();
-            }
-
-            public function rules(): array
-            {
-                return [];
-            }
-
-            public function login(
-                ?string $guard = null,
-                ?bool $remember = null,
-                bool $destroySession = false,
-                callable|array|null $callbacks = null,
-            ): ?WebAuthnAuthenticatable {
-                Auth::login($this->fakeUser);
-
-                return $this->fakeUser;
-            }
-        });
     }
 }

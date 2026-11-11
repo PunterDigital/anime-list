@@ -88,14 +88,15 @@ class SettingsController extends Controller
      */
     private function passkeysFor($user): array
     {
-        return $user->webAuthnCredentials()
+        return $user->passkeys()
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get()
-            ->map(fn ($credential) => [
-                'id' => $credential->id,
-                'alias' => $credential->alias ?? 'Passkey',
-                'enabled' => $credential->isEnabled(),
-                'created_at' => $credential->created_at?->toISOString(),
+            ->map(fn ($passkey) => [
+                'id' => (string) $passkey->id,
+                'alias' => $passkey->name,
+                'enabled' => true,
+                'created_at' => $passkey->created_at?->toISOString(),
             ])
             ->values()
             ->all();

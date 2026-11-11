@@ -43,6 +43,9 @@ const appEnv = {
     // The suite signs in and registers several times a minute from one IP;
     // production allows 5 (config/auth.php), and Pest covers the throttle.
     AUTH_THROTTLE_PER_MINUTE: '60',
+    // passkeys.spec.ts runs on http://localhost: WebAuthn refuses an IP as RP ID.
+    WEBAUTHN_ID: 'localhost',
+    WEBAUTHN_ORIGINS: `http://localhost:${port}`,
 };
 
 const gtagEnv = {

@@ -134,7 +134,18 @@ class AnimeDataPersistenceService
 
         $anilistIds = array_column($rows, 'anilist_id');
 
-        return Anime::whereIn('anilist_id', $anilistIds)->get()->keyBy('anilist_id');
+        $models = Anime::whereIn('anilist_id', $anilistIds)->get()->keyBy('anilist_id');
+
+        // Populate slugs for newly inserted anime (upsert bypasses model
+        // events), as for studios and people. Without one a title has no
+        // public page, and route('anime.show') throws (card 4505). An
+        // existing slug is never changed, so URLs stay put.
+        $models->filter(fn (Anime $anime) => ! $anime->slug)->each(function (Anime $anime) {
+            $anime->slug = Anime::generateUniqueSlug($anime);
+            $anime->saveQuietly();
+        });
+
+        return $models;
     }
 
     /**

@@ -168,6 +168,27 @@ class AnimeDataPersistenceServiceTest extends TestCase
      * @param  array<int, array{nodeId:int, recId:int, rating:int}>  $recommendations
      * @param  array<int, array<string, mixed>>|null  $recommendationsRaw
      */
+    public function test_persist_batch_gives_new_anime_a_unique_slug_and_keeps_existing_ones(): void
+    {
+        Redis::shouldReceive('rpush')->zeroOrMoreTimes();
+
+        $existing = Anime::factory()->create(['anilist_id' => 3, 'title_romaji' => 'Old Title']);
+        Anime::query()->whereKey($existing->id)->update(['slug' => 'kept-slug']);
+        $first = $this->minimalMedia(1);
+        $first['title'] = ['romaji' => 'Sousou no Frieren', 'english' => 'Frieren', 'native' => null];
+        $second = $this->minimalMedia(2);
+        $second['title'] = ['romaji' => 'Frieren', 'english' => null, 'native' => null];
+        $renamed = $this->minimalMedia(3);
+        $renamed['title'] = ['romaji' => 'New Title', 'english' => null, 'native' => null];
+
+        app(AnimeDataPersistenceService::class)->persistBatch([$first, $second, $renamed]);
+
+        $this->assertSame('frieren', Anime::where('anilist_id', 1)->value('slug'));
+        $this->assertSame('frieren-2', Anime::where('anilist_id', 2)->value('slug'));
+        $this->assertSame('kept-slug', $existing->refresh()->slug);
+        $this->assertSame(0, Anime::whereNull('slug')->count());
+    }
+
     private function minimalMedia(int $id, array $recommendations = [], ?array $recommendationsRaw = null): array
     {
         $edges = $recommendationsRaw ?? array_map(fn (array $r) => [

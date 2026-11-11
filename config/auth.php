@@ -110,4 +110,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sign-in / sign-up throttle
+    |--------------------------------------------------------------------------
+    |
+    | Auth requests (login, register, password reset) allowed per minute, per
+    | IP and per email ("throttle:auth"). Only the E2E servers raise it: the
+    | whole Playwright suite signs in from one IP within a minute.
+    |
+    */
+
+    'throttle_per_minute' => (int) (env('AUTH_THROTTLE_PER_MINUTE') ?: 5),
+
 ];

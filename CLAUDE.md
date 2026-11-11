@@ -96,7 +96,10 @@ as `php <that dir>/composer/composer.phar`.
 - Seed data lives in `database/seeders/E2ESeeder.php` (three anime + `e2e@example.com`).
 - Specs fail on any browser console error. The production CSP is active in E2E (`APP_ENV=e2e`),
   so a CSP violation shows up as a failure: seed images must be `null` or on an allowed host.
-- `throttle:auth` allows 5 auth requests a minute: keep registrations/logins per run low.
+- `throttle:auth` allows 5 auth requests a minute per IP and per email in production
+  (`config/auth.php` `throttle_per_minute`). The E2E servers set `AUTH_THROTTLE_PER_MINUTE=60`:
+  with the blog spec's admin login the suite went past 5 and smoke's signup got a 429
+  (card 4479). Pest's `AuthenticationTest` checks the production limit.
 
 ## Deploy and release
 

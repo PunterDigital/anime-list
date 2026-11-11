@@ -40,6 +40,9 @@ const appEnv = {
     GOOGLE_ANALYTICS_ID: '',
     GOOGLE_ADS_ID: '',
     LOG_CHANNEL: 'single',
+    // The suite signs in and registers several times a minute from one IP;
+    // production allows 5 (config/auth.php), and Pest covers the throttle.
+    AUTH_THROTTLE_PER_MINUTE: '60',
 };
 
 const gtagEnv = {

@@ -158,6 +158,19 @@ as `php <that dir>/composer/composer.phar`.
   forget the key there. The page's list edits reload `list_entry` and `anitrack_rating`.
   E2E: `anitrack-rating.spec.ts` and `ssr.spec.ts` on the seeded `rated-e2e-show` (8.4,
   10 ratings) and `unrated-e2e-show` (9).
+- Blog (cards 4477/4479-4481): `blog_posts` (`App\Models\BlogPost`), written by admins at
+  `/admin/blog` (`AdminBlogPostController`, admin-only, so no flag; the public pages in 4481
+  get one). The body is stored as **Markdown**; `App\Support\BlogMarkdown` renders it with
+  league/commonmark GFM, `html_input: strip` and no unsafe links, so pasted HTML or
+  `javascript:` links never reach a page. The editor (`Components/BlogEditor.vue`) is TipTap 3
+  with `@tiptap/markdown`: it writes the model and never reads it back after mount (reading it
+  back raced with typing and dropped keystrokes). Toolbar buttons use `@mousedown.prevent`,
+  or the first keys typed after a click land on the button (TipTap refocuses a frame late).
+  The create page redirects to the same component (`BlogPostEditPage`), which isn't
+  remounted, so the store's `onSuccess` copies the generated slug into the form. Flash
+  messages show as the layout's toast (`useFlashToast`), not a page banner. Image-by-URL
+  only shows hosts the CSP's `img-src` allows (self, AniList) until uploads land (4480).
+  E2E: `blog-admin.spec.ts` (admin writes, toggles Markdown, saves, publishes, deletes).
 - PrimeVue is gone (card 4272): PrimeVue 5 became a commercial PrimeUI package that needs a
   licence key, so AniTrack moved to its own components. Don't add it back.
 - Form controls (card 4272): `resources/js/Components/ui` has `AppButton` (label,

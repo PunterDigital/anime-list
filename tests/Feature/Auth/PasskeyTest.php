@@ -4,9 +4,6 @@ namespace Tests\Feature\Auth;
 
 use App\Models\Passkey;
 use App\Models\User;
-use App\Support\LegacyPasskeys;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use ParagonIE\ConstantTime\Base64UrlSafe;
 use Tests\Support\RegistersPasskeys;
 use Tests\Support\SoftwareAuthenticator;
@@ -14,7 +11,7 @@ use Tests\TestCase;
 
 /**
  * Passkeys on laravel/passkeys (card 4237): real assertions signed by a
- * software authenticator, and the copy of laragear/webauthn's credentials.
+ * software authenticator.
  */
 class PasskeyTest extends TestCase
 {
@@ -34,6 +31,16 @@ class PasskeyTest extends TestCase
         $passkey = Passkey::query()->sole();
         $this->assertNotNull($passkey->last_used_at);
         $this->assertSame(1, $passkey->credential['counter']);
+    }
+
+    public function test_an_rs256_passkey_signs_the_user_in(): void
+    {
+        $user = User::factory()->create();
+        $authenticator = $this->registerPasskey($user, authenticator: SoftwareAuthenticator::rs256($user->getPasskeyUserHandle()));
+
+        $this->signInWith($authenticator)->assertOk();
+
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_an_assertion_for_another_challenge_is_refused(): void
@@ -168,117 +175,5 @@ class PasskeyTest extends TestCase
         $this->actingAs($user)->delete(route('settings.passkeys.destroy', $mine))->assertRedirect();
         $this->assertModelMissing($mine);
         $this->assertModelExists($theirs);
-    }
-
-    public function test_laragear_passkeys_are_copied_and_still_sign_in(): void
-    {
-        $user = User::factory()->create();
-        $other = User::factory()->create();
-
-        $legacy = [
-            [$user, $this->legacyRow($user, SoftwareAuthenticator::es256(), '0f3a52d4-6c1e-4b8e-9a7d-2c5b8e1f4a90', 'YubiKey')],
-            [$user, $this->legacyRow($user, SoftwareAuthenticator::rs256(), '0f3a52d4-6c1e-4b8e-9a7d-2c5b8e1f4a90', null)],
-            [$other, $this->legacyRow($other, SoftwareAuthenticator::es256(), 'ab12cd34ef56ab12cd34ef56ab12cd34', 'Phone')],
-        ];
-
-        $result = LegacyPasskeys::copyAll();
-
-        $this->assertSame(['copied' => 3, 'skipped' => []], $result);
-        $this->assertSame(['YubiKey', 'Passkey'], Passkey::query()->where('user_id', $user->id)->orderBy('id')->pluck('name')->all());
-
-        // Running it again (a re-run migration) adds nothing.
-        $this->assertSame(0, LegacyPasskeys::copyAll()['copied']);
-
-        $this->assertLegacyPasskeysSignIn($legacy);
-    }
-
-    public function test_laragear_ed25519_passkeys_are_reported_not_copied(): void
-    {
-        // laravel/passkeys verifies ES256 and RS256 only: a copied Ed25519 key
-        // failed at sign-in with "Unsupported algorithm" (a 500, first CI run).
-        $user = User::factory()->create();
-        $this->legacyRow($user, SoftwareAuthenticator::es256(), 'ab12cd34ef56ab12cd34ef56ab12cd34', 'Phone', [
-            'public_key' => Crypt::encryptString(SoftwareAuthenticator::ed25519PublicKeyPem()),
-        ]);
-
-        $result = LegacyPasskeys::copyAll();
-
-        $this->assertSame(0, $result['copied']);
-        $this->assertCount(1, $result['skipped']);
-        $this->assertStringContainsString('Ed25519 keys are not supported', $result['skipped'][0]);
-        $this->assertDatabaseCount('passkeys', 0);
-    }
-
-    /**
-     * @param  list<array{User, SoftwareAuthenticator}>  $legacy
-     */
-    private function assertLegacyPasskeysSignIn(array $legacy): void
-    {
-        // Two requests per sign-in; production allows 5 a minute per IP.
-        config(['auth.throttle_per_minute' => 60]);
-
-        foreach ($legacy as [$owner, $authenticator]) {
-            $this->signInWith($authenticator)->assertOk();
-            $this->assertAuthenticatedAs($owner);
-            $this->post(route('logout'));
-            $this->flushSession();
-            auth()->forgetGuards();
-        }
-    }
-
-    public function test_laragear_passkeys_that_cannot_be_used_are_reported_and_left_out(): void
-    {
-        $user = User::factory()->create();
-        $gone = User::factory()->create();
-
-        $this->legacyRow($user, SoftwareAuthenticator::es256(), '0f3a52d4-6c1e-4b8e-9a7d-2c5b8e1f4a90', 'Disabled', ['disabled_at' => now()]);
-        $this->legacyRow($user, SoftwareAuthenticator::es256(), '0f3a52d4-6c1e-4b8e-9a7d-2c5b8e1f4a90', 'Broken', ['public_key' => Crypt::encryptString('not a key')]);
-        $this->legacyRow($gone, SoftwareAuthenticator::es256(), 'ab12cd34ef56ab12cd34ef56ab12cd34', 'Gone');
-        $gone->forceDelete();
-
-        $result = LegacyPasskeys::copyAll();
-
-        $this->assertSame(0, $result['copied']);
-        $this->assertCount(3, $result['skipped']);
-        $this->assertStringContainsString('disabled', $result['skipped'][0]);
-        $this->assertStringContainsString('public key could not be read', $result['skipped'][1]);
-        $this->assertStringContainsString('user no longer exists', $result['skipped'][2]);
-        $this->assertDatabaseCount('passkeys', 0);
-    }
-
-    /**
-     * A webauthn_credentials row as laragear/webauthn wrote it: the browser's
-     * credential id, the user's UUID as the handle (the authenticator holds
-     * base64url_decode(<32 hex chars>), as SimpleWebAuthn 13 sent it) and the
-     * public key as an encrypted PEM.
-     *
-     * @param  array<string, mixed>  $overrides
-     */
-    private function legacyRow(User $user, SoftwareAuthenticator $authenticator, string $uuid, ?string $alias, array $overrides = []): SoftwareAuthenticator
-    {
-        $hex = str_replace('-', '', $uuid);
-        $authenticator->userHandle = Base64UrlSafe::decodeNoPadding($hex);
-
-        DB::table('webauthn_credentials')->insert([
-            'id' => $authenticator->credentialIdB64(),
-            'authenticatable_type' => User::class,
-            'authenticatable_id' => $user->id,
-            'user_id' => $hex,
-            'alias' => $alias,
-            'counter' => 0,
-            'rp_id' => 'localhost',
-            'origin' => rtrim((string) config('app.url'), '/'),
-            'transports' => json_encode(['internal']),
-            'aaguid' => '00000000-0000-0000-0000-000000000000',
-            'public_key' => Crypt::encryptString($authenticator->publicKeyPem),
-            'attestation_format' => 'none',
-            'certificates' => null,
-            'disabled_at' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-            ...$overrides,
-        ]);
-
-        return $authenticator;
     }
 }

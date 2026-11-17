@@ -15,9 +15,9 @@ trait RegistersPasskeys
      * Store a passkey the way laravel/passkeys' StorePasskey does after a
      * registration, for a software authenticator holding the user's handle.
      */
-    protected function registerPasskey(User $user, string $name = 'Passkey'): SoftwareAuthenticator
+    protected function registerPasskey(User $user, string $name = 'Passkey', ?SoftwareAuthenticator $authenticator = null): SoftwareAuthenticator
     {
-        $authenticator = SoftwareAuthenticator::es256($user->getPasskeyUserHandle());
+        $authenticator ??= SoftwareAuthenticator::es256($user->getPasskeyUserHandle());
 
         $record = CredentialRecord::create(
             publicKeyCredentialId: $authenticator->credentialId,

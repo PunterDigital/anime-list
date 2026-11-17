@@ -88,7 +88,9 @@ as `php <that dir>/composer/composer.phar`.
 - A second server on `127.0.0.1:8766` (own SQLite file) has the production Google tag IDs, for
   `google-tag.spec.ts` only (Playwright project `google-tag`). That spec lets the tag's scripts
   load and answers every other non-local request itself, so no hit reaches Google; it fails on
-  CSP errors from the tag's page_view hits.
+  CSP errors from the tag's page_view hits. On Shay's PC `www.googletagmanager.com` doesn't
+  resolve (DNS blocks it; seen Nov 17, card 4533), so this spec fails locally with no
+  `/g/collect` hits: rely on CI for it.
 - A third server on `127.0.0.1:8767` (own SQLite file) has SSR on and talks to
   `node bootstrap/ssr/ssr.js` on port 13716 (`INERTIA_SSR_PORT`), for `ssr.spec.ts` only
   (Playwright project `ssr`). It checks the raw HTML inside `#app` before any JS runs, then
@@ -242,20 +244,17 @@ as `php <that dir>/composer/composer.phar`.
   null was a 500); the controller refuses deleted accounts. `config/passkeys.php` keeps
   laragear's env names (`WEBAUTHN_ID`, `WEBAUTHN_ORIGINS`) and always allows the https origin
   of APP_URL's host (Forge's APP_URL is http://).
-  Existing passkeys were copied by the migration `copy_webauthn_credentials_to_passkeys`
-  (`App\Support\LegacyPasskeys`): laragear's encrypted PEM becomes a COSE key (P-256 → ES256,
-  RSA → RS256; laragear always verified with SHA-256). Ed25519 rows are skipped: laravel/passkeys
-  only verifies ES256/RS256, and a copied EdDSA key 500'd at sign-in ("Unsupported algorithm",
-  first CI run). The record keeps
-  laragear's user handle: `base64url_decode(<UUID as 32 hex chars>)`, the bytes SimpleWebAuthn
-  13 made from laragear's `user.id`, which the authenticator returns at sign-in. Disabled or
-  unconvertible rows are logged and printed by the migration. `webauthn_credentials` stays
-  (its migration is written out by hand now) until a cleanup card drops it.
+  Passkeys registered before the move were copied into `passkeys` by a one-off migration
+  (laragear's encrypted PEM turned into a COSE key; Ed25519 rows skipped, since laravel/passkeys
+  only verifies ES256/RS256). Those copied records keep laragear's user handle,
+  `base64url_decode(<UUID as 32 hex chars>)`, not `getPasskeyUserHandle()`: don't "fix" it, the
+  authenticator returns those bytes at sign-in. Card 4533 dropped `webauthn_credentials` and
+  removed the copy code (`App\Support\LegacyPasskeys`) and both its migrations; their rows stay
+  in production's `migrations` table, which is harmless.
   The `auth` limiter keys its second bucket by email only when there is one: passkey requests
   have none, and `by('')` made every passkey sign-in on the site share one 5/min bucket.
   Tests: `tests/Support/SoftwareAuthenticator.php` signs real assertions (ES256/RS256; key
   generation on Windows PHP needs its `extras/ssl/openssl.cnf`, which the helper finds).
-  Windows PHP here has no ext-sodium, so EdDSA paths only run in CI. `passkeys.spec.ts` runs on
-  `http://localhost` (WebAuthn refuses an IP as RP ID) with a CDP virtual authenticator: a
-  seeded laragear-format passkey (E2ESeeder, throwaway key) signs in, and a new one is added,
-  used and removed.
+  Its `coseKey()` encodes the key as the browser would at registration. `passkeys.spec.ts` runs on
+  `http://localhost` (WebAuthn refuses an IP as RP ID) with a CDP virtual authenticator: a new
+  passkey is added, used and removed.

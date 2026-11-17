@@ -2,7 +2,6 @@
 
 namespace Tests\Support;
 
-use App\Support\LegacyPasskeys;
 use ParagonIE\ConstantTime\Base64UrlSafe;
 use RuntimeException;
 
@@ -59,25 +58,70 @@ class SoftwareAuthenticator
         return $key ?: throw new RuntimeException('openssl_pkey_new failed: '.openssl_error_string());
     }
 
-    /**
-     * An Ed25519 public key in PEM form (laragear accepted these; laravel/passkeys
-     * can't verify them). Only the key format matters, so no signing half.
-     */
-    public static function ed25519PublicKeyPem(): string
-    {
-        $der = hex2bin('302a300506032b6570032100').random_bytes(32);
-
-        return "-----BEGIN PUBLIC KEY-----\n".chunk_split(base64_encode($der), 64, "\n")."-----END PUBLIC KEY-----\n";
-    }
-
     public function credentialIdB64(): string
     {
         return Base64UrlSafe::encodeUnpadded($this->credentialId);
     }
 
+    /**
+     * The public key as a COSE_Key in CBOR, the form a browser hands over at
+     * registration and laravel/passkeys stores (P-256 is ES256, RSA is RS256).
+     */
     public function coseKey(): string
     {
-        return LegacyPasskeys::pemToCose($this->publicKeyPem);
+        $details = openssl_pkey_get_details(openssl_pkey_get_public($this->publicKeyPem)
+            ?: throw new RuntimeException('public key could not be read'));
+
+        if (isset($details['ec'])) {
+            return self::cborMap([
+                1 => 2,   // kty: EC2
+                3 => -7,  // alg: ES256
+                -1 => 1,  // crv: P-256
+                -2 => ['bytes' => str_pad($details['ec']['x'], 32, "\0", STR_PAD_LEFT)],
+                -3 => ['bytes' => str_pad($details['ec']['y'], 32, "\0", STR_PAD_LEFT)],
+            ]);
+        }
+
+        return self::cborMap([
+            1 => 3,    // kty: RSA
+            3 => -257, // alg: RS256
+            -1 => ['bytes' => $details['rsa']['n']],
+            -2 => ['bytes' => $details['rsa']['e']],
+        ]);
+    }
+
+    /**
+     * Encode a map of int keys to ints or ['bytes' => string] as CBOR.
+     *
+     * @param  array<int, int|array{bytes: string}>  $map
+     */
+    private static function cborMap(array $map): string
+    {
+        $out = self::cborHead(5, count($map));
+
+        foreach ($map as $key => $value) {
+            $out .= self::cborInt($key);
+            $out .= is_array($value) ? self::cborHead(2, strlen($value['bytes'])).$value['bytes'] : self::cborInt($value);
+        }
+
+        return $out;
+    }
+
+    private static function cborInt(int $value): string
+    {
+        return $value >= 0 ? self::cborHead(0, $value) : self::cborHead(1, -1 - $value);
+    }
+
+    private static function cborHead(int $major, int $length): string
+    {
+        $type = $major << 5;
+
+        return match (true) {
+            $length < 24 => chr($type | $length),
+            $length < 0x100 => chr($type | 24).chr($length),
+            $length < 0x10000 => chr($type | 25).pack('n', $length),
+            default => chr($type | 26).pack('N', $length),
+        };
     }
 
     /**

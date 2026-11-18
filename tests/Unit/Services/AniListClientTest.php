@@ -6,12 +6,18 @@ use App\Exceptions\AniListApiException;
 use App\Exceptions\AniListServiceUnavailableException;
 use App\Services\AniListClient;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\ConnectTimeoutException;
+use GuzzleHttp\Exception\NetworkTimeoutException;
+use GuzzleHttp\Exception\ResponseTimeoutException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AniListClientTest extends TestCase
@@ -83,7 +89,53 @@ class AniListClientTest extends TestCase
         }
     }
 
-    private function makeClient(array $responses): AniListClient
+    /**
+     * Guzzle 8 throws a read timeout as NetworkTimeoutException and a timeout
+     * after the headers as ResponseTimeoutException; neither is a
+     * ConnectException any more. All of them must still be retried.
+     *
+     * @return array<string, array{callable(Request): \Throwable}>
+     */
+    public static function transientTransportErrors(): array
+    {
+        return [
+            'connect failure' => [fn (Request $r) => new ConnectException('cURL error 7: Failed to connect', $r)],
+            'connect timeout' => [fn (Request $r) => new ConnectTimeoutException('cURL error 28: Connection timed out', $r)],
+            'read timeout' => [fn (Request $r) => new NetworkTimeoutException('cURL error 28: Operation timed out', $r)],
+            'timeout mid-body' => [fn (Request $r) => new ResponseTimeoutException('cURL error 28: Operation timed out', $r, new Response(200))],
+        ];
+    }
+
+    #[DataProvider('transientTransportErrors')]
+    public function test_transient_transport_errors_are_retried(callable $makeError): void
+    {
+        $request = new Request('POST', 'https://graphql.anilist.co');
+
+        $client = $this->makeClient([
+            $makeError($request),
+            new Response(200, [], json_encode(['data' => ['Viewer' => ['id' => 1]]])),
+        ], maxRetries: 1);
+
+        $this->assertSame(['Viewer' => ['id' => 1]], $client->query('query { Viewer { id } }'));
+    }
+
+    #[DataProvider('transientTransportErrors')]
+    public function test_transient_transport_errors_give_up_after_max_retries(callable $makeError): void
+    {
+        $request = new Request('POST', 'https://graphql.anilist.co');
+
+        $client = $this->makeClient([$makeError($request), $makeError($request)], maxRetries: 1);
+
+        try {
+            $client->query('query { Viewer { id } }');
+            $this->fail('Expected AniListApiException');
+        } catch (AniListApiException $e) {
+            $this->assertSame(0, $e->statusCode);
+            $this->assertStringContainsString('Connection failed after 1 retries', $e->getMessage());
+        }
+    }
+
+    private function makeClient(array $responses, int $maxRetries = 0): AniListClient
     {
         $handler = new MockHandler($responses);
         $guzzle = new Client([
@@ -94,7 +146,7 @@ class AniListClientTest extends TestCase
         return new AniListClient(
             http: $guzzle,
             requestsPerMinute: 1000,
-            maxRetries: 0,
+            maxRetries: $maxRetries,
             backoffBase: 0,
             rateLimitBackoff: 0,
             serviceUnavailableBackoff: 60,

@@ -20,6 +20,10 @@ updates:
       # attribute (vuejs/language-tools#6240). package.json pins 3.3.11.
       - dependency-name: vue-tsc
         versions: ["3.3.12", "3.3.13", "3.3.14"]
+      # TypeScript 7 (the native compiler) has no JS compiler API, and vue-tsc
+      # needs one (`typescript/lib/tsc`). Stay on 5.x/6.x until vue-tsc supports 7.
+      - dependency-name: typescript
+        versions: [">=7"]
 
   - package-ecosystem: npm
     directory: /chrome-extension

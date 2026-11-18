@@ -8,7 +8,8 @@ use App\Exceptions\AniListServiceUnavailableException;
 use App\Models\RawApiResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\NetworkException;
+use GuzzleHttp\Exception\ResponseTransferException;
 use GuzzleHttp\Exception\ServerException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -225,7 +226,11 @@ class AniListClient
                 $delay = $this->backoffBase * (2 ** ($attempt - 1));
                 Log::warning('AniList server error', ['attempt' => $attempt, 'status' => $e->getResponse()->getStatusCode(), 'backoff_seconds' => $delay]);
                 sleep($delay);
-            } catch (ConnectException $e) {
+            } catch (NetworkException|ResponseTransferException $e) {
+                // Guzzle 8 splits what Guzzle 7 threw as ConnectException: a read
+                // timeout is now a NetworkTimeoutException, and a timeout or broken
+                // body after the headers arrived is a ResponseTransferException.
+                // All of them are transient, so retry them like connect failures.
                 $attempt++;
                 if ($attempt > $this->maxRetries) {
                     throw new AniListApiException(

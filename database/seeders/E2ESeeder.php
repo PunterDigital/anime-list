@@ -34,6 +34,8 @@ class E2ESeeder extends Seeder
 
     public const BLOG_DRAFT_SLUG = 'unfinished-draft';
 
+    public const BLOG_TABLE_SLUG = 'release-calendar-e2e';
+
     public const SLUGLESS_TITLE = 'Slugless E2E Show';
 
     public function run(): void
@@ -188,6 +190,21 @@ class E2ESeeder extends Seeder
         ]);
         Anime::query()->whereKey($slugless->id)->update(['slug' => null]);
 
+        // Card 5244: a published post with a Markdown table (blog-public.spec.ts).
+        // Older than the welcome post, so that one stays first on /blog.
+        BlogPost::factory()->create([
+            'title' => 'Release Calendar E2E',
+            'slug' => self::BLOG_TABLE_SLUG,
+            'excerpt' => 'A month of releases.',
+            'body' => "## Calendar\n\n| Date | Release |\n| --- | --- |\n"
+                ."| Fri 4 Dec | Steel Ball Run finale (Netflix) |\n"
+                ."| Sat 19 to Sun 20 Dec | Jump Festa 2027 |\n"
+                ."| Weekly all month | Firefly Wedding, Even the Student Council Has Its Holes!, Black Clover S2, Blue Box S2, Dragon Ball Super: Beerus |\n",
+        ])->forceFill([
+            'status' => BlogPost::STATUS_PUBLISHED,
+            'published_at' => now()->subDays(3),
+            'author_id' => $admin->id,
+        ])->save();
     }
 
     private function ratingTitle(string $title, string $slug): Anime

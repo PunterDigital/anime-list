@@ -80,3 +80,34 @@ test('an admin previews a draft with a banner and noindex', async ({ page }) => 
 
     expect(errors).toEqual([]);
 });
+
+// Card 5244: Markdown tables in a post had no styling (no borders, centred
+// headers, no padding). The seeded post `release-calendar-e2e` has one.
+test('a table in a post is styled and scrolls on its own on a phone', async ({ page }) => {
+    const errors = collectErrors(page);
+
+    await page.goto('/blog/release-calendar-e2e');
+    const table = page.locator('[data-test="blog-body"] table');
+    await expect(table).toBeVisible();
+    await expect(table.getByRole('columnheader')).toHaveText(['Date', 'Release']);
+
+    const header = table.getByRole('columnheader', { name: 'Date' });
+    await expect(header).toHaveCSS('text-align', 'left');
+    await expect(header).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const cell = table.getByRole('cell', { name: 'Sat 19 to Sun 20 Dec' });
+    await expect(cell).toHaveCSS('vertical-align', 'top');
+    expect(parseFloat(await cell.evaluate((el) => getComputedStyle(el).paddingLeft))).toBeGreaterThan(8);
+    await expect(cell).not.toHaveCSS('border-bottom-width', '0px');
+    await expect(table).not.toHaveCSS('border-top-width', '0px');
+
+    // Phone width: the page itself never scrolls sideways; the table does.
+    await page.setViewportSize({ width: 360, height: 740 });
+    await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+        .toBe(true);
+    const box = await table.evaluate((el) => ({ client: el.clientWidth, scroll: el.scrollWidth, overflow: getComputedStyle(el).overflowX }));
+    expect(box.overflow).toBe('auto');
+    expect(box.scroll).toBeGreaterThanOrEqual(box.client);
+
+    expect(errors).toEqual([]);
+});

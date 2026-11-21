@@ -143,3 +143,40 @@ body {
 .blog-prose hr {
     border-color: var(--color-gray-700);
 }
+/* Card 5244: Markdown (GFM) tables. A block box lets a table wider than the
+   column scroll sideways on a phone instead of overflowing the page; it is
+   as wide as its content up to the column's width. */
+.blog-prose table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    border: 1px solid var(--color-gray-700);
+    border-radius: 0.375rem;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+.blog-prose th,
+.blog-prose td {
+    padding: 0.5em 0.85em;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-gray-800);
+}
+.blog-prose th + th,
+.blog-prose td + td {
+    border-left: 1px solid var(--color-gray-800);
+}
+.blog-prose thead th {
+    background: var(--color-gray-800);
+    color: var(--color-gray-100);
+    font-weight: 600;
+    border-bottom-color: var(--color-gray-700);
+}
+.blog-prose tbody tr:nth-child(even) {
+    background: color-mix(in oklab, var(--color-gray-800) 40%, transparent);
+}
+.blog-prose tbody tr:last-child td {
+    border-bottom: 0;
+}

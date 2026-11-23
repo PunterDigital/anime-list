@@ -254,3 +254,14 @@ test('/version shows the deployed commit as JSON (#4453)', async ({ request }) =
     expect(body.commit).toMatch(/^[0-9a-f]{40}$/);
     expect(body.version).toBe(body.commit.slice(0, 7));
 });
+
+// Card 5533: HSTS from the app; X-Frame-Options is left to Forge's nginx (the
+// CSP's frame-ancestors covers framing), so the app sends none.
+test('pages send HSTS and the CSP framing rule, not X-Frame-Options', async ({ request }) => {
+    const response = await request.get('/');
+    const headers = response.headers();
+    expect(headers['strict-transport-security']).toBe('max-age=31536000');
+    expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+    expect(headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    expect(headers['x-frame-options']).toBeUndefined();
+});

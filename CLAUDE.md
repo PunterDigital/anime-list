@@ -132,6 +132,11 @@ as `php <that dir>/composer/composer.phar`.
   CSRF exemption safe (it lives in `routes/web.php`, so sessions still run). Don't put `web`
   back in that list; a web page that needs data uses its own session routes (`api/list`, ...).
   Pest: `PublicApiTest::test_a_signed_in_session_without_a_token_is_refused`.
+- Security headers (card 5533): `SecurityHeaders` (web group) sends HSTS (`max-age=31536000`, no
+  includeSubDomains/preload yet), nosniff, Referrer-Policy, Permissions-Policy and the CSP
+  (`frame-ancestors 'none'`). No X-Frame-Options: Forge's nginx already adds SAMEORIGIN (and
+  nosniff), and a second, different value made the header invalid. Routes outside the web
+  group (`/version`, `/media/blog`, the feed) get only nginx's headers.
 - Security hardening (card 5529): Horizon's gate is `is_admin` (not an email list). Profile
   stats follow the list's privacy: others see none for a private list, and private entries
   count only for the owner. `App\Http\Middleware\AuthenticateSession` (the framework's, skipped

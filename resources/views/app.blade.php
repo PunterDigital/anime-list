@@ -15,7 +15,9 @@
         @php($gtagIds = array_values(array_filter([config('analytics.ga_id'), config('analytics.ads_id')])))
         @if ($gtagIds)
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gtagIds[0] }}" nonce="{{ app('csp-nonce') }}"></script>
-            <script nonce="{{ app('csp-nonce') }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());@foreach ($gtagIds as $gtagId)gtag('config',@js($gtagId));@endforeach</script>
+            {{-- The consent default comes before gtag('config'), so EEA/UK visitors get no
+                 Google cookies until the consent message answers (card 5529). --}}
+            <script nonce="{{ app('csp-nonce') }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{!! json_encode(['ad_storage' => 'denied', 'ad_user_data' => 'denied', 'ad_personalization' => 'denied', 'analytics_storage' => 'denied', 'region' => array_values(config('analytics.consent_denied_regions')), 'wait_for_update' => (int) config('analytics.consent_wait_for_update')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) !!});gtag('js',new Date());@foreach ($gtagIds as $gtagId)gtag('config',@js($gtagId));@endforeach</script>
         @endif
         {{-- "@@context" is Blade's escape for a literal "@context": unescaped, Laravel's
              @context directive compiles the JSON-LD key into PHP (card 4456). --}}

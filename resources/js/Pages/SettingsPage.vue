@@ -10,6 +10,7 @@ import AppPassword from '@/Components/ui/AppPassword.vue'
 import AppButton from '@/Components/ui/AppButton.vue'
 import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
 import { Passkeys } from '@laravel/passkeys'
+import axios from 'axios'
 
 defineOptions({ layout: AppLayout })
 
@@ -56,7 +57,13 @@ const profileForm = useForm({
     timezone: user.value.timezone,
     avatar_url: user.value.avatar_url ?? '',
     list_is_public: user.value.list_is_public ?? false,
+    current_password: '',
 })
+
+// A new email address needs the current password (card 5529).
+const emailChanged = computed(
+    () => profileForm.email.trim().toLowerCase() !== (user.value.email ?? '').toLowerCase(),
+)
 
 const passwordForm = useForm({
     current_password: '',
@@ -67,6 +74,9 @@ const passwordForm = useForm({
 function submitProfile() {
     profileForm.patch(route('settings.profile'), {
         preserveScroll: true,
+        onSuccess: () => {
+            profileForm.reset('current_password')
+        },
     })
 }
 
@@ -142,6 +152,7 @@ const passkeySupported = ref(false)
 const passkeyError = ref<string | null>(null)
 const passkeyBusy = ref(false)
 const passkeyAlias = ref('')
+const passkeyPassword = ref('')
 const passkeyDeletingId = ref<string | null>(null)
 
 onMounted(() => {
@@ -153,6 +164,16 @@ async function addPasskey() {
     passkeyBusy.value = true
     const alias = passkeyAlias.value.trim() || 'Passkey'
 
+    // Adding a passkey needs the password first (card 5529).
+    try {
+        await axios.post(route('settings.confirm-password'), { password: passkeyPassword.value })
+    } catch (e) {
+        const data = axios.isAxiosError(e) ? e.response?.data as { message?: string; errors?: { password?: string[] } } | undefined : undefined
+        passkeyError.value = data?.errors?.password?.[0] ?? data?.message ?? "Couldn't confirm your password."
+        passkeyBusy.value = false
+        return
+    }
+
     try {
         await Passkeys.register({
             name: alias,
@@ -163,6 +184,7 @@ async function addPasskey() {
         })
 
         passkeyAlias.value = ''
+        passkeyPassword.value = ''
         router.reload({ only: ['passkeys'] })
     } catch (e) {
         passkeyError.value = e instanceof Error ? e.message : "Couldn't register passkey."
@@ -249,6 +271,23 @@ function summariseUserAgent(ua: string | null): string {
                     />
                     <p v-if="profileForm.errors.email" class="text-red-400 text-sm mt-1">
                         {{ profileForm.errors.email }}
+                    </p>
+                </div>
+
+                <div v-if="emailChanged || profileForm.errors.current_password">
+                    <label for="profile-current-password" class="block text-sm text-gray-400 mb-1">Current password</label>
+                    <AppPassword
+                        id="profile-current-password"
+                        v-model="profileForm.current_password"
+                        toggle-mask
+                        autocomplete="current-password"
+                        class="w-full"
+                        input-class="w-full"
+                        :invalid="!!profileForm.errors.current_password"
+                    />
+                    <p class="text-gray-500 text-xs mt-1">Needed to change your email address.</p>
+                    <p v-if="profileForm.errors.current_password" class="text-red-400 text-sm mt-1">
+                        {{ profileForm.errors.current_password }}
                     </p>
                 </div>
 
@@ -375,12 +414,25 @@ function summariseUserAgent(ua: string | null): string {
                 Your browser doesn't support passkeys. Try the latest Chrome, Firefox, or Safari.
             </div>
 
-            <form v-else class="flex gap-2 mb-6" @submit.prevent="addPasskey">
-                <div class="flex-1">
+            <form v-else class="flex flex-wrap gap-2 mb-6" @submit.prevent="addPasskey">
+                <div class="flex-1 min-w-48">
                     <AppInputText
                         v-model="passkeyAlias"
                         placeholder="e.g. YubiKey 5C, MacBook Touch ID"
+                        aria-label="Passkey name"
                         class="w-full"
+                        :disabled="passkeyBusy"
+                    />
+                </div>
+                <div class="flex-1 min-w-48">
+                    <AppPassword
+                        v-model="passkeyPassword"
+                        placeholder="Current password"
+                        aria-label="Current password for the new passkey"
+                        autocomplete="current-password"
+                        required
+                        class="w-full"
+                        input-class="w-full"
                         :disabled="passkeyBusy"
                     />
                 </div>

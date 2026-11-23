@@ -27,10 +27,8 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
      */
     protected function gate(): void
     {
-        Gate::define('viewHorizon', function ($user = null) {
-            return in_array(optional($user)->email, [
-                'shay@shaypunter.co.uk',
-            ]);
-        });
+        // Admins only. An email allowlist let anyone in who set that address on
+        // their account, since an email change isn't verified (card 5529).
+        Gate::define('viewHorizon', fn ($user = null) => (bool) $user?->is_admin);
     }
 }

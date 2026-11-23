@@ -38,6 +38,10 @@ class NewPasswordController extends Controller
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // Signed-in browsers end through AuthenticateSession (the
+                // password hash changed); API tokens are revoked here (card 5529).
+                $user->tokens()->delete();
+
                 event(new PasswordReset($user));
             }
         );

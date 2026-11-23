@@ -125,6 +125,7 @@ class PasskeyTest extends TestCase
         $this->registerPasskey($user);
 
         $options = $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
             ->getJson(route('settings.passkeys.options'))
             ->assertOk()
             ->json('options');
@@ -140,7 +141,8 @@ class PasskeyTest extends TestCase
         $this->getJson(route('settings.passkeys.options'))->assertUnauthorized();
 
         $user = User::factory()->create();
-        $this->actingAs($user)->getJson(route('settings.passkeys.options'))->assertOk();
+        $this->actingAs($user)->withSession(['auth.password_confirmed_at' => time()]);
+        $this->getJson(route('settings.passkeys.options'))->assertOk();
 
         $this->actingAs($user)->postJson(route('settings.passkeys.store'), [
             'name' => 'Laptop',
@@ -148,6 +150,25 @@ class PasskeyTest extends TestCase
         ])->assertUnprocessable();
 
         $this->assertDatabaseCount('passkeys', 0);
+    }
+
+    public function test_adding_a_passkey_needs_a_recently_confirmed_password(): void
+    {
+        $user = User::factory()->create();
+        $credential = ['id' => 'x', 'rawId' => 'x', 'type' => 'public-key', 'response' => ['clientDataJSON' => 'x', 'attestationObject' => 'x']];
+
+        $this->actingAs($user)->getJson(route('settings.passkeys.options'))->assertStatus(423);
+        $this->actingAs($user)->postJson(route('settings.passkeys.store'), ['name' => 'Laptop', 'credential' => $credential])->assertStatus(423);
+
+        // Confirmed longer ago than auth.password_timeout counts as not confirmed.
+        $this->withSession(['auth.password_confirmed_at' => time() - config('auth.password_timeout') - 1])
+            ->getJson(route('settings.passkeys.options'))->assertStatus(423);
+
+        $this->postJson(route('settings.confirm-password'), ['password' => 'wrong'])->assertUnprocessable()->assertJsonValidationErrors('password');
+        $this->getJson(route('settings.passkeys.options'))->assertStatus(423);
+
+        $this->postJson(route('settings.confirm-password'), ['password' => 'password'])->assertOk();
+        $this->getJson(route('settings.passkeys.options'))->assertOk();
     }
 
     public function test_settings_lists_renames_and_removes_only_the_users_own_passkeys(): void

@@ -95,3 +95,11 @@ Schedule::command('anilist:prune-raw-responses')
     ->onFailure(function () {
         Log::error('Scheduled raw_api_responses prune failed');
     });
+
+// API tokens unused for half a year are refused already; this deletes them (card 5529).
+Schedule::command('api-tokens:prune-unused')
+    ->dailyAt('03:30')
+    ->timezone('UTC')
+    ->onFailure(function () {
+        Log::error('Pruning unused API tokens failed');
+    });

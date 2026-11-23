@@ -32,6 +32,12 @@ class MalImportService
         return $date;
     }
 
+    /** The largest XML parsed, after decompressing (a MAL entry is about 1 KB). */
+    public const MAX_XML_BYTES = 50 * 1024 * 1024;
+
+    /** MAX_XML_BYTES, smaller in tests. */
+    public int $maxXmlBytes = self::MAX_XML_BYTES;
+
     private const STATUS_MAP = [
         'Watching' => UserAnimeList::STATUS_WATCHING,
         'Completed' => UserAnimeList::STATUS_COMPLETED,
@@ -48,12 +54,17 @@ class MalImportService
             throw new \InvalidArgumentException('The uploaded file could not be read or is empty.');
         }
 
-        // Decompress gzip if needed (MAL exports as .xml.gz)
+        // Decompress gzip if needed (MAL exports as .xml.gz). The output is capped:
+        // a 10 MB upload could otherwise inflate to gigabytes (card 5529).
         if (str_starts_with($content, "\x1f\x8b")) {
-            $content = gzdecode($content);
+            $content = @gzdecode($content, $this->maxXmlBytes + 1);
             if ($content === false) {
-                throw new \InvalidArgumentException('The uploaded gzip file could not be decompressed.');
+                throw new \InvalidArgumentException('The uploaded gzip file could not be decompressed, or it is over 50 MB unzipped.');
             }
+        }
+
+        if (strlen($content) > $this->maxXmlBytes) {
+            throw new \InvalidArgumentException('The list file is too large to import (50 MB at most unzipped).');
         }
 
         $content = preg_replace('/<!DOCTYPE[^>]*>/i', '', $content);

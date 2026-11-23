@@ -23,6 +23,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,7 +37,13 @@ class AnimeController extends Controller
         return Inertia::render('AnimeIndexPage', $data);
     }
 
+    /** On-demand AniList fetches a minute, per IP and for the whole site. */
+    public const ANILIST_FETCHES_PER_IP = 10;
+
+    public const ANILIST_FETCHES_PER_SITE = 30;
+
     public function showByAnilistId(
+        Request $request,
         int $anilistId,
         AniListClient $client,
         AnimeDataPersistenceService $persistenceService,
@@ -51,6 +58,23 @@ class AnimeController extends Controller
             }
 
             return redirect()->route('anime.show', $existing);
+        }
+
+        // Fetching from AniList spends the API budget the sync jobs need, so
+        // on-demand fetches are capped per visitor and for the whole site
+        // (card 5529). Local titles above are never limited.
+        $limits = [
+            'anilist-fetch:ip:'.$request->ip() => self::ANILIST_FETCHES_PER_IP,
+            'anilist-fetch:site' => self::ANILIST_FETCHES_PER_SITE,
+        ];
+        foreach ($limits as $key => $max) {
+            if (RateLimiter::tooManyAttempts($key, $max)) {
+                return redirect()->route('home')
+                    ->with('flash', ['type' => 'error', 'message' => 'Too many new titles were opened at once. Please try again in a minute.']);
+            }
+        }
+        foreach (array_keys($limits) as $key) {
+            RateLimiter::hit($key, 60);
         }
 
         // Fetch from AniList API

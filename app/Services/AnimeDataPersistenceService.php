@@ -76,7 +76,7 @@ class AnimeDataPersistenceService
             $this->pushPendingRecommendations([$dto]);
         }
 
-        Cache::forget("anime:v3:{$anime->id}");
+        Cache::forget(Anime::pageCacheKey($anime->id));
         if ($dto->season && $dto->season_year) {
             Cache::forget("anime:seasonal:{$dto->season_year}:{$dto->season}");
         }
@@ -594,7 +594,7 @@ class AnimeDataPersistenceService
         foreach ($dtos as $dto) {
             $animeId = $animeMap->get($dto->anilist_id);
             if ($animeId) {
-                Cache::forget("anime:v3:{$animeId}");
+                Cache::forget(Anime::pageCacheKey($animeId));
             }
             if ($dto->season && $dto->season_year) {
                 Cache::forget("anime:seasonal:{$dto->season_year}:{$dto->season}");

@@ -311,3 +311,11 @@ as `php <that dir>/composer/composer.phar`.
   `AniListRateLimitException`. Mocks of the client need `shouldReceive('interactive')->andReturnSelf()`.
   A MAL import of up to 200 entries runs in the request only when every title is already in
   the catalogue; otherwise it goes to `ProcessMalImport` like a big one.
+- Anime page cache (card 5709): `AnimeController::show` caches plain arrays under
+  `Anime::pageCacheKey($id)` (`anime:v4:{id}`, 1 h): the resolved `AnimeResource` (JSON round
+  trip, so no nested resource objects keep their models), the season chain, the "similar" cards
+  and the OG text. Use `Anime::pageCacheKey()` to forget it, never a literal key. Per view only
+  route binding, the viewer's list entry, the rating and one id lookup that drops similar titles
+  hidden/NSFW/adult since the fill run; `is_adult`, NSFW and hidden are checked on the live row
+  every view. A big synthetic franchise went from 855 KB serialized and 19 queries per cached
+  view to 81 KB and 3 (`AnimePageCacheTest`).

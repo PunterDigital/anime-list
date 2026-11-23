@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Cloudflare's ranges are in config/trustedproxy.php (card 5703). Only the
+        // client IP and scheme are taken from it; Cloudflare passes X-Forwarded-Host through.
+        $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);
+
         // AuthenticateSession: a password change or reset signs every other
         // browser out, since its session's password hash no longer matches (card 5529).
         $middleware->web(append: [

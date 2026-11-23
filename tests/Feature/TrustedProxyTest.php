@@ -60,6 +60,7 @@ class TrustedProxyTest extends TestCase
     public function test_visitors_behind_one_cloudflare_edge_get_their_own_anilist_fetch_limit(): void
     {
         $client = Mockery::mock(AniListClient::class);
+        $client->shouldReceive('interactive')->andReturnSelf();
         $client->shouldReceive('query')->andReturn(['Media' => null]);
         $this->instance(AniListClient::class, $client);
 

@@ -21,6 +21,10 @@ export function useAnimeSearch() {
         },
         enabled,
         staleTime: 5 * 60 * 1000,
+        // A miss queues an AniList lookup (card 5707): ask again every 2 s
+        // while it's pending, up to 5 times, so new titles show up.
+        refetchInterval: (q) =>
+            q.state.data?.pending && q.state.dataUpdateCount <= 5 ? 2000 : false,
     })
 
     const results = computed(() => data.value?.data ?? [])

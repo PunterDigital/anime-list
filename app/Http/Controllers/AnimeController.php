@@ -79,7 +79,9 @@ class AnimeController extends Controller
 
         // Fetch from AniList API
         try {
-            $data = $client->query(AniListQueryBuilder::singleAnime(), ['id' => $anilistId]);
+            // Fail fast (card 5707): no rate-limit sleep, retry or long timeout while
+            // the visitor waits; an empty bucket or a 429 shows the "try again" flash.
+            $data = $client->interactive()->query(AniListQueryBuilder::singleAnime(), ['id' => $anilistId]);
         } catch (AniListServiceUnavailableException $e) {
             Log::warning('On-demand fetch paused (AniList unavailable)', [
                 'anilist_id' => $anilistId,

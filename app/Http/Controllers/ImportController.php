@@ -46,7 +46,10 @@ class ImportController extends Controller
             return response()->json(['error' => 'Import session expired. Please upload again.'], 422);
         }
 
-        if (count($entries) <= 200) {
+        // Small imports run in the request, but only when every title is
+        // already in the catalogue: fetching missing ones from AniList can
+        // sleep on its rate limit, so those go to the queue (card 5707).
+        if (count($entries) <= 200 && $importService->missingMalIds($entries) === []) {
             try {
                 $result = $importService->processEntries($request->user(), $token, $overwrite);
             } catch (\RuntimeException $e) {

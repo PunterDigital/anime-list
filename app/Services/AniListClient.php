@@ -19,6 +19,18 @@ class AniListClient
 {
     private const CIRCUIT_BREAKER_KEY = 'anilist:outage_until';
 
+    /** Request timeout (seconds) for calls made inside a web request. */
+    public const INTERACTIVE_TIMEOUT = 4;
+
+    public const INTERACTIVE_CONNECT_TIMEOUT = 2;
+
+    /**
+     * Fail fast instead of waiting (card 5707): no sleep for a rate-limit
+     * token, no retry or backoff, and a short timeout. Set on a copy via
+     * interactive(); the sync jobs keep the patient client.
+     */
+    private bool $interactive = false;
+
     public function __construct(
         private readonly Client $http,
         private readonly int $requestsPerMinute,
@@ -30,6 +42,26 @@ class AniListClient
     ) {}
 
     /**
+     * A copy of this client for calls made while a visitor waits (a web
+     * request holding a PHP-FPM worker): it never sleeps. An empty rate-limit
+     * bucket or a 429 throws AniListRateLimitException at once, a 5xx or a
+     * network error throws AniListApiException at once, and the request times
+     * out after INTERACTIVE_TIMEOUT seconds.
+     */
+    public function interactive(): static
+    {
+        $copy = clone $this;
+        $copy->interactive = true;
+
+        return $copy;
+    }
+
+    public function isInteractive(): bool
+    {
+        return $this->interactive;
+    }
+
+    /**
      * Execute a GraphQL query against the AniList API.
      */
     public function query(string $query, array $variables = []): array
@@ -39,12 +71,18 @@ class AniListClient
         return $this->executeWithRetry(function () use ($query, $variables) {
             $this->enforceRateLimit();
 
-            $response = $this->http->post('', [
+            $options = [
                 'json' => [
                     'query' => $query,
                     'variables' => $variables,
                 ],
-            ]);
+            ];
+            if ($this->interactive) {
+                $options['timeout'] = self::INTERACTIVE_TIMEOUT;
+                $options['connect_timeout'] = self::INTERACTIVE_CONNECT_TIMEOUT;
+            }
+
+            $response = $this->http->post('', $options);
 
             $body = $response->getBody()->getContents();
             $data = json_decode($body, true);
@@ -169,6 +207,13 @@ class AniListClient
         $wait = (float) Redis::eval($script, 1, 'anilist:rate_limit',
             $this->requestsPerMinute, microtime(true));
 
+        if ($wait > 0 && $this->interactive) {
+            throw new AniListRateLimitException(
+                retryAfter: max(1, (int) ceil($wait)),
+                message: 'AniList rate-limit bucket is empty; not waiting inside a web request',
+            );
+        }
+
         if ($wait > 0) {
             $waitMicroseconds = (int) ($wait * 1_000_000);
             Log::debug('AniList rate limit: sleeping', ['wait_ms' => (int) ($wait * 1000)]);
@@ -183,6 +228,7 @@ class AniListClient
     private function executeWithRetry(callable $fn): array
     {
         $attempt = 0;
+        $maxRetries = $this->interactive ? 0 : $this->maxRetries;
 
         while (true) {
             try {
@@ -192,10 +238,10 @@ class AniListClient
 
                 if ($status === 429) {
                     $attempt++;
-                    if ($attempt > $this->maxRetries) {
+                    if ($attempt > $maxRetries) {
                         throw new AniListRateLimitException(
                             retryAfter: $this->rateLimitBackoff,
-                            message: "Rate limit exceeded after {$this->maxRetries} retries",
+                            message: "Rate limit exceeded after {$maxRetries} retries",
                         );
                     }
 
@@ -216,10 +262,10 @@ class AniListClient
                 );
             } catch (ServerException $e) {
                 $attempt++;
-                if ($attempt > $this->maxRetries) {
+                if ($attempt > $maxRetries) {
                     throw new AniListApiException(
                         statusCode: $e->getResponse()->getStatusCode(),
-                        message: "Server error after {$this->maxRetries} retries: {$e->getMessage()}",
+                        message: "Server error after {$maxRetries} retries: {$e->getMessage()}",
                     );
                 }
 
@@ -232,10 +278,10 @@ class AniListClient
                 // body after the headers arrived is a ResponseTransferException.
                 // All of them are transient, so retry them like connect failures.
                 $attempt++;
-                if ($attempt > $this->maxRetries) {
+                if ($attempt > $maxRetries) {
                     throw new AniListApiException(
                         statusCode: 0,
-                        message: "Connection failed after {$this->maxRetries} retries: {$e->getMessage()}",
+                        message: "Connection failed after {$maxRetries} retries: {$e->getMessage()}",
                     );
                 }
 

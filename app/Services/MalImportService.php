@@ -119,6 +119,24 @@ class MalImportService
         return Cache::get(self::cacheKey($userId, $token));
     }
 
+    /**
+     * MAL ids in a preview that have no anime in the catalogue yet.
+     *
+     * @param  array<int, array{mal_id: int|null}>  $entries
+     * @return list<int>
+     */
+    public function missingMalIds(array $entries): array
+    {
+        $malIds = array_values(array_unique(array_filter(array_column($entries, 'mal_id'))));
+        if ($malIds === []) {
+            return [];
+        }
+
+        $known = Anime::whereIn('mal_id', $malIds)->pluck('mal_id')->all();
+
+        return array_values(array_diff($malIds, $known));
+    }
+
     public function processEntries(User $user, string $token, bool $overwrite): array
     {
         $entries = $this->getPreview($user->id, $token);

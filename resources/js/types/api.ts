@@ -27,4 +27,6 @@ export interface SearchResponse {
     data: import('./anime').AnimeCard[]
     query: string
     total: number
+    /** True while an AniList lookup for this text is queued (card 5707). */
+    pending?: boolean
 }

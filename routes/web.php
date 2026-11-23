@@ -189,11 +189,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'show'])->name('settings');
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/confirm-password', [SettingsController::class, 'confirmPassword'])
+        ->middleware('throttle:6,1')
+        ->name('settings.confirm-password');
     Route::post('/settings/api-tokens', [SettingsController::class, 'createApiToken'])->name('settings.api-tokens.store');
     Route::delete('/settings/api-tokens/{token}', [SettingsController::class, 'destroyApiToken'])->whereNumber('token')->name('settings.api-tokens.destroy');
 
-    Route::get('/settings/passkeys/options', [PasskeyController::class, 'registerOptions'])->name('settings.passkeys.options');
-    Route::post('/settings/passkeys', [PasskeyController::class, 'register'])->name('settings.passkeys.store');
+    // Adding a passkey needs a recently confirmed password (card 5529).
+    Route::middleware('password.recent')->group(function () {
+        Route::get('/settings/passkeys/options', [PasskeyController::class, 'registerOptions'])->name('settings.passkeys.options');
+        Route::post('/settings/passkeys', [PasskeyController::class, 'register'])->name('settings.passkeys.store');
+    });
     Route::patch('/settings/passkeys/{passkey}', [PasskeyController::class, 'update'])->name('settings.passkeys.update');
     Route::delete('/settings/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('settings.passkeys.destroy');
 

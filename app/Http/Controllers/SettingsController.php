@@ -6,6 +6,7 @@ use App\Http\Requests\CreateApiTokenRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Services\FeatureFlagService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,18 +34,45 @@ class SettingsController extends Controller
 
     public function updateProfile(UpdateProfileRequest $request): RedirectResponse
     {
-        $request->user()->update($request->validated());
+        $request->user()->update($request->safe()->except('current_password'));
 
         return back()->with('message', 'Profile updated successfully.');
     }
 
+    /**
+     * A new password signs the account out everywhere else (card 5529): other
+     * browsers through AuthenticateSession in the web group (their session's
+     * password hash no longer matches), and every API token, the Chrome
+     * extension's included, is revoked. This session stays signed in.
+     */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $request->user();
+
+        $user->update([
             'password' => $request->validated('password'),
         ]);
 
-        return back()->with('message', 'Password updated successfully.');
+        $revoked = $user->tokens()->delete();
+
+        $message = 'Password updated. You were signed out on your other devices';
+
+        return back()->with('message', $message.($revoked > 0 ? ', and your API tokens were revoked.' : '.'));
+    }
+
+    /**
+     * Confirms the password for the next few hours (auth.password_timeout), for
+     * actions that need it, such as adding a passkey (card 5529).
+     */
+    public function confirmPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password'],
+        ]);
+
+        $request->session()->passwordConfirmed();
+
+        return response()->json(['confirmed' => true]);
     }
 
     /**

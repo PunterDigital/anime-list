@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\AuthenticateSession;
 use App\Http\Middleware\EnsureEmailIsVerified;
 use App\Http\Middleware\EnsureFeatureActive;
 use App\Http\Middleware\EnsureIsAdmin;
+use App\Http\Middleware\EnsurePasswordRecentlyConfirmed;
 use App\Http\Middleware\EnsurePublicApiEnabled;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -25,7 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // AuthenticateSession: a password change or reset signs every other
+        // browser out, since its session's password hash no longer matches (card 5529).
         $middleware->web(append: [
+            AuthenticateSession::class,
             HandleInertiaRequests::class,
             SecurityHeaders::class,
         ]);
@@ -42,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'public-api' => EnsurePublicApiEnabled::class,
             'feature' => EnsureFeatureActive::class,
             'track-token-usage' => TrackSanctumTokenUsage::class,
+            'password.recent' => EnsurePasswordRecentlyConfirmed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -44,6 +44,15 @@ test('add a passkey, sign in with it, then remove it', async ({ page }) => {
 
     await page.goto('/settings');
     await page.getByPlaceholder('e.g. YubiKey 5C, MacBook Touch ID').fill('E2E key');
+
+    // Adding a passkey needs the current password (card 5529): a wrong one adds nothing.
+    const passkeyPassword = page.getByLabel('Current password for the new passkey');
+    await passkeyPassword.fill('not-the-password');
+    await page.getByRole('button', { name: 'Add passkey' }).click();
+    await expect(page.getByText('The password is incorrect.')).toBeVisible();
+    expect((await cdp.send('WebAuthn.getCredentials', { authenticatorId })).credentials).toHaveLength(0);
+
+    await passkeyPassword.fill('e2e-password');
     await page.getByRole('button', { name: 'Add passkey' }).click();
     await expect(page.getByText('E2E key')).toBeVisible();
 

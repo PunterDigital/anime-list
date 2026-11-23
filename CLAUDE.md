@@ -132,6 +132,24 @@ as `php <that dir>/composer/composer.phar`.
   CSRF exemption safe (it lives in `routes/web.php`, so sessions still run). Don't put `web`
   back in that list; a web page that needs data uses its own session routes (`api/list`, ...).
   Pest: `PublicApiTest::test_a_signed_in_session_without_a_token_is_refused`.
+- Security hardening (card 5529): Horizon's gate is `is_admin` (not an email list). Profile
+  stats follow the list's privacy: others see none for a private list, and private entries
+  count only for the owner. `App\Http\Middleware\AuthenticateSession` (the framework's, skipped
+  when the default guard isn't the session guard: `/api/v1` is in the web group and
+  `auth:sanctum` makes Sanctum's RequestGuard the default, where the base class 500s on
+  `viaRemember()`) signs other browsers out after a password change or reset; both also revoke
+  every API token. A new email address needs `current_password`; adding a passkey needs a
+  password confirmed in the last 3 h (`POST /settings/confirm-password`, then the
+  `password.recent` middleware answers 423 without it). Tokens unused for 180 days are refused
+  (`App\Support\ApiTokenLifetime`, Sanctum's `authenticateAccessTokensUsing`) and deleted daily
+  (`api-tokens:prune-unused`). On-demand AniList fetches (`/anime/al/{id}` for a title not in
+  the DB) are capped at 10 a minute per IP and 30 for the site. MAL imports are refused over
+  50 MB unzipped (`gzdecode` max length). `app.blade.php` sends a Consent Mode default
+  (denied for `analytics.consent_denied_regions`, EEA/UK/CH) before `gtag('config')`; the
+  Funding Choices CMP sends the visitor's choice as the update.
+  The site is behind Cloudflare and the app trusts no proxies, so unless Forge's nginx restores
+  the visitor's address (not checked), `$request->ip()` is a Cloudflare edge: per-IP limits
+  (this one, `throttle:auth`) would then be per edge, not per visitor.
 - Error pages: `bootstrap/app.php` renders `ErrorPage` with `App\Support\ErrorPageProps`. With the
   `error-pages` flag on, 403/404/419/451 use the site layout (500/503 stay standalone). Errors
   thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,

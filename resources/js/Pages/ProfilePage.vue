@@ -10,6 +10,7 @@ defineOptions({ layout: AppLayout })
 
 const props = defineProps<{
     profile: UserProfile
+    stats_hidden: boolean
     stats: Record<string, number>
     avg_score: number | null
     episodes_watched: number
@@ -64,7 +65,10 @@ const totalEntries = computed(() => {
         <!-- Stats -->
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 class="text-lg font-semibold mb-4">Anime Stats</h2>
-            <div v-if="totalEntries > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            <p v-if="stats_hidden" class="text-gray-500" data-test="profile-stats-hidden">
+                {{ profile.name }}'s list is private.
+            </p>
+            <div v-else-if="totalEntries > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 <div
                     v-for="status in statuses"
                     :key="status"
@@ -81,7 +85,7 @@ const totalEntries = computed(() => {
             <p v-else class="text-gray-500">No anime in list yet.</p>
 
             <!-- Summary stats -->
-            <div v-if="totalEntries > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div v-if="!stats_hidden && totalEntries > 0" class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div class="bg-gray-800 rounded-lg p-4 text-center">
                     <div class="text-2xl font-bold text-gray-200">{{ totalEntries }}</div>
                     <div class="text-xs text-gray-400 mt-1">Total Entries</div>

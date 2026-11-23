@@ -15,4 +15,25 @@ return [
     'ga_id' => env('GOOGLE_ANALYTICS_ID', 'G-4K6RNYTM27'),
 
     'ads_id' => env('GOOGLE_ADS_ID', 'AW-18128258525'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consent Mode default (card 5529)
+    |--------------------------------------------------------------------------
+    |
+    | Visitors in these regions (EEA, UK, Switzerland: ISO 3166-1 codes) start
+    | with Google's ad and analytics storage denied, so the tag sets no
+    | cookies before they answer the consent message. Google's Privacy &
+    | messaging CMP (loaded by AdSense) then sends the visitor's choice as a
+    | consent update. wait_for_update gives it that long, in ms, first.
+    |
+    */
+
+    'consent_denied_regions' => [
+        'AT', 'BE', 'BG', 'CH', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR',
+        'HR', 'HU', 'IE', 'IS', 'IT', 'LI', 'LT', 'LU', 'LV', 'MT', 'NL', 'NO', 'PL', 'PT',
+        'RO', 'SE', 'SI', 'SK',
+    ],
+
+    'consent_wait_for_update' => 500,
 ];

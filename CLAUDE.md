@@ -152,9 +152,12 @@ as `php <that dir>/composer/composer.phar`.
   50 MB unzipped (`gzdecode` max length). `app.blade.php` sends a Consent Mode default
   (denied for `analytics.consent_denied_regions`, EEA/UK/CH) before `gtag('config')`; the
   Funding Choices CMP sends the visitor's choice as the update.
-  The site is behind Cloudflare and the app trusts no proxies, so unless Forge's nginx restores
-  the visitor's address (not checked), `$request->ip()` is a Cloudflare edge: per-IP limits
-  (this one, `throttle:auth`) would then be per edge, not per visitor.
+- Trusted proxies (card 5703): the site is behind Cloudflare, so `config/trustedproxy.php`
+  (MCPacks' file) lists Cloudflare's published ranges and `bootstrap/app.php` trusts only
+  X-Forwarded-For and X-Forwarded-Proto from them. `$request->ip()` is then the visitor, so
+  per-IP limits (`throttle:auth`, the AniList cap) are per visitor, not per edge; any other
+  address keeps REMOTE_ADDR and its forwarded headers are ignored. Cloudflare changes its
+  ranges rarely: recheck https://www.cloudflare.com/ips now and then. Pest: `TrustedProxyTest`.
 - Error pages: `bootstrap/app.php` renders `ErrorPage` with `App\Support\ErrorPageProps`. With the
   `error-pages` flag on, 403/404/419/451 use the site layout (500/503 stay standalone). Errors
   thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,
@@ -265,7 +268,7 @@ as `php <that dir>/composer/composer.phar`.
   `PasskeyController` uses its actions on its own routes: `GET /passkeys/login/options` +
   `POST /passkeys/login` (guest, `throttle:auth`, JSON `{message, redirect}` with the same
   `redirect`/intended handling as password login) and `GET /settings/passkeys/options` +
-  `POST /settings/passkeys` (auth, no password confirm), plus rename/delete under
+  `POST /settings/passkeys` (auth + `password.recent`, card 5529), plus rename/delete under
   `/settings/passkeys/{passkey}` (404 for someone else's). All are CSRF-protected: the
   client sends `X-XSRF-TOKEN` from the cookie. `App\Models\Passkey` is the package's model
   with `user()` including soft-deleted users (the package's `PasskeyVerified` event needs one;

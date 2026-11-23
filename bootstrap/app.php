@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        // Safe only because /api/v1 accepts bearer tokens alone (sanctum.guard is [], card 5528).
         $middleware->preventRequestForgery(except: [
             'api/v1/*',
         ]);

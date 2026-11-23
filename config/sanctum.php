@@ -37,7 +37,10 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    // None (card 5528): /api/v1 is exempt from CSRF (bootstrap/app.php), so it must never
+    // sign a request in by the session cookie. Bearer tokens only; the web app doesn't use
+    // `auth:sanctum` routes.
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------

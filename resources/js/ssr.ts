@@ -57,5 +57,13 @@ createServer((page) => {
         },
     })
 },
-// E2E runs its own SSR server next to a dev one; production uses the default.
-{ port: Number(process.env.INERTIA_SSR_PORT) || 13714 })
+{
+    // E2E runs its own SSR server next to a dev one; production uses the default.
+    port: Number(process.env.INERTIA_SSR_PORT) || 13714,
+    // Card 5717: only Laravel on this machine talks to it (config/inertia.php's
+    // url is 127.0.0.1); Inertia's default host is 0.0.0.0.
+    host: '127.0.0.1',
+    // One worker per CPU, so a burst of crawler hits doesn't queue behind a
+    // single Node thread. INERTIA_SSR_CLUSTER=false turns it off.
+    cluster: process.env.INERTIA_SSR_CLUSTER !== 'false',
+})

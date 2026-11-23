@@ -7,7 +7,6 @@ use App\Models\CharacterVoiceActor;
 use App\Models\Person;
 use App\Services\FeatureFlagService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,24 +29,12 @@ class PeopleController extends Controller
 
         $search = trim((string) $request->query('search', ''));
 
-        // Count VA roles per person (restricted to non-adult anime)
+        // Card 5717: role_count (roles on listable anime) is stored and
+        // refreshed hourly by people:refresh-role-counts; counting it here
+        // per person took ~0.9 s.
         $query = Person::query()
-            ->select('people.*')
-            ->selectSub(
-                CharacterVoiceActor::query()
-                    ->selectRaw('count(*)')
-                    ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
-                    ->whereColumn('character_voice_actor.person_id', 'people.id')
-                    ->where('anime.is_adult', false)->whereNull('anime.nsfw_at')->whereNull('anime.hidden_at'),
-                'role_count',
-            )
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('character_voice_actor')
-                    ->join('anime', 'anime.id', '=', 'character_voice_actor.anime_id')
-                    ->whereColumn('character_voice_actor.person_id', 'people.id')
-                    ->where('anime.is_adult', false)->whereNull('anime.nsfw_at')->whereNull('anime.hidden_at');
-            });
+            ->select(['id', 'slug', 'name_full', 'name_native', 'image_medium', 'role_count'])
+            ->where('role_count', '>', 0);
 
         if ($search !== '') {
             $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $search).'%';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Anime;
+use App\Services\DiscoverService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -246,6 +247,8 @@ class AdminAnimeController extends Controller
         if ($anime->season_year && $anime->season) {
             Cache::forget("anime:seasonal:{$anime->season_year}:{$anime->season}");
         }
+
+        DiscoverService::forgetMoodCaches();
     }
 
     public function reset(Anime $anime): RedirectResponse

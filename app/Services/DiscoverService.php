@@ -50,12 +50,38 @@ class DiscoverService
         })->values()->all();
     }
 
+    /** Cache key of a mood shelf (card 5717): the same for every visitor. */
+    public static function moodCacheKey(string $slug, ?string $length, int $limit): string
+    {
+        return "discover:mood:v1:{$slug}:".($length ?? 'any').":{$limit}";
+    }
+
+    /** Forget every mood shelf, e.g. after an admin hides a title. */
+    public static function forgetMoodCaches(int $limit = 24): void
+    {
+        foreach (array_keys(config('moods', [])) as $slug) {
+            foreach ([null, ...self::LENGTHS] as $length) {
+                Cache::forget(self::moodCacheKey($slug, $length, $limit));
+            }
+        }
+    }
+
     public function byMood(string $slug, ?string $length = null, int $limit = 24): array
     {
         $def = config("moods.{$slug}");
         if (! $def) {
             return [];
         }
+
+        return Cache::remember(
+            self::moodCacheKey($slug, $length, $limit),
+            3600,
+            fn () => $this->computeMood($def, $length, $limit),
+        );
+    }
+
+    private function computeMood(array $def, ?string $length, int $limit): array
+    {
 
         $any = $def['genres_any'] ?? [];
         $boost = $def['genres_boost'] ?? [];

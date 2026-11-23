@@ -320,9 +320,14 @@ class Anime extends Model
 
     public function nextAiringEpisode(): HasOne
     {
-        return $this->hasOne(AiringSchedule::class)
-            ->where('airs_at', '>', now())
-            ->orderBy('airs_at');
+        // Card 5717: one-of-many, so eager loading fetches one row per anime
+        // (the earliest future airing) instead of hydrating every future
+        // schedule row and keeping the first. Ties on airs_at go to the
+        // lowest id.
+        return $this->hasOne(AiringSchedule::class)->ofMany(
+            ['airs_at' => 'min', 'id' => 'min'],
+            fn ($q) => $q->where('airs_at', '>', now()),
+        );
     }
 
     public function episodeList(): HasMany

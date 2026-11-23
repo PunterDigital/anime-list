@@ -6,6 +6,8 @@ import { useFeature } from '@/composables/useFeature'
 import ScoreBadge from '@/Components/ScoreBadge.vue'
 import AddToListButton from '@/Components/AddToListButton.vue'
 import ListEntryModal from '@/Components/ListEntryModal.vue'
+import TrailerFacade from '@/Components/TrailerFacade.vue'
+import { parseTrailer } from '@/lib/trailer'
 import type { AnimeCard, AnimeDetail, EpisodeEntry, SeasonEntry, StudioEntry, VoiceActorEntry } from '@/types/anime'
 import type { ListEntryResource, ListStatus, User } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
@@ -115,7 +117,8 @@ const displayCharacters = computed(() => [...mainCharacters.value, ...supporting
 
 const schedules = computed(() => props.anime.airing_schedules ?? [])
 const relations = computed(() => (props.anime.relations ?? []).filter(r => r.related_anime))
-const hasTrailer = computed(() => !!props.anime.trailer_url && !!embedUrl(props.anime.trailer_url!))
+const trailer = computed(() => parseTrailer(props.anime.trailer_url))
+const hasTrailer = computed(() => trailer.value !== null)
 const hasSeasons = computed(() => props.seasons.length > 1)
 
 const episodesList = computed<EpisodeEntry[]>(() => props.anime.episodes_list ?? [])
@@ -133,23 +136,6 @@ const episodeCounts = computed(() => ({
     aired: episodesList.value.filter(ep => ep.status === 'aired').length,
     upcoming: episodesList.value.filter(ep => ep.status === 'upcoming').length,
 }))
-
-function embedUrl(url: string): string | null {
-    try {
-        const parsed = new URL(url)
-        if (parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtu.be')) {
-            const videoId = parsed.searchParams.get('v') || parsed.pathname.slice(1)
-            return `https://www.youtube.com/embed/${videoId}`
-        }
-        if (parsed.hostname.includes('dailymotion.com')) {
-            const videoId = parsed.pathname.split('/').pop()
-            return `https://www.dailymotion.com/embed/video/${videoId}`
-        }
-        return null
-    } catch {
-        return null
-    }
-}
 
 // Tabs — only show those with content
 type TabKey = 'trailer' | 'franchise' | 'episodes' | 'schedule' | 'characters'
@@ -464,15 +450,8 @@ function displayScore(): string {
 
                         <div class="pt-5">
                             <!-- Trailer -->
-                            <div v-if="currentTab === 'trailer' && anime.trailer_url && embedUrl(anime.trailer_url)">
-                                <div class="aspect-video overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-                                    <iframe
-                                        :src="embedUrl(anime.trailer_url)!"
-                                        class="h-full w-full"
-                                        allowfullscreen
-                                        loading="lazy"
-                                    />
-                                </div>
+                            <div v-if="currentTab === 'trailer' && trailer">
+                                <TrailerFacade :trailer="trailer" :title="displayTitle(anime)" />
                             </div>
 
                             <!-- Franchise -->

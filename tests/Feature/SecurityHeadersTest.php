@@ -21,6 +21,19 @@ class SecurityHeadersTest extends TestCase
         $this->assertStringEndsWith("frame-ancestors 'none'", $response->headers->get('Content-Security-Policy'));
     }
 
+    public function test_the_csp_allows_the_trailer_facade_and_player(): void
+    {
+        // Card 5704: the thumbnail from i.ytimg.com, the player from youtube-nocookie.
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+        preg_match('/img-src ([^;]+);/', $csp, $img);
+        preg_match('/frame-src ([^;]+);/', $csp, $frame);
+
+        $this->assertContains('https://i.ytimg.com', explode(' ', $img[1]));
+        $this->assertContains('https://www.youtube-nocookie.com', explode(' ', $frame[1]));
+        $this->assertContains('https://www.dailymotion.com', explode(' ', $frame[1]));
+    }
+
     public function test_the_app_leaves_x_frame_options_to_nginx(): void
     {
         // Forge's nginx sends X-Frame-Options: SAMEORIGIN; a second value from the

@@ -118,6 +118,10 @@ as `php <that dir>/composer/composer.phar`.
   `curl -s https://anitrack.app/version` confirms a deploy went live. The route skips the `web`
   group (no session cookie, no CSP headers) and sends `Cache-Control: no-store`; without a
   `.git` it reports `unknown`. Other methods hit the `Route::any` fallback (404).
+- After a deploy that changes a page's markup, check the live SSR HTML shows the change, not
+  only `/version`. Nov 23 (card 5704, f03c8d2): PHP, the CSP and the client bundle were new,
+  but the SSR server still rendered the old trailer iframe 10+ minutes later, so every anime
+  page logged a CSP error and "Hydration completed but contains mismatches".
 - Check SSR on the live site with `curl -s https://anitrack.app/ | grep -o '<div data-server-rendered="true" id="app">.\{0,80\}'`:
   the page's HTML should follow. Without SSR the page has only `<div id="app"></div>` (the props
   are in a `<script data-page="app" type="application/json">` before it, since Inertia 3).

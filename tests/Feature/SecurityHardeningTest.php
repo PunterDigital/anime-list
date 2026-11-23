@@ -146,6 +146,7 @@ class SecurityHardeningTest extends TestCase
     public function test_on_demand_anilist_fetches_are_throttled_per_ip_and_site_wide(): void
     {
         $client = Mockery::mock(AniListClient::class);
+        $client->shouldReceive('interactive')->andReturnSelf();
         $client->shouldReceive('query')->andReturn(['Media' => null]);
         $this->instance(AniListClient::class, $client);
 

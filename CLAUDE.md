@@ -301,3 +301,13 @@ as `php <that dir>/composer/composer.phar`.
   Its `coseKey()` encodes the key as the browser would at registration. `passkeys.spec.ts` runs on
   `http://localhost` (WebAuthn refuses an IP as RP ID) with a CDP virtual authenticator: a new
   passkey is added, used and removed.
+- Search misses (card 5707): `/api/search` never calls AniList inside the request. A miss is
+  cached for 10 min (`App\Support\SearchCache`) and queues `SearchAniListForQuery` on `import`
+  (at most one per normalised text per 10 min); the response says `pending: true` while it
+  runs, and `useAnimeSearch` asks again every 2 s (up to 5 times). The job stores what it finds
+  and forgets the cached miss when one of the titles is listable. `AniListClient::interactive()`
+  is the fail-fast copy for calls a visitor waits on (`/anime/al/{id}`, the search job): no
+  sleep for a rate-limit token, no retry/backoff, 4 s timeout; an empty bucket or a 429 throws
+  `AniListRateLimitException`. Mocks of the client need `shouldReceive('interactive')->andReturnSelf()`.
+  A MAL import of up to 200 entries runs in the request only when every title is already in
+  the catalogue; otherwise it goes to `ProcessMalImport` like a big one.

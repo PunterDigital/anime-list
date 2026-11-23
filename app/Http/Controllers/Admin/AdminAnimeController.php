@@ -169,7 +169,7 @@ class AdminAnimeController extends Controller
             'synopsis_rewritten_at' => now(),
         ])->save();
 
-        Cache::forget("anime:v3:{$anime->id}");
+        Cache::forget(Anime::pageCacheKey($anime->id));
 
         return redirect()
             ->route('admin.anime.edit', $anime)
@@ -232,7 +232,7 @@ class AdminAnimeController extends Controller
     private function forgetPublicCaches(Anime $anime): void
     {
         foreach ([
-            "anime:v3:{$anime->id}",
+            Anime::pageCacheKey($anime->id),
             'sitemap:xml',
             'top:rated:100',
             'top:popular:100',
@@ -254,7 +254,7 @@ class AdminAnimeController extends Controller
             'synopsis_rewritten_at' => null,
         ])->save();
 
-        Cache::forget("anime:v3:{$anime->id}");
+        Cache::forget(Anime::pageCacheKey($anime->id));
 
         return back()->with('message', 'Reverted to auto-synced description. The next sync will overwrite it.');
     }

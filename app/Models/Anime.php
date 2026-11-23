@@ -437,6 +437,16 @@ class Anime extends Model
 
     // Score normalization (stored 0-100, displayed 0-10)
 
+    /**
+     * Cache key of the anime page's cached data (AnimeController::show).
+     * Card 5709 changed the value from an Eloquent graph to plain arrays,
+     * hence v4: v3 entries are never read again and expire within the hour.
+     */
+    public static function pageCacheKey(int $id): string
+    {
+        return "anime:v4:{$id}";
+    }
+
     public static function normalizeScore(?int $score): ?float
     {
         return $score !== null ? round($score / 10, 1) : null;

@@ -116,7 +116,7 @@ class AnimeRatingTest extends TestCase
 
         // The first view caches both the page model and the rating.
         $this->assertRating($anime, null);
-        $this->assertTrue(Cache::has("anime:v3:{$anime->id}"));
+        $this->assertTrue(Cache::has(Anime::pageCacheKey($anime->id)));
         $this->assertTrue(Cache::has(AnimeRatingService::cacheKey($anime->id)));
 
         $viewer = User::factory()->create();
@@ -144,7 +144,7 @@ class AnimeRatingTest extends TestCase
         $this->assertRating($anime, null);
 
         // The page model stayed cached the whole time.
-        $this->assertTrue(Cache::has("anime:v3:{$anime->id}"));
+        $this->assertTrue(Cache::has(Anime::pageCacheKey($anime->id)));
     }
 
     public function test_a_change_that_leaves_the_score_alone_keeps_the_cached_rating(): void

@@ -64,11 +64,11 @@ class SecurityHeaders
             "default-src 'self'; "
             .$scriptSrc
             ."style-src 'self' 'unsafe-inline'; "
-            ."img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.gstatic.com data:; "
+            ."img-src 'self' https://s4.anilist.co https://img.anilist.co https://img1.ak.crunchyroll.com https://i.ytimg.com https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com https://*.gstatic.com data:; "
             ."font-src 'self'; "
             .$connectSrc
             ."worker-src 'self' blob:; "
-            ."frame-src https://www.youtube.com https://www.dailymotion.com {$adsense} https://www.google.com {$turnstile}; "
+            ."frame-src https://www.youtube-nocookie.com https://www.dailymotion.com {$adsense} https://www.google.com {$turnstile}; "
             ."frame-ancestors 'none'"
         );
 

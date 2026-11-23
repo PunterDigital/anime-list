@@ -152,6 +152,14 @@ as `php <that dir>/composer/composer.phar`.
   50 MB unzipped (`gzdecode` max length). `app.blade.php` sends a Consent Mode default
   (denied for `analytics.consent_denied_regions`, EEA/UK/CH) before `gtag('config')`; the
   Funding Choices CMP sends the visitor's choice as the update.
+- Trailer facade (card 5704): the Trailer tab (the first tab when a title has one) shows
+  `Components/TrailerFacade.vue`: the i.ytimg.com thumbnail and a play button. The player
+  iframe (`youtube-nocookie.com/embed/<id>?autoplay=1`, or Dailymotion with no thumbnail) is
+  only created when it's pressed: an up-front iframe cost ~1 MB of YouTube JS on every page
+  view. URLs are parsed in `resources/js/lib/trailer.ts`. CSP: `img-src` has i.ytimg.com,
+  `frame-src` youtube-nocookie and Dailymotion (www.youtube.com is no longer framed).
+  E2E: `trailer.spec.ts` (answers YouTube's hosts itself and checks no player request before
+  the click) and `ssr.spec.ts` on the seeded `trailer-e2e-show`.
 - Trusted proxies (card 5703): the site is behind Cloudflare, so `config/trustedproxy.php`
   (MCPacks' file) lists Cloudflare's published ranges and `bootstrap/app.php` trusts only
   X-Forwarded-For and X-Forwarded-Proto from them. `$request->ip()` is then the visitor, so

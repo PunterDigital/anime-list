@@ -164,3 +164,20 @@ test('a blog post arrives rendered with its meta tags and JSON-LD', async ({ pag
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Welcome to the AniTrack Blog');
     expect(errors).toEqual([]);
 });
+
+// Card 5704: the trailer facade is in the server HTML (no player iframe), and the
+// page hydrates onto it without a mismatch.
+test('an anime page with a trailer arrives with the play button, not the player', async ({ page, request }) => {
+    const html = appHtml(await (await request.get('/anime/trailer-e2e-show')).text());
+    expect(html).toContain('data-ui="trailer-play"');
+    expect(html).toContain('aria-label="Play the Trailer E2E Show trailer"');
+    expect(html).toContain('src="https://i.ytimg.com/vi/e2eTrailer1/hqdefault.jpg"');
+    expect(html).not.toContain('<iframe');
+    expect(html).not.toContain('youtube-nocookie');
+
+    await page.route('https://i.ytimg.com/**', (route) => route.fulfill({ status: 404, body: '' }));
+    const errors = collectErrors(page);
+    await page.goto('/anime/trailer-e2e-show');
+    await expect(page.getByRole('button', { name: 'Play the Trailer E2E Show trailer' })).toBeVisible();
+    expect(errors.filter((e) => !e.includes('404'))).toEqual([]);
+});

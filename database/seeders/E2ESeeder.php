@@ -36,6 +36,10 @@ class E2ESeeder extends Seeder
 
     public const BLOG_TABLE_SLUG = 'release-calendar-e2e';
 
+    public const TRAILER_SLUG = 'trailer-e2e-show';
+
+    public const TRAILER_VIDEO_ID = 'e2eTrailer1';
+
     public const SLUGLESS_TITLE = 'Slugless E2E Show';
 
     public function run(): void
@@ -205,6 +209,12 @@ class E2ESeeder extends Seeder
             'published_at' => now()->subDays(3),
             'author_id' => $admin->id,
         ])->save();
+
+        // Card 5704: a title with a YouTube trailer, so the Trailer tab (the first
+        // tab) shows the click-to-play facade (trailer.spec.ts, ssr.spec.ts).
+        $this->ratingTitle('Trailer E2E Show', self::TRAILER_SLUG)
+            ->forceFill(['trailer_url' => 'https://www.youtube.com/watch?v='.self::TRAILER_VIDEO_ID])
+            ->save();
     }
 
     private function ratingTitle(string $title, string $slug): Anime

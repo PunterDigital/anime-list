@@ -73,6 +73,14 @@ Schedule::command('anime:recalculate-bayesian')
         Log::error('Bayesian score recalculation failed');
     });
 
+// Card 5717: the /people index sorts by this stored count.
+Schedule::command('people:refresh-role-counts')
+    ->hourlyAt(25)
+    ->withoutOverlapping(30)
+    ->onFailure(function () {
+        Log::error('People role count refresh failed');
+    });
+
 // Refresh top popular cache daily
 Schedule::call(function () {
     Cache::forget('top:popular:100');

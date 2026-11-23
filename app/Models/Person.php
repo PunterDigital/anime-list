@@ -29,6 +29,7 @@ class Person extends Model
     {
         return [
             'birthdate' => 'date',
+            'role_count' => 'integer',
         ];
     }
 

@@ -319,3 +319,13 @@ as `php <that dir>/composer/composer.phar`.
   hidden/NSFW/adult since the fill run; `is_adult`, NSFW and hidden are checked on the live row
   every view. A big synthetic franchise went from 855 KB serialized and 19 queries per cached
   view to 81 KB and 3 (`AnimePageCacheTest`).
+- Server-side aggregates (card 5717): `/people` sorts by the stored `people.role_count` (roles on
+  listable anime: not adult, NSFW or hidden), refreshed hourly at :25 by
+  `people:refresh-role-counts` (chunked UPDATEs) and once by its migration; a title hidden in
+  the admin drops out of the counts on the next run (person pages count live). Mood shelves
+  (`/api/discover/mood/{slug}`) are cached an hour (`DiscoverService::moodCacheKey`); the admin's
+  hide/NSFW actions call `forgetMoodCaches()`. `Anime::nextAiringEpisode` is a one-of-many
+  (earliest future airing, ties by id) on an `(anime_id, airs_at)` index, so eager loading reads
+  one row per anime. `ssr.ts` listens on 127.0.0.1 in cluster mode (one worker per CPU;
+  `INERTIA_SSR_CLUSTER=false` turns it off; local E2E does, CI doesn't). The daemon only picks
+  that up when it restarts on the new bundle.

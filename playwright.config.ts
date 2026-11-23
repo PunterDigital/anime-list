@@ -111,7 +111,9 @@ export default defineConfig({
             url: `http://127.0.0.1:${ssrNodePort}/health`,
             timeout: 30_000,
             reuseExistingServer: false,
-            env: { INERTIA_SSR_PORT: String(ssrNodePort) },
+            // Cluster mode forks one worker per CPU: CI's runner has 4, this
+            // PC 24 shared with other runs, so local E2E uses one process.
+            env: { INERTIA_SSR_PORT: String(ssrNodePort), INERTIA_SSR_CLUSTER: process.env.CI ? 'true' : 'false' },
         },
         {
             command: 'node tests/e2e/serve.mjs',

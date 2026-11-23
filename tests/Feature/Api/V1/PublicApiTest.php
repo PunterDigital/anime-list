@@ -81,6 +81,26 @@ class PublicApiTest extends TestCase
         $this->getJson('/api/v1/anime/search?q=naruto')->assertStatus(401);
     }
 
+    /**
+     * Card 5528: /api/v1 skips CSRF, so a signed-in session cookie alone must not count.
+     */
+    public function test_a_signed_in_session_without_a_token_is_refused(): void
+    {
+        $user = $this->enabledUser();
+        $anime = Anime::factory()->create();
+        $entry = UserAnimeList::factory()->create(['user_id' => $user->id]);
+        $token = $user->createToken('Chrome Extension')->accessToken;
+
+        $this->actingAs($user)->getJson('/api/v1/user')->assertStatus(401);
+        $this->actingAs($user)->postJson('/api/v1/list', ['anime_id' => $anime->id, 'status' => 'watching'])->assertStatus(401);
+        $this->actingAs($user)->deleteJson("/api/v1/list/{$entry->id}")->assertStatus(401);
+        $this->actingAs($user)->deleteJson("/api/v1/auth/tokens/{$token->id}")->assertStatus(401);
+
+        $this->assertSame(0, UserAnimeList::query()->where('anime_id', $anime->id)->count());
+        $this->assertModelExists($entry);
+        $this->assertSame(1, $user->tokens()->count());
+    }
+
     public function test_endpoints_require_feature_flag_even_with_valid_token(): void
     {
         $user = User::factory()->create();

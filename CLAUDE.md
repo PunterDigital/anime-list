@@ -127,6 +127,11 @@ as `php <that dir>/composer/composer.phar`.
 - Google tag IDs live in `config/analytics.php` (`GOOGLE_ANALYTICS_ID`, `GOOGLE_ADS_ID`); empty
   values leave the tag out. AdSense is `config/adsense.php`.
 - `env('X', fallback)` returns `''` for an empty `X=` line, so the fallback never applies.
+- `/api/v1` (card 5528) is bearer-token only: `config/sanctum.php` has `'guard' => []`, so
+  `auth:sanctum` never signs a request in by the session cookie. That's what makes the group's
+  CSRF exemption safe (it lives in `routes/web.php`, so sessions still run). Don't put `web`
+  back in that list; a web page that needs data uses its own session routes (`api/list`, ...).
+  Pest: `PublicApiTest::test_a_signed_in_session_without_a_token_is_refused`.
 - Error pages: `bootstrap/app.php` renders `ErrorPage` with `App\Support\ErrorPageProps`. With the
   `error-pages` flag on, 403/404/419/451 use the site layout (500/503 stay standalone). Errors
   thrown before `HandleInertiaRequests` ran (route model binding, CSRF) have no shared props,

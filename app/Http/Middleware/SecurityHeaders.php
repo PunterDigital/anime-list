@@ -22,7 +22,10 @@ class SecurityHeaders
 
         $response = $next($request);
 
-        $response->headers->set('X-Frame-Options', 'DENY');
+        // No X-Frame-Options here: Forge's nginx already sends SAMEORIGIN, two values
+        // are invalid, and the CSP's frame-ancestors 'none' below is what browsers use
+        // (card 5533). HSTS: a year, no includeSubDomains or preload yet.
+        $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');

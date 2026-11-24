@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\FeatureFlagService;
+use App\Support\ZiggyGroup;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -51,10 +52,15 @@ class HandleInertiaRequests extends Middleware
                 'client' => config('adsense.client'),
                 'slot' => config('adsense.slot'),
             ],
-            'ziggy' => fn () => [
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
-            ],
+            // Card 5710: only the SSR server reads this (the browser uses the
+            // list @routes printed in the first HTML), and SSR only renders
+            // first loads, so Inertia visits leave it out (13 KB each).
+            ...($request->header('X-Inertia') ? [] : [
+                'ziggy' => fn () => [
+                    ...(new Ziggy(ZiggyGroup::for($request)))->toArray(),
+                    'location' => $request->url(),
+                ],
+            ]),
         ];
     }
 }

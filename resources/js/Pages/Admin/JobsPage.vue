@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
-import axios from 'axios'
+import { http } from '@/lib/http'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 
@@ -190,7 +190,7 @@ async function toggleFailedDetail(uuid: string) {
 
     loadingDetailUuid.value = uuid
     try {
-        const { data } = await axios.get<FailedJobDetail>(route('admin.jobs.failed.show', { uuid }))
+        const { data } = await http.get<FailedJobDetail>(route('admin.jobs.failed.show', { uuid }))
         failedDetails.value = { ...failedDetails.value, [uuid]: data }
     } catch {
         detailError.value = 'Could not load the stack trace. The failed job may have been cleared.'

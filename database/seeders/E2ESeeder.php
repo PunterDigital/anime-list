@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Anime;
 use App\Models\BlogPost;
+use App\Models\Genre;
 use App\Models\Recommendation;
+use App\Models\Studio;
 use App\Models\User;
 use App\Models\UserAnimeList;
 use App\Services\FeatureFlagService;
@@ -215,6 +217,12 @@ class E2ESeeder extends Seeder
         $this->ratingTitle('Trailer E2E Show', self::TRAILER_SLUG)
             ->forceFill(['trailer_url' => 'https://www.youtube.com/watch?v='.self::TRAILER_VIDEO_ID])
             ->save();
+
+        // Card 5710: a genre and a studio, so the browse filters have options
+        // that must survive an Inertia visit (once props, lighter-pages.spec.ts).
+        $kumo = $this->ratingTitle('Kumo E2E Show', 'kumo-e2e-show');
+        $kumo->genres()->attach(Genre::factory()->create(['name' => 'Kumo Genre'])->id);
+        $kumo->studios()->attach(Studio::factory()->create(['name' => 'Kumo Studio', 'is_animation_studio' => true])->id, ['is_main' => true]);
     }
 
     private function ratingTitle(string $title, string $slug): Anime

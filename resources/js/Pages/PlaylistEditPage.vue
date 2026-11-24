@@ -8,7 +8,7 @@ import AppButton from '@/Components/ui/AppButton.vue'
 import AppInputText from '@/Components/ui/AppInputText.vue'
 import AppTextarea from '@/Components/ui/AppTextarea.vue'
 import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
-import axios from 'axios'
+import { http } from '@/lib/http'
 
 defineOptions({ layout: AppLayout })
 
@@ -41,7 +41,7 @@ function onSearchInput() {
     searchTimeout = setTimeout(async () => {
         searching.value = true
         try {
-            const { data } = await axios.get<{ data: AnimeCard[] }>(route('api.search'), {
+            const { data } = await http.get<{ data: AnimeCard[] }>(route('api.search'), {
                 params: { q: searchQuery.value },
             })
             searchResults.value = data.data.filter(

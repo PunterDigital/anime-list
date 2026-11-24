@@ -63,13 +63,15 @@ function handleLogout() {
                             >
                                 Settings
                             </Link>
-                            <Link
+                            <!-- A full page load (card 5710): admin route names are only in
+                                 the route list of a page loaded as an admin. -->
+                            <a
                                 v-if="user.is_admin"
-                                :href="route('admin.dashboard')"
+                                href="/admin"
                                 class="block px-4 py-2 text-sm text-primary-400 hover:bg-gray-800 hover:text-primary-300"
                             >
                                 Admin
-                            </Link>
+                            </a>
                             <hr class="border-gray-700 my-1" />
                             <button
                                 class="block w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-gray-100"

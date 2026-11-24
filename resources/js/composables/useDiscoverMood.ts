@@ -1,6 +1,6 @@
 import { computed, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import axios from 'axios'
+import { http } from '@/lib/http'
 import type { AnimeCard } from '@/types/anime'
 
 export type DiscoverLength = 'short' | 'standard' | 'long' | 'movie'
@@ -24,7 +24,7 @@ export function useDiscoverMood(
             if (!slug) {
                 return { slug: '', length: null, data: [] }
             }
-            const { data } = await axios.get<MoodResponse>(
+            const { data } = await http.get<MoodResponse>(
                 `/api/discover/mood/${encodeURIComponent(slug)}`,
                 {
                     params: selectedLength.value ? { length: selectedLength.value } : undefined,

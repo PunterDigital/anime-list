@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import axios from 'axios'
+import { http } from '@/lib/http'
 import type { ListEntryResource, ListEntryPayload } from '@/types'
 
 export function useListMutations() {
@@ -7,7 +7,7 @@ export function useListMutations() {
 
     const storeMutation = useMutation({
         mutationFn: async (payload: ListEntryPayload) => {
-            const { data } = await axios.post<ListEntryResource>('/api/list', payload)
+            const { data } = await http.post<ListEntryResource>('/api/list', payload)
             return data
         },
         onSuccess: () => {
@@ -17,7 +17,7 @@ export function useListMutations() {
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, ...patch }: { id: number } & Partial<ListEntryPayload>) => {
-            const { data } = await axios.patch<ListEntryResource>(`/api/list/${id}`, patch)
+            const { data } = await http.patch<ListEntryResource>(`/api/list/${id}`, patch)
             return data
         },
         onSuccess: () => {
@@ -27,7 +27,7 @@ export function useListMutations() {
 
     const destroyMutation = useMutation({
         mutationFn: async (id: number) => {
-            await axios.delete(`/api/list/${id}`)
+            await http.delete(`/api/list/${id}`)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['myList'] })

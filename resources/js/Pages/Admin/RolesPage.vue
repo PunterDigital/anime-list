@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 import AdminUserSearch from '@/Components/AdminUserSearch.vue'
 import UserAvatar from '@/Components/UserAvatar.vue'
-import axios from 'axios'
+import { http } from '@/lib/http'
 
 defineOptions({ layout: AppLayout })
 
@@ -28,14 +28,14 @@ defineProps<{
 }>()
 
 async function assignUser(roleSlug: string, user: RoleUser) {
-    await axios.post(route('admin.roles.assign', { role: roleSlug }), {
+    await http.post(route('admin.roles.assign', { role: roleSlug }), {
         username: user.username,
     })
     router.visit(route('admin.roles'), { preserveScroll: true })
 }
 
 async function removeUser(roleSlug: string, userId: number) {
-    await axios.delete(route('admin.roles.remove', { role: roleSlug, user: userId }))
+    await http.delete(route('admin.roles.remove', { role: roleSlug, user: userId }))
     router.visit(route('admin.roles'), { preserveScroll: true })
 }
 </script>

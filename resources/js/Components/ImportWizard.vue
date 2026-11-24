@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
-import axios from 'axios'
+import { http, isHttpError } from '@/lib/http'
 import type { MalPreviewEntry, ImportResult, ImportStatus } from '@/types'
 import AppButton from '@/Components/ui/AppButton.vue'
 import AppProgressBar from '@/Components/ui/AppProgressBar.vue'
@@ -34,7 +34,7 @@ async function handleUpload(event: Event) {
         const formData = new FormData()
         formData.append('file', file)
 
-        const { data } = await axios.post<{ token: string; entries: MalPreviewEntry[]; total: number }>(
+        const { data } = await http.post<{ token: string; entries: MalPreviewEntry[]; total: number }>(
             route('import.upload'),
             formData,
         )
@@ -44,7 +44,7 @@ async function handleUpload(event: Event) {
         total.value = data.total
         step.value = 'preview'
     } catch (e: unknown) {
-        if (axios.isAxiosError(e)) {
+        if (isHttpError(e)) {
             error.value = e.response?.data?.message ?? 'Failed to parse XML file'
         } else {
             error.value = 'Failed to parse XML file'
@@ -59,7 +59,7 @@ async function confirmImport() {
     error.value = ''
 
     try {
-        const { data } = await axios.post<{ status: string; result?: ImportResult; token?: string }>(
+        const { data } = await http.post<{ status: string; result?: ImportResult; token?: string }>(
             route('import.confirm'),
             { token: token.value, overwrite_existing: overwrite.value },
         )
@@ -72,7 +72,7 @@ async function confirmImport() {
             startPolling()
         }
     } catch (e: unknown) {
-        if (axios.isAxiosError(e)) {
+        if (isHttpError(e)) {
             error.value = e.response?.data?.error ?? 'Import failed'
         } else {
             error.value = 'Import failed'
@@ -85,7 +85,7 @@ async function confirmImport() {
 function startPolling() {
     pollTimer = setInterval(async () => {
         try {
-            const { data } = await axios.get<ImportStatus>(route('import.status'), {
+            const { data } = await http.get<ImportStatus>(route('import.status'), {
                 params: { token: token.value },
             })
 

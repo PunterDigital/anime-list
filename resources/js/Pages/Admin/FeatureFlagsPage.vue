@@ -3,7 +3,7 @@ import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import AdminNav from '@/Components/AdminNav.vue'
 import AdminUserSearch from '@/Components/AdminUserSearch.vue'
-import axios from 'axios'
+import { http } from '@/lib/http'
 
 defineOptions({ layout: AppLayout })
 
@@ -25,17 +25,17 @@ defineProps<{
 }>()
 
 async function setStatus(feature: string, status: 'everyone' | 'nobody' | 'default') {
-    await axios.patch(route('admin.features.update', { feature }), { status })
+    await http.patch(route('admin.features.update', { feature }), { status })
     router.visit(route('admin.features'), { preserveScroll: true })
 }
 
 async function addUser(feature: string, username: string) {
-    await axios.post(route('admin.features.activate-user', { feature }), { username })
+    await http.post(route('admin.features.activate-user', { feature }), { username })
     router.visit(route('admin.features'), { preserveScroll: true })
 }
 
 async function removeUser(feature: string, userId: number) {
-    await axios.delete(route('admin.features.deactivate-user', { feature, user: userId }))
+    await http.delete(route('admin.features.deactivate-user', { feature, user: userId }))
     router.visit(route('admin.features'), { preserveScroll: true })
 }
 

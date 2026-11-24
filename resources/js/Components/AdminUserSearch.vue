@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import axios from 'axios'
+import { http } from '@/lib/http'
 import UserAvatar from '@/Components/UserAvatar.vue'
 import { useDebounce } from '@/composables/useDebounce'
 
@@ -40,7 +40,7 @@ watch(debouncedQuery, async (value) => {
 
     loading.value = true
     try {
-        const { data } = await axios.get<{ data: SearchUser[] }>(route('admin.users.search'), {
+        const { data } = await http.get<{ data: SearchUser[] }>(route('admin.users.search'), {
             params: { q: term },
         })
         results.value = data.data.filter(u => !props.excludeIds.includes(u.id))

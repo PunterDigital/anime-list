@@ -1,4 +1,4 @@
-import axios from 'axios'
+import { http, isHttpError } from '@/lib/http'
 
 // Card 4480: uploads one image for a blog post (the editor and the cover
 // image field). The server checks the type (JPEG, PNG, WebP, GIF) and size
@@ -42,12 +42,12 @@ export async function uploadBlogImage(file: File): Promise<UploadedBlogImage> {
     body.append('image', file)
 
     try {
-        const { data } = await axios.post<UploadedBlogImage>(route('admin.blog.images.store'), body, {
+        const { data } = await http.post<UploadedBlogImage>(route('admin.blog.images.store'), body, {
             headers: { Accept: 'application/json' },
         })
         return data
     } catch (error) {
-        if (axios.isAxiosError(error)) {
+        if (isHttpError(error)) {
             const data = error.response?.data as { message?: string; errors?: Record<string, string[]> } | undefined
             const message = data?.errors?.image?.[0] ?? data?.message
             if (error.response?.status === 413) {

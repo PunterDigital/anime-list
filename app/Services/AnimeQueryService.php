@@ -7,6 +7,7 @@ use App\Models\Anime;
 use App\Models\Genre;
 use App\Models\Studio;
 use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -59,8 +60,11 @@ class AnimeQueryService
 
         return [
             'anime' => AnimeCardResource::collection($paginator),
-            'genres' => $this->cachedGenres(),
-            'studios' => $this->cachedStudios(),
+            // Card 5710: the filter options are the same on every page and
+            // filter click, so the client keeps them after the first visit
+            // (Inertia 3 once props; ~37 KB of studios per click before).
+            'genres' => Inertia::once(fn () => $this->cachedGenres()),
+            'studios' => Inertia::once(fn () => $this->cachedStudios()),
         ];
     }
 

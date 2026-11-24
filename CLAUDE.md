@@ -329,3 +329,16 @@ as `php <that dir>/composer/composer.phar`.
   one row per anime. `ssr.ts` listens on 127.0.0.1 in cluster mode (one worker per CPU;
   `INERTIA_SSR_CLUSTER=false` turns it off; local E2E does, CI doesn't). The daemon only picks
   that up when it restarts on the new bundle.
+- Lighter pages (card 5710): no axios. `resources/js/lib/http.ts` is a small fetch wrapper with
+  axios' shape (`http.get(url, { params, signal })`, `http.post(url, body)`, `{ data }` back,
+  `isHttpError(e)` and `e.response.status/data`); it sends `X-Requested-With`, JSON and the
+  `X-XSRF-TOKEN` cookie header. The Inertia `ziggy` prop is only on first loads (only the SSR
+  server reads it; the browser uses `@routes`), and non-admins get Ziggy's `public` group
+  (`config/ziggy.php`: no `admin.*`/`horizon.*`, `App\Support\ZiggyGroup`). The browser keeps the
+  route list of the page it first loaded, so admin pages must open with a full page load: the
+  navbar's Admin link and the blog's "Manage posts" are plain `<a>`, and a password sign-in whose
+  target is under /admin answers `Inertia::location()` (409 + full load). Don't turn those into
+  `<Link :href="route('admin...')">`: for an admin who signed in from a guest page, `route()`
+  throws. The browse filter options (`genres`, `studios`) are Inertia 3 once props. Cover art:
+  `<link rel="preconnect" href="https://s4.anilist.co">` and `fetchpriority="high"` on the
+  detail cover. E2E: `lighter-pages.spec.ts` on the seeded `kumo-e2e-show` (Kumo Genre/Studio).

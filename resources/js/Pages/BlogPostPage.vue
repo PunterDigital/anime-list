@@ -61,7 +61,7 @@ const ogTitle = computed(() => props.seo.title)
                 <time v-if="post.published_at" :datetime="post.published_at">{{ post.published_label }}</time>
                 <span v-if="post.author"> · {{ post.author }}</span>
                 <template v-if="isAdmin">
-                    · <Link :href="route('admin.blog.index')" class="text-gray-400 hover:text-gray-200">Manage posts</Link>
+                    · <a href="/admin/blog" class="text-gray-400 hover:text-gray-200">Manage posts</a>
                 </template>
             </p>
         </header>

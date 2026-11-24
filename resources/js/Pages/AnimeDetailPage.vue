@@ -280,6 +280,7 @@ function displayScore(): string {
                         :alt="displayTitle(anime)"
                         class="w-full"
                         loading="eager"
+                        fetchpriority="high"
                     />
                 </div>
 

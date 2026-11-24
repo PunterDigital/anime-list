@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import axios from 'axios'
+import { http } from '@/lib/http'
 import { useDebounce } from './useDebounce'
 import type { SearchResponse } from '@/types'
 
@@ -13,7 +13,7 @@ export function useAnimeSearch() {
     const { data, isFetching, isError } = useQuery<SearchResponse>({
         queryKey: ['anime-search', debouncedQuery],
         queryFn: async ({ signal }) => {
-            const { data } = await axios.get<SearchResponse>('/api/search', {
+            const { data } = await http.get<SearchResponse>('/api/search', {
                 params: { q: debouncedQuery.value },
                 signal,
             })

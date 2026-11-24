@@ -8,6 +8,10 @@
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48.png">
         <link rel="icon" type="image/png" sizes="128x128" href="/favicon/favicon-128.png">
         <link rel="apple-touch-icon" sizes="128x128" href="/favicon/favicon-128.png">
+        {{-- Cover art is hot-linked from AniList's CDN (card 5710): open that
+             connection while the HTML and JS load. --}}
+        <link rel="preconnect" href="https://s4.anilist.co">
+        <link rel="dns-prefetch" href="https://s4.anilist.co">
         @if (config('adsense.client'))
             <meta name="google-adsense-account" content="{{ config('adsense.client') }}">
             <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ config('adsense.client') }}" crossorigin="anonymous" nonce="{{ app('csp-nonce') }}"></script>
@@ -27,7 +31,8 @@
         @if (! empty($page['props']['json_ld']) && is_array($page['props']['json_ld']))
             <script type="application/ld+json" nonce="{{ app('csp-nonce') }}">{!! json_encode($page['props']['json_ld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
         @endif
-        @routes(nonce: app('csp-nonce'))
+        {{-- Card 5710: no admin.* / horizon.* route names for non-admins. --}}
+        @routes(\App\Support\ZiggyGroup::for(request()), nonce: app('csp-nonce'))
         @vite(['resources/js/app.ts'])
         {{-- The SSR head carries the page's own title; the fallback is only for pages
              rendered without SSR, so a page never has two titles (card 4242). --}}

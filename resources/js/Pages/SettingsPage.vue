@@ -10,7 +10,7 @@ import AppPassword from '@/Components/ui/AppPassword.vue'
 import AppButton from '@/Components/ui/AppButton.vue'
 import AppToggleSwitch from '@/Components/ui/AppToggleSwitch.vue'
 import { Passkeys } from '@laravel/passkeys'
-import axios from 'axios'
+import { http, isHttpError } from '@/lib/http'
 
 defineOptions({ layout: AppLayout })
 
@@ -166,9 +166,9 @@ async function addPasskey() {
 
     // Adding a passkey needs the password first (card 5529).
     try {
-        await axios.post(route('settings.confirm-password'), { password: passkeyPassword.value })
+        await http.post(route('settings.confirm-password'), { password: passkeyPassword.value })
     } catch (e) {
-        const data = axios.isAxiosError(e) ? e.response?.data as { message?: string; errors?: { password?: string[] } } | undefined : undefined
+        const data = isHttpError(e) ? e.response?.data as { message?: string; errors?: { password?: string[] } } | undefined : undefined
         passkeyError.value = data?.errors?.password?.[0] ?? data?.message ?? "Couldn't confirm your password."
         passkeyBusy.value = false
         return

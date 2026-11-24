@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Http\Resources\ListEntryResource;
+use App\Http\Resources\ListPageEntryResource;
 use App\Models\Anime;
 use App\Models\User;
 use App\Models\UserAnimeList;
@@ -23,7 +23,7 @@ class UserListService
             ->toArray();
 
         return [
-            'entries' => ListEntryResource::collection($entries),
+            'entries' => ListPageEntryResource::collection($entries),
             'counts' => $counts,
         ];
     }
@@ -50,7 +50,7 @@ class UserListService
             ->toArray();
 
         return [
-            'entries' => ListEntryResource::collection($entries),
+            'entries' => ListPageEntryResource::collection($entries),
             'counts' => $counts,
         ];
     }

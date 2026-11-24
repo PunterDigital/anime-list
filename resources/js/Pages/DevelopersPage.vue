@@ -155,13 +155,25 @@ const sections: Section[] = [
                 path: '/list',
                 title: 'Get your list',
                 auth: 'bearer',
-                description: 'Returns all list entries belonging to the token owner, most-recently-updated first.',
+                description: 'Returns the list entries belonging to the token owner, most-recently-updated first: all of them, or one page when page or per_page is given (the response then has meta.current_page, meta.last_page and meta.per_page; total is the whole list).',
                 params: [
                     {
                         name: 'status',
                         in: 'query',
                         type: 'string',
                         notes: 'One of watching, completed, on_hold, dropped, plan_to_watch',
+                    },
+                    {
+                        name: 'page',
+                        in: 'query',
+                        type: 'integer',
+                        notes: 'Page number, from 1',
+                    },
+                    {
+                        name: 'per_page',
+                        in: 'query',
+                        type: 'integer',
+                        notes: 'Entries per page, 1 to 500 (default 100)',
                     },
                 ],
                 example: `curl "{BASE}/list?status=watching" \\

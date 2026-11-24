@@ -223,6 +223,34 @@ class E2ESeeder extends Seeder
         $kumo = $this->ratingTitle('Kumo E2E Show', 'kumo-e2e-show');
         $kumo->genres()->attach(Genre::factory()->create(['name' => 'Kumo Genre'])->id);
         $kumo->studios()->attach(Studio::factory()->create(['name' => 'Kumo Studio', 'is_animation_studio' => true])->id, ['is_main' => true]);
+
+        // Card 5718: a public list longer than one render slice (120), for
+        // big-list.spec.ts. Popularity 0 keeps these at the end of /anime;
+        // 125 is the most recently updated, so 001-005 (watching) start hidden.
+        $shelf = User::factory()->create([
+            'name' => 'Shelf E2E',
+            'username' => 'shelf-e2e',
+            'email' => 'shelf-e2e@example.com',
+            'list_is_public' => true,
+        ]);
+        foreach (range(1, 125) as $n) {
+            $anime = Anime::factory()->finished()->create([
+                'title_romaji' => sprintf('Shelf E2E %03d', $n),
+                'title_english' => null,
+                'slug' => sprintf('shelf-e2e-%03d', $n),
+                'cover_image_large' => null,
+                'cover_image_medium' => null,
+                'banner_image' => null,
+                'popularity' => 0,
+                'is_adult' => false,
+            ]);
+            UserAnimeList::factory()->create([
+                'user_id' => $shelf->id,
+                'anime_id' => $anime->id,
+                'status' => $n <= 5 ? UserAnimeList::STATUS_WATCHING : UserAnimeList::STATUS_COMPLETED,
+                'updated_at' => now()->subMinutes(126 - $n),
+            ]);
+        }
     }
 
     private function ratingTitle(string $title, string $slug): Anime

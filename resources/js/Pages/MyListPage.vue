@@ -8,6 +8,8 @@ import LibraryRowsView from '@/Components/LibraryRowsView.vue'
 import LibraryDataTable from '@/Components/LibraryDataTable.vue'
 import ListEntryModal from '@/Components/ListEntryModal.vue'
 import { useListMutations } from '@/composables/useListMutations'
+import { useRenderLimit } from '@/composables/useRenderLimit'
+import AppButton from '@/Components/ui/AppButton.vue'
 import { statusDotClass } from '@/composables/useLibraryTheme'
 import type { ListEntryResource, ListStatus, ListViewMode } from '@/types'
 import { LIST_STATUS_LABELS } from '@/types'
@@ -113,6 +115,9 @@ const filteredEntries = computed(() => {
         return 0
     })
 })
+
+// Card 5718: draw a slice of a long list; filters and sorting still see all of it.
+const { visible: visibleEntries, remaining, showMore } = useRenderLimit(filteredEntries, [activeStatus, sortField, filterText, selectedGenres])
 
 const totalCount = computed(() => Object.values(props.counts).reduce((n, c) => n + c, 0))
 
@@ -377,21 +382,24 @@ const sortOptions = [
 
         <LibraryCardsView
             v-else-if="viewMode === 'card'"
-            :entries="filteredEntries"
+            :entries="visibleEntries"
             @edit="openEdit"
             @progress="handleProgress"
         />
         <LibraryRowsView
             v-else-if="viewMode === 'compact'"
-            :entries="filteredEntries"
+            :entries="visibleEntries"
             @edit="openEdit"
             @progress="handleProgress"
         />
         <LibraryDataTable
             v-else
-            :entries="filteredEntries"
+            :entries="visibleEntries"
             @edit="openEdit"
         />
+        <div v-if="remaining > 0" class="mt-6 flex justify-center" data-test="list-show-more">
+            <AppButton :label="`Show more (${remaining} left)`" severity="secondary" outlined @click="showMore" />
+        </div>
 
         <ListEntryModal
             v-if="showEditModal && editingEntry?.anime"

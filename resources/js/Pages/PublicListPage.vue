@@ -5,6 +5,8 @@ import ListStatusTabs from '@/Components/ListStatusTabs.vue'
 import ListTableView from '@/Components/ListTableView.vue'
 import ListCardView from '@/Components/ListCardView.vue'
 import ListCompactView from '@/Components/ListCompactView.vue'
+import AppButton from '@/Components/ui/AppButton.vue'
+import { useRenderLimit } from '@/composables/useRenderLimit'
 import type { ListEntryResource, ListStatus, ListViewMode, UserProfile } from '@/types'
 
 defineOptions({ layout: AppLayout })
@@ -66,6 +68,9 @@ const filteredEntries = computed(() => {
         return 0
     })
 })
+
+// Card 5718: draw a slice of a long list; the tabs and sorting still see all of it.
+const { visible: visibleEntries, remaining, showMore } = useRenderLimit(filteredEntries, [activeStatus, sortField])
 
 const sortOptions = [
     { label: 'Last Updated', value: '-updated_at' },
@@ -139,9 +144,12 @@ const sortOptions = [
                 </div>
             </div>
 
-            <ListTableView v-if="viewMode === 'table'" :entries="filteredEntries" readonly />
-            <ListCardView v-else-if="viewMode === 'card'" :entries="filteredEntries" readonly />
-            <ListCompactView v-else :entries="filteredEntries" readonly />
+            <ListTableView v-if="viewMode === 'table'" :entries="visibleEntries" readonly />
+            <ListCardView v-else-if="viewMode === 'card'" :entries="visibleEntries" readonly />
+            <ListCompactView v-else :entries="visibleEntries" readonly />
+            <div v-if="remaining > 0" class="mt-6 flex justify-center" data-test="list-show-more">
+                <AppButton :label="`Show more (${remaining} left)`" severity="secondary" outlined @click="showMore" />
+            </div>
         </template>
     </div>
 </template>

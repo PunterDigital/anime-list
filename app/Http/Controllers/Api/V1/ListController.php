@@ -15,6 +15,10 @@ use Illuminate\Validation\Rule;
 
 class ListController extends Controller
 {
+    public const DEFAULT_PER_PAGE = 100;
+
+    public const MAX_PER_PAGE = 500;
+
     public function __construct(
         private readonly UserListService $listService,
     ) {}
@@ -26,17 +30,37 @@ class ListController extends Controller
     {
         $validated = $request->validate([
             'status' => ['nullable', 'string', Rule::in(UserAnimeList::STATUSES)],
+            // Card 5718: optional paging. Without page/per_page the whole list
+            // comes back as before, so older extension versions keep working.
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_PER_PAGE],
         ]);
 
-        $entries = $request->user()->animeList()
+        $query = $request->user()->animeList()
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->with(['anime:id,slug,anilist_id,title_romaji,title_english,format,episodes,cover_image_large,cover_image_medium,cover_image_color,average_score,bayesian_score,popularity,status', 'anime.genres'])
             ->orderByDesc('updated_at')
-            ->get();
+            ->orderByDesc('id');
+
+        if (! isset($validated['page']) && ! isset($validated['per_page'])) {
+            $entries = $query->get();
+
+            return response()->json([
+                'data' => ListEntryResource::collection($entries)->resolve($request),
+                'total' => $entries->count(),
+            ]);
+        }
+
+        $page = $query->paginate((int) ($validated['per_page'] ?? self::DEFAULT_PER_PAGE));
 
         return response()->json([
-            'data' => ListEntryResource::collection($entries)->resolve($request),
-            'total' => $entries->count(),
+            'data' => ListEntryResource::collection($page->getCollection())->resolve($request),
+            'total' => $page->total(),
+            'meta' => [
+                'current_page' => $page->currentPage(),
+                'last_page' => $page->lastPage(),
+                'per_page' => $page->perPage(),
+            ],
         ]);
     }
 

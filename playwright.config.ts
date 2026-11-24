@@ -17,7 +17,7 @@ const ssrURL = `http://127.0.0.1:${ssrPort}`;
 const ssrNodePort = Number(process.env.E2E_SSR_NODE_PORT ?? 13716);
 
 // Env beats `.env` in Laravel: point the app at a throwaway SQLite file and
-// switch off everything that would reach a real service (Redis, Sentry, AdSense).
+// switch off everything that would reach a real service (Redis, Sentry, AdSense ads).
 const appEnv = {
     E2E_PORT: String(port),
     APP_ENV: 'e2e',
@@ -35,8 +35,10 @@ const appEnv = {
     MAIL_MAILER: 'array',
     INERTIA_SSR_ENABLED: 'false',
     SENTRY_LARAVEL_DSN: '',
-    ADSENSE_CLIENT: '',
-    ADSENSE_SLOT: '',
+    // A made-up client and slot with the `ads` flag off (never seeded on): the
+    // page carries the verification meta tag but no loader (adsense.spec.ts, card 5715).
+    ADSENSE_CLIENT: 'ca-pub-0000000000000000',
+    ADSENSE_SLOT: '0000000000',
     GOOGLE_ANALYTICS_ID: '',
     GOOGLE_ADS_ID: '',
     LOG_CHANNEL: 'single',

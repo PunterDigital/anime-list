@@ -129,7 +129,12 @@ as `php <that dir>/composer/composer.phar`.
 ## Quirks
 
 - Google tag IDs live in `config/analytics.php` (`GOOGLE_ANALYTICS_ID`, `GOOGLE_ADS_ID`); empty
-  values leave the tag out. AdSense is `config/adsense.php`.
+  values leave the tag out. AdSense is `config/adsense.php`. The `google-adsense-account` meta
+  tag is printed whenever a client is set (site verification), but `adsbygoogle.js` only when
+  the page's resolved `features.ads` is true and `adsense.slot` is set (card 5715; ads are off
+  since AdSense turned the site down for content quality). `AdBanner.vue` adds the loader
+  itself if the flag turns on later in a visit (sign-in is an Inertia visit). E2E's servers
+  have a made-up client and slot with the flag off; `adsense.spec.ts` checks no AdSense request.
 - `env('X', fallback)` returns `''` for an empty `X=` line, so the fallback never applies.
 - `/api/v1` (card 5528) is bearer-token only: `config/sanctum.php` has `'guard' => []`, so
   `auth:sanctum` never signs a request in by the session cookie. That's what makes the group's

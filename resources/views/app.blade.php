@@ -12,9 +12,15 @@
              connection while the HTML and JS load. --}}
         <link rel="preconnect" href="https://s4.anilist.co">
         <link rel="dns-prefetch" href="https://s4.anilist.co">
+        {{-- The meta tag keeps the site verifiable in AdSense. The loader script only comes
+             when AdBanner would show an ad: the `ads` flag is on for this viewer and a slot is
+             set (card 5715). It reads the props this page already resolved, so switching the
+             flag on in Admin brings it back without a deploy. --}}
         @if (config('adsense.client'))
             <meta name="google-adsense-account" content="{{ config('adsense.client') }}">
-            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ config('adsense.client') }}" crossorigin="anonymous" nonce="{{ app('csp-nonce') }}"></script>
+            @if (($page['props']['features']['ads'] ?? false) && config('adsense.slot'))
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ config('adsense.client') }}" crossorigin="anonymous" nonce="{{ app('csp-nonce') }}"></script>
+            @endif
         @endif
         @php($gtagIds = array_values(array_filter([config('analytics.ga_id'), config('analytics.ads_id')])))
         @if ($gtagIds)

@@ -342,3 +342,11 @@ as `php <that dir>/composer/composer.phar`.
   throws. The browse filter options (`genres`, `studios`) are Inertia 3 once props. Cover art:
   `<link rel="preconnect" href="https://s4.anilist.co">` and `fetchpriority="high"` on the
   detail cover. E2E: `lighter-pages.spec.ts` on the seeded `kumo-e2e-show` (Kumo Genre/Studio).
+- Big lists (card 5718): My List and the public list draw 120 entries at a time with a "Show
+  more" button (`composables/useRenderLimit.ts`; SSR renders the first slice). The tabs, filters,
+  sort and stats still use every entry, so the page still gets the whole list, as
+  `ListPageEntryResource` (only the anime fields those pages use). `/api/v1/list` pages only when
+  asked (`page`/`per_page`, max 500, default 100, with `meta`); without them it returns the whole
+  list with the full card, as older extension versions expect. A 2,000-entry public list went
+  from 3.67 MB HTML / 2.2 s TTFB to 1.84 MB / 1.5 s locally (most of what's left is the JSON).
+  E2E: `big-list.spec.ts` on the seeded `shelf-e2e` (125 entries).

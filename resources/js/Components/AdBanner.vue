@@ -19,12 +19,30 @@ const visible = computed(() => adsEnabled.value && !!client.value && !!slot.valu
 // refuses to fill a slot it has already filled.
 const insKey = ref(0)
 
+const LOADER = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
+
+// app.blade.php prints the loader only when the first page load already shows
+// ads (card 5715). A viewer whose flag turns on later in the visit (signing in
+// is an Inertia visit, so the root view isn't rendered again) gets it here.
+function ensureLoader() {
+    if (document.querySelector(`script[src^="${LOADER}"]`)) {
+        return
+    }
+
+    const script = document.createElement('script')
+    script.async = true
+    script.crossOrigin = 'anonymous'
+    script.src = `${LOADER}?client=${encodeURIComponent(client.value ?? '')}`
+    document.head.appendChild(script)
+}
+
 function requestAd() {
     if (!visible.value || typeof window === 'undefined') {
         return
     }
 
     try {
+        ensureLoader()
         const w = window as Window & { adsbygoogle?: unknown[] }
         w.adsbygoogle = w.adsbygoogle || []
         w.adsbygoogle.push({})
